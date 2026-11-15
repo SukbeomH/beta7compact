@@ -58,6 +58,7 @@ class MediaOriginalStoreContractTest {
                 args.data[QUERY_ARG_SQL_SELECTION_ARGS] as Array<String>?, true)
         }
         override fun openFileDescriptor(uri: Uri, mode: String) = ParcelFileDescriptor(rows.getValue(uri.toString()).bytes.size.toLong())
+        override fun openInputStream(uri: Uri) = rows.getValue(uri.toString()).bytes.inputStream()
         override fun openOutputStream(uri: Uri, mode: String) = object : ByteArrayOutputStream() {
             override fun close() { rows.getValue(uri.toString()).bytes = toByteArray() }
         }
@@ -89,6 +90,7 @@ class MediaOriginalStoreContractTest {
                 assertEquals(listOf(orphan), resolver.deleted)
                 assertEquals(setOf(known, published, foreign, otherPath), resolver.rows.keys)
                 assertTrue(store.recover(published, 4))
+                assertEquals(dev.sukbeomh.beta7compact.core.sha256(byteArrayOf(1, 2, 3, 4).inputStream()), store.contentHash(published))
                 assertFailsWith<IllegalStateException> { store.discard(published) }
                 assertEquals(listOf(orphan), resolver.deleted)
                 assertEquals(if (api >= 30) 1 else 0, resolver.bundleQueries)

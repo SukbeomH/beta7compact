@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import dev.sukbeomh.beta7compact.core.CameraObject
 import dev.sukbeomh.beta7compact.core.OriginalStore
+import dev.sukbeomh.beta7compact.core.sha256
 import java.io.File
 
 class MediaOriginalStore(context: Context) : OriginalStore {
@@ -36,6 +37,9 @@ class MediaOriginalStore(context: Context) : OriginalStore {
             }
         } ?: false
     }
+    override fun contentHash(uri: String): String? = runCatching {
+        resolver.openInputStream(Uri.parse(uri))?.let(::sha256)
+    }.getOrNull()
     private fun length(uri: Uri) = resolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: -1L
     override fun write(uri: String, source: File) {
         checkNotNull(resolver.openOutputStream(Uri.parse(uri), "wt")) { "갤러리 쓰기 실패" }.use { out ->

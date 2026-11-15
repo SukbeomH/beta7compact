@@ -2,6 +2,7 @@ package dev.sukbeomh.beta7compact.core
 
 import java.io.Closeable
 import java.io.File
+import java.io.InputStream
 import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.time.Instant
@@ -11,7 +12,8 @@ import java.time.format.DateTimeFormatter
 
 /** Only immutable, supported still-image objects enter the queue. No object/delete operations. */
 data class CameraObject(val handle: Int, val storage: Int, val name: String, val size: Long,
-                        val captured: Long, val parent: Int = 0, val cameraTime: String? = null) {
+                        val captured: Long, val parent: Int = 0, val cameraTime: String? = null,
+                        val recordKey: String? = null) {
     val mime: String? get() = when (name.substringAfterLast('.', "").lowercase()) {
         "jpg", "jpeg" -> "image/jpeg"
         "arw" -> "image/x-sony-arw"
@@ -20,17 +22,20 @@ data class CameraObject(val handle: Int, val storage: Int, val name: String, val
     }
     val valid: Boolean get() = mime != null && size in 1..0xfffffff0L &&
         name.isNotBlank() && name.length <= 255 && name.none { it == '/' || it == '\\' || it.code < 32 }
-    // v1 and native-only metadata have no original camera DateTime; retain conservative aliases.
-    val key: String get() = identity(cameraTime ?: captured.toString())
+    // Metadata hashes identify records, never the contents. Keep migrated primary keys verbatim.
+    val hasRawTime: Boolean get() = !cameraTime.isNullOrBlank()
+    val metadataKey: String get() = identity(cameraTime?.takeIf { hasRawTime } ?: captured.toString())
+    private val scopedKey: String get() = digest("$storage/$parent/$metadataKey")
+    val key: String get() = recordKey ?: scopedKey
     private fun identity(time: String) = digest("$name\u0000$size\u0000$time")
-    val pair: String get() = digest("$storage/$parent/${name.substringBeforeLast('.').lowercase()}/${cameraTime ?: captured}")
+    val pair: String get() = digest("$storage/$parent/${name.substringBeforeLast('.').lowercase()}/${cameraTime?.takeIf { hasRawTime } ?: captured}")
     val compatibleKeys: Set<String> by lazy {
-        // MTP aliases never alias two exact raw clocks through isKnown().
-        if (cameraTime != null) setOf(key) + legacyKeys.map { "mtp:$it" }
-        else setOf(key, "legacy:$key")
+        // Only an exact raw clock AND location can suppress a planned download.
+        (if (hasRawTime) setOf("known:$scopedKey") else emptySet()) +
+            (legacyKeys + metadataKey).map { "hint:$it" }
     }
     private val legacyKeys: Set<String> by lazy {
-        val walls = if (cameraTime != null) listOfNotNull(
+        val walls = if (hasRawTime) listOfNotNull(
             runCatching { LocalDateTime.parse(cameraTime?.take(15), clock) }.getOrNull())
         else if (captured > 0) listOf(
             LocalDateTime.ofInstant(Instant.ofEpochMilli(captured), ZoneId.systemDefault()),
@@ -51,12 +56,14 @@ data class CameraObject(val handle: Int, val storage: Int, val name: String, val
         }
         epochs.map { identity(it.toString()) }.toSet()
     }
-    fun isKnown(keys: Set<String>): Boolean = key in keys ||
-        (cameraTime == null && "mtp:$key" in keys) ||
-        (keys.any { it.startsWith("legacy:") } && legacyKeys.any { "legacy:$it" in keys })
-    fun matchesQueued(queued: CameraObject): Boolean = key == queued.key ||
-        (queued.cameraTime == null && queued.key in legacyKeys) ||
-        (cameraTime == null && queued.cameraTime != null && key in queued.legacyKeys)
+    fun isKnown(keys: Set<String>): Boolean = hasRawTime && "known:$scopedKey" in keys
+    fun needsVerification(keys: Set<String>): Boolean = !isKnown(keys) &&
+        compatibleKeys.any { it.startsWith("hint:") && it in keys }
+    fun sameLocation(other: CameraObject): Boolean = storage == other.storage && parent == other.parent &&
+        name == other.name && size == other.size
+    fun matchesQueued(queued: CameraObject): Boolean = sameLocation(queued) &&
+        if (hasRawTime && queued.hasRawTime) cameraTime == queued.cameraTime
+        else compatibleKeys.any { it.startsWith("hint:") && it in queued.compatibleKeys }
     companion object {
         const val PATH = "DCIM/beta7compact/"
         private val clock = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
@@ -98,13 +105,28 @@ interface ImportJournal {
     suspend fun uri(key: String): String?
     suspend fun staged(key: String, uri: String)
     suspend fun completed(key: String, uri: String)
+    suspend fun contentHash(key: String): String?
+    suspend fun hashed(key: String, hash: String)
 }
 interface OriginalStore {
     fun recover(uri: String, size: Long): Boolean
+    fun contentHash(uri: String): String?
     fun begin(item: CameraObject): String
     fun write(uri: String, source: File)
     fun publish(uri: String, size: Long)
     fun discard(uri: String)
+}
+
+/** Streaming SHA-256 over received bytes or an existing published original. Never logged. */
+fun sha256(input: InputStream): String = input.use {
+    val digest = MessageDigest.getInstance("SHA-256")
+    val buffer = ByteArray(64 * 1024)
+    while (true) {
+        val count = it.read(buffer)
+        if (count < 0) break
+        if (count > 0) digest.update(buffer, 0, count)
+    }
+    digest.digest().joinToString("") { byte -> "%02x".format(byte.toInt() and 255) }
 }
 
 class ImportPipeline(private val journal: ImportJournal, private val store: OriginalStore,
@@ -113,57 +135,86 @@ class ImportPipeline(private val journal: ImportJournal, private val store: Orig
         val queue = journal.pending()
         if (queue.isEmpty()) return
         val current = camera.list().filter { it.valid }.distinct()
-        // Resolve the entire queue before any download/publication. Different handles with the
-        // same identity remain separate candidates: silently collapsing them would hide ambiguity.
-        fun matches(queued: CameraObject) = current.filter { it.matchesQueued(queued) }
+        // Resolve the WHOLE queue before publication. A raw queued clock cannot be reconstructed
+        // from a fallback listing. Legacy rows may use one unambiguous candidate at the same path.
         val groups = queue.groupBy { queued ->
-            val candidates = matches(queued)
+            val candidates = current.filter { it.matchesQueued(queued) }
             check(candidates.size <= 1) { "기존 대기 사진의 촬영시각이 모호합니다. 대기열을 확인하세요" }
-            checkNotNull(candidates.singleOrNull()) { "카드에서 대기 사진을 찾을 수 없습니다" }
-        }
-        val completed = mutableMapOf<CameraObject, MutableList<CameraObject>>()
-        for (record in journal.completedItems()) {
-            val candidates = matches(record)
-            if (candidates.any { it in groups }) {
-                check(candidates.size == 1) { "기존 완료 사진의 촬영시각이 모호합니다. 대기열을 확인하세요" }
-                completed.getOrPut(candidates.single()) { mutableListOf() }.add(record)
+            val item = checkNotNull(candidates.singleOrNull()) { "카드에서 대기 사진을 찾을 수 없습니다" }
+            check((!queued.hasRawTime || item.hasRawTime) &&
+                (queued.hasRawTime || item.hasRawTime || queued.captured == item.captured)) {
+                "대기 사진의 원문 촬영시각을 확인할 수 없습니다. 목록을 새로고침하세요"
             }
+            item
+        }
+        for (pending in groups.values) {
+            check(pending.filter { it.hasRawTime }.map { it.metadataKey }.distinct().size <= 1) {
+                "서로 다른 원문 대기 사진입니다. 대기열을 확인하세요"
+            }
+        }
+        // Read failures cannot confirm equality. Published originals remain untouched.
+        fun publishedHash(uri: String, size: Long): String? = runCatching {
+            if (store.recover(uri, size)) store.contentHash(uri) else null
+        }.getOrNull()
+        suspend fun completedHash(record: CameraObject): Pair<String, String>? {
+            val uri = journal.uri(record.key) ?: return null
+            val hash = journal.contentHash(record.key) ?: publishedHash(uri, record.size)?.also {
+                journal.hashed(record.key, it)
+            } ?: return null
+            return if (runCatching { store.recover(uri, record.size) }.getOrDefault(false)) uri to hash else null
         }
         temp.parentFile?.mkdirs()
         try {
             var done = 0
             for ((item, pending) in groups) {
                 check(active()) { "가져오기가 중단되었습니다" }
-                val finished = completed[item].orEmpty()
-                val previous = (finished + pending).mapNotNull { record ->
-                    val uri = journal.uri(record.key)
-                    check(uri != null || record !in finished) { "완료 원본의 URI를 확인할 수 없습니다. 갤러리 상태를 확인하세요" }
-                    uri?.let { record.key to it }
+                val previous = pending.mapNotNull { row -> journal.uri(row.key)?.let { row.key to it } }.toMap()
+                val published = previous.values.distinct().mapNotNull { uri ->
+                    publishedHash(uri, item.size)?.let { uri to it }
                 }.toMap()
-                val recovered = previous.values.distinct().filter { store.recover(it, item.size) }.toSet()
-                check(finished.all { previous[it.key] in recovered }) {
-                    "완료 원본을 확인할 수 없습니다. 갤러리 상태를 확인하세요"
+                // Only hashes journaled before publication can recover a staged download without
+                // rereading the camera. v1 URI/size/aliases alone are never content evidence.
+                val recovered = pending.firstNotNullOfOrNull { row ->
+                    val uri = previous[row.key]
+                    val hash = journal.contentHash(row.key)
+                    if (uri != null && hash != null && published[uri] == hash) uri to hash else null
                 }
-                // Only unpublished temporary rows may be discarded. Preserve every published URI.
-                previous.values.distinct().filter { it !in recovered }.forEach(store::discard)
-                val uri = recovered.firstOrNull() ?: run {
+                val hash = recovered?.second ?: run {
                     temp.delete()
                     camera.download(item, temp)
                     check(active()) { "가져오기가 중단되었습니다" }
                     check(temp.length() == item.size) { "원본 크기가 일치하지 않습니다" }
+                    sha256(temp.inputStream())
+                }
+                check(active()) { "가져오기가 중단되었습니다" }
+                // Include previously completed groups, so legacy aliases publish only once even
+                // across an interruption between row completions.
+                var existing = recovered?.first ?: published.entries.firstOrNull { it.value == hash }?.key
+                if (existing == null) {
+                    for (record in journal.completedItems().filter { it.size == item.size }) {
+                        val original = completedHash(record)
+                        if (original?.second == hash) { existing = original.first; break }
+                    }
+                }
+                // Persist the received hash BEFORE staging or publishing for crash recovery.
+                pending.forEach { journal.hashed(it.key, hash) }
+                previous.values.distinct().filter { uri ->
+                    !runCatching { store.recover(uri, item.size) }.getOrDefault(true)
+                }.forEach(store::discard)
+                val uri = existing ?: run {
                     val uri = store.begin(item)
-                    // All aliases own the same staged URI before publication, including crash retries.
                     try { pending.forEach { journal.staged(it.key, uri) } }
                     catch (e: Throwable) { store.discard(uri); throw e }
-                    // On interruption the journal retains this URI. Retry validates or deletes it.
                     store.write(uri, temp)
                     check(active()) { "가져오기가 중단되었습니다" }
                     store.publish(uri, item.size)
                     uri
                 }
                 for (queued in pending) {
-                    // A pending alias may already reference a different published original. Keep it.
-                    journal.completed(queued.key, previous[queued.key]?.takeIf { it in recovered } ?: uri)
+                    // Preserve every already published URI; retain its row link if bytes agree.
+                    val target = previous[queued.key]?.takeIf { published[it] == hash } ?: uri
+                    journal.staged(queued.key, target)
+                    journal.completed(queued.key, target)
                     progress(++done, queue.size)
                 }
             }

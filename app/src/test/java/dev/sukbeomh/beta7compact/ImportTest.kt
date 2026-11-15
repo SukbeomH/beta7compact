@@ -8,21 +8,23 @@ import java.nio.file.Files
 import kotlin.test.*
 
 class ImportTest {
-    private val jpeg = CameraObject(1, 2, "SAMPLE.JPG", 4, 1000, 4)
+    private val jpeg = CameraObject(1, 2, "SAMPLE.JPG", 4, 1000, 4, "20200102T030405")
     private val raw = jpeg.copy(handle = 2, name = "SAMPLE.ARW", size = 8)
     @Test fun planDeduplicatesAndGroupsRawJpegWithoutCombiningDifferentCardsOrFolders() {
         val list = ImportPlan.create(listOf(raw, jpeg, jpeg.copy(handle = 9), jpeg.copy(name = "video.MP4")), emptySet())
         assertEquals(2, list.size); assertEquals(jpeg.pair, raw.pair)
         assertNotEquals(jpeg.pair, jpeg.copy(storage = 9).pair)
         assertNotEquals(jpeg.pair, jpeg.copy(parent = 9).pair)
-        assertEquals(1, ImportPlan.create(listOf(raw, jpeg), setOf(jpeg.key)).size)
+        assertEquals(1, ImportPlan.create(listOf(raw, jpeg), jpeg.compatibleKeys).size)
     }
     @Test fun selectionAndNewOnlyAreIntersectedAndIdentitySurvivesHandleReassignment() {
         assertEquals(listOf(raw), ImportPlan.create(listOf(jpeg, raw), emptySet(), setOf(raw.key)))
-        assertTrue(ImportPlan.create(listOf(jpeg), setOf(jpeg.key), setOf(jpeg.key)).isEmpty())
-        assertEquals(jpeg.key, jpeg.copy(handle = 98, storage = 7).key)
+        assertTrue(ImportPlan.create(listOf(jpeg), jpeg.compatibleKeys, setOf(jpeg.key)).isEmpty())
+        assertEquals(jpeg.key, jpeg.copy(handle = 98).key)
+        assertNotEquals(jpeg.key, jpeg.copy(storage = 7).key)
         assertNotEquals(jpeg.key, jpeg.copy(size = 5).key)
-        assertNotEquals(jpeg.key, jpeg.copy(captured = 2000).key)
+        assertEquals(jpeg.key, jpeg.copy(captured = 2000).key)
+        assertNotEquals(jpeg.key, jpeg.copy(cameraTime = "20200102T030406").key)
     }
     @Test fun storagePolicyAcceptsSupportedOriginalsAndRejectsTraversalAndUnknownData() {
         assertEquals("DCIM/beta7compact/", CameraObject.PATH)
@@ -37,6 +39,9 @@ class ImportTest {
     }
     private class Journal(val items: List<CameraObject>) : ImportJournal {
         val done = mutableSetOf<String>(); val uris = mutableMapOf<String, String>()
+        val hashes = mutableMapOf<String, String>()
+        override suspend fun contentHash(key: String) = hashes[key]
+        override suspend fun hashed(key: String, hash: String) { hashes[key] = hash }
         var failCommit = false
         override suspend fun pending() = items.filter { it.key !in done }
         override suspend fun completedItems() = items.filter { it.key in done }
@@ -50,6 +55,7 @@ class ImportTest {
     private class Store : OriginalStore {
         val bytes = mutableMapOf<String, ByteArray>(); val visible = mutableSetOf<String>()
         var count = 0; var failWrite = false
+        override fun contentHash(uri: String) = bytes[uri]?.inputStream()?.let(::sha256)
         override fun begin(item: CameraObject) = "content://synthetic/${++count}"
         override fun recover(uri: String, size: Long) = uri in visible && bytes[uri]?.size?.toLong() == size
         override fun write(uri: String, source: File) {
@@ -153,13 +159,13 @@ class ImportTest {
             val second = obj(); camera.objects = listOf(second)
             assertNotEquals(first.captured, second.captured)
             assertEquals(first.key, second.key); assertEquals(first.pair, second.pair)
-            assertTrue(ImportPlan.create(camera.objects, queue.done).isEmpty())
+            assertTrue(ImportPlan.create(camera.objects, first.compatibleKeys).isEmpty())
             ImportPipeline(queue, store, file).run(camera)
             assertEquals(1, store.visible.size); assertEquals(1, store.count)
             assertEquals(listOf(1), camera.downloads)
         } finally { java.util.TimeZone.setDefault(old); file.parentFile!!.deleteRecursively() }
     }
-    @Test fun v1ParallelKeysPreventReimportAndResumeUnderADifferentTimezone() = runBlocking {
+    @Test fun v1ParallelKeysRequireVerificationAndResumeUnderADifferentTimezone() = runBlocking {
         val old = java.util.TimeZone.getDefault(); val file = temp()
         try {
             java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Seoul"))
@@ -167,7 +173,8 @@ class ImportTest {
             java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
             val current = legacy.copy(handle = 11, captured = CameraObject.ptpTime("20200102T030405"),
                 cameraTime = "20200102T030405")
-            assertTrue(ImportPlan.create(listOf(current), legacy.compatibleKeys).isEmpty())
+            assertEquals(listOf(current), ImportPlan.create(listOf(current), legacy.compatibleKeys))
+            assertTrue(current.needsVerification(legacy.compatibleKeys))
             val queue = Journal(listOf(legacy)); val store = Store()
             ImportPipeline(queue, store, file).run(FakeCamera(listOf(current)))
             assertEquals(setOf(legacy.key), queue.done)
@@ -178,7 +185,7 @@ class ImportTest {
     @Test fun v1AmbiguousPendingIdentityStopsBeforePublication() = runBlocking {
         val file = temp()
         try {
-            val legacy = jpeg.copy(captured = 1577934245000)
+            val legacy = jpeg.copy(captured = 1577934245000, cameraTime = null)
             val candidates = listOf("20200102T030405", "20200102T120405").mapIndexed { index, time ->
                 legacy.copy(handle = index + 1, cameraTime = time)
             }
@@ -189,7 +196,7 @@ class ImportTest {
     }
     @Test fun rawCameraTimestampIsPreservedVerbatimInIdentity() {
         val raw = jpeg.copy(cameraTime = "20200102T030405.1+0900")
-        assertEquals(CameraObject.digest("${raw.name}\u0000${raw.size}\u000020200102T030405.1+0900"), raw.key)
+        assertEquals(CameraObject.digest("${raw.name}\u0000${raw.size}\u000020200102T030405.1+0900"), raw.metadataKey)
         assertEquals(raw.key, raw.copy(captured = 0).key)
     }
     @Test fun migratedV1KeysCoverOriginalSuffixesAndDstGapWithoutDependingOnCurrentTimezone() {
@@ -197,10 +204,11 @@ class ImportTest {
         try {
             for (date in listOf("20200102T030405.1+0900", "20200308T023000", "20200308T023000Z")) {
                 java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/New_York"))
-                val legacy = jpeg.copy(captured = CameraObject.ptpTime(date))
+                val legacy = jpeg.copy(captured = CameraObject.ptpTime(date), cameraTime = null)
                 java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Seoul"))
                 val current = jpeg.copy(captured = CameraObject.ptpTime(date), cameraTime = date)
-                assertTrue(ImportPlan.create(listOf(current), legacy.compatibleKeys).isEmpty())
+                assertEquals(listOf(current), ImportPlan.create(listOf(current), legacy.compatibleKeys))
+                assertTrue(current.needsVerification(legacy.compatibleKeys))
                 assertTrue(current.matchesQueued(legacy))
             }
         } finally { java.util.TimeZone.setDefault(old) }
@@ -220,9 +228,12 @@ class ImportTest {
                 val fallback = raw.copy(cameraTime = null)
                 java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
                 val current = fallback.copy(captured = CameraObject.ptpTime(date))
-                assertTrue(current.isKnown(fallback.compatibleKeys))
-                assertTrue(current.isKnown(raw.compatibleKeys))
-                assertTrue(raw.isKnown(current.compatibleKeys))
+                assertFalse(current.isKnown(fallback.compatibleKeys))
+                assertTrue(current.needsVerification(fallback.compatibleKeys))
+                assertFalse(current.isKnown(raw.compatibleKeys))
+                assertTrue(current.needsVerification(raw.compatibleKeys))
+                assertFalse(raw.isKnown(current.compatibleKeys))
+                assertTrue(raw.needsVerification(current.compatibleKeys))
                 assertTrue(current.matchesQueued(fallback))
                 assertTrue(current.matchesQueued(raw))
                 assertTrue(raw.matchesQueued(current))
