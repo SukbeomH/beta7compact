@@ -20,11 +20,12 @@ data class CameraObject(val handle: Int, val storage: Int, val name: String, val
     }
     val valid: Boolean get() = mime != null && size in 1..0xfffffff0L &&
         name.isNotBlank() && name.length <= 255 && name.none { it == '/' || it == '\\' || it.code < 32 }
-    // null is reserved for v1 records, whose original camera clock was not persisted.
+    // v1 and native-only metadata have no original camera DateTime; retain conservative aliases.
     val key: String get() = identity(cameraTime ?: captured.toString())
     private fun identity(time: String) = digest("$name\u0000$size\u0000$time")
     val pair: String get() = digest("$storage/$parent/${name.substringBeforeLast('.').lowercase()}/${cameraTime ?: captured}")
     val compatibleKeys: Set<String> by lazy {
+        // MTP aliases never alias two exact raw clocks through isKnown().
         if (cameraTime != null) setOf(key) + legacyKeys.map { "mtp:$it" }
         else setOf(key, "legacy:$key")
     }
@@ -93,6 +94,7 @@ fun transition(state: LinkState, event: LinkEvent): LinkState = when (event) {
 /** The Android implementation journals pending URIs before any publication. */
 interface ImportJournal {
     suspend fun pending(): List<CameraObject>
+    suspend fun completedItems(): List<CameraObject>
     suspend fun uri(key: String): String?
     suspend fun staged(key: String, uri: String)
     suspend fun completed(key: String, uri: String)
@@ -109,33 +111,61 @@ class ImportPipeline(private val journal: ImportJournal, private val store: Orig
                      private val temp: File) {
     suspend fun run(camera: Camera, active: () -> Boolean = { true }, progress: suspend (Int, Int) -> Unit = { _, _ -> }) {
         val queue = journal.pending()
-        val current = camera.list().filter { it.valid }.distinctBy { it.key }
+        if (queue.isEmpty()) return
+        val current = camera.list().filter { it.valid }.distinct()
+        // Resolve the entire queue before any download/publication. Different handles with the
+        // same identity remain separate candidates: silently collapsing them would hide ambiguity.
+        fun matches(queued: CameraObject) = current.filter { it.matchesQueued(queued) }
+        val groups = queue.groupBy { queued ->
+            val candidates = matches(queued)
+            check(candidates.size <= 1) { "기존 대기 사진의 촬영시각이 모호합니다. 대기열을 확인하세요" }
+            checkNotNull(candidates.singleOrNull()) { "카드에서 대기 사진을 찾을 수 없습니다" }
+        }
+        val completed = mutableMapOf<CameraObject, MutableList<CameraObject>>()
+        for (record in journal.completedItems()) {
+            val candidates = matches(record)
+            if (candidates.any { it in groups }) {
+                check(candidates.size == 1) { "기존 완료 사진의 촬영시각이 모호합니다. 대기열을 확인하세요" }
+                completed.getOrPut(candidates.single()) { mutableListOf() }.add(record)
+            }
+        }
         temp.parentFile?.mkdirs()
         try {
-            queue.forEachIndexed { index, queued ->
+            var done = 0
+            for ((item, pending) in groups) {
                 check(active()) { "가져오기가 중단되었습니다" }
-                val previous = journal.uri(queued.key)
-                if (previous != null && store.recover(previous, queued.size)) {
-                    journal.completed(queued.key, previous)
-                } else {
-                    if (previous != null) store.discard(previous)
-                    val matches = current.filter { it.matchesQueued(queued) }
-                    check(matches.size <= 1) { "기존 대기 사진의 촬영시각이 모호합니다. 대기열을 확인하세요" }
-                    val item = checkNotNull(matches.singleOrNull()) { "카드에서 대기 사진을 찾을 수 없습니다" }
+                val finished = completed[item].orEmpty()
+                val previous = (finished + pending).mapNotNull { record ->
+                    val uri = journal.uri(record.key)
+                    check(uri != null || record !in finished) { "완료 원본의 URI를 확인할 수 없습니다. 갤러리 상태를 확인하세요" }
+                    uri?.let { record.key to it }
+                }.toMap()
+                val recovered = previous.values.distinct().filter { store.recover(it, item.size) }.toSet()
+                check(finished.all { previous[it.key] in recovered }) {
+                    "완료 원본을 확인할 수 없습니다. 갤러리 상태를 확인하세요"
+                }
+                // Only unpublished temporary rows may be discarded. Preserve every published URI.
+                previous.values.distinct().filter { it !in recovered }.forEach(store::discard)
+                val uri = recovered.firstOrNull() ?: run {
                     temp.delete()
                     camera.download(item, temp)
                     check(active()) { "가져오기가 중단되었습니다" }
                     check(temp.length() == item.size) { "원본 크기가 일치하지 않습니다" }
                     val uri = store.begin(item)
-                    try { journal.staged(queued.key, uri) }
+                    // All aliases own the same staged URI before publication, including crash retries.
+                    try { pending.forEach { journal.staged(it.key, uri) } }
                     catch (e: Throwable) { store.discard(uri); throw e }
                     // On interruption the journal retains this URI. Retry validates or deletes it.
                     store.write(uri, temp)
                     check(active()) { "가져오기가 중단되었습니다" }
                     store.publish(uri, item.size)
-                    journal.completed(queued.key, uri)
+                    uri
                 }
-                progress(index + 1, queue.size)
+                for (queued in pending) {
+                    // A pending alias may already reference a different published original. Keep it.
+                    journal.completed(queued.key, previous[queued.key]?.takeIf { it in recovered } ?: uri)
+                    progress(++done, queue.size)
+                }
             }
         } finally { temp.delete() }
     }

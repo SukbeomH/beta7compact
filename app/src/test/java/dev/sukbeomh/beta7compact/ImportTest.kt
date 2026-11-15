@@ -39,6 +39,7 @@ class ImportTest {
         val done = mutableSetOf<String>(); val uris = mutableMapOf<String, String>()
         var failCommit = false
         override suspend fun pending() = items.filter { it.key !in done }
+        override suspend fun completedItems() = items.filter { it.key in done }
         override suspend fun uri(key: String) = uris[key]
         override suspend fun staged(key: String, uri: String) { uris[key] = uri }
         override suspend fun completed(key: String, uri: String) {
