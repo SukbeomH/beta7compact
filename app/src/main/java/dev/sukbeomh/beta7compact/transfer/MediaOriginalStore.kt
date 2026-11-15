@@ -2,7 +2,10 @@ package dev.sukbeomh.beta7compact.transfer
 
 import android.content.ContentValues
 import android.content.Context
+import android.content.ContentResolver
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import dev.sukbeomh.beta7compact.core.CameraObject
 import dev.sukbeomh.beta7compact.core.OriginalStore
@@ -57,10 +60,21 @@ class MediaOriginalStore(context: Context) : OriginalStore {
     }
     /** Repair a process death between MediaStore insert and Room URI journaling. */
     fun cleanOrphans(known: Set<String>) {
-        resolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            arrayOf(MediaStore.Images.Media._ID),
-            "${MediaStore.Images.Media.IS_PENDING} = 1 AND ${MediaStore.Images.Media.OWNER_PACKAGE_NAME} = ? AND ${MediaStore.Images.Media.RELATIVE_PATH} = ?",
-            arrayOf(owner, CameraObject.PATH), null)?.use { cursor ->
+        val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val projection = arrayOf(MediaStore.Images.Media._ID)
+        val selection = "${MediaStore.Images.Media.IS_PENDING} = 1 AND ${MediaStore.Images.Media.OWNER_PACKAGE_NAME} = ? AND ${MediaStore.Images.Media.RELATIVE_PATH} = ?"
+        val arguments = arrayOf(owner, CameraObject.PATH)
+        val cursor = if (Build.VERSION.SDK_INT >= 30) {
+            resolver.query(collection, projection, Bundle().apply {
+                putInt(MediaStore.QUERY_ARG_MATCH_PENDING, MediaStore.MATCH_INCLUDE)
+                putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arguments)
+            }, null)
+        } else {
+            @Suppress("DEPRECATION")
+            resolver.query(MediaStore.setIncludePending(collection), projection, selection, arguments, null)
+        }
+        cursor?.use {
             while (cursor.moveToNext()) {
                 val uri = android.content.ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor.getLong(0)).toString()
                 if (uri !in known) discard(uri)
