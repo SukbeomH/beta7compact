@@ -1,6 +1,7 @@
 # 내장 LUT 형식: B7LT v1
 
-이 문서는 LUT 산출물의 소비 계약입니다. 앱 코드는 이 작업에서 변경하지 않았습니다.
+이 문서는 LUT 산출물의 소비 계약입니다. 내장 LUT 생성 작업에서는 앱 코드를 변경하지 않았습니다.
+M2 사용자 LUT 확장은 마지막 절에 기록합니다.
 27종의 표시 이름·분류·출처·라이선스·경로·SHA256은 `assets/luts/manifest.json`에 있습니다.
 필름 이름은 룩의 계열을 설명하며 필름 원본의 정확한 재현이나 상표권자의 보증을 뜻하지 않습니다.
 
@@ -62,3 +63,20 @@ EditorHub는 Git 저장소가 없어 repo/commit이 null이며 URL·원본 SHA25
 축·채널 순서, 끝점, clamp, 비선형 보간, 16bit Hald 보존, 잘못된 헤더를 검사합니다.
 정량 결과는 `assets/luts/validation.json`과 `docs/LUT-VALIDATION.md`에 있습니다.
 CPU 합성 패치 검증이며 앱 GPU·Darktable GUI·카메라 실기 결과와의 일치는 미검증입니다.
+
+## M2 사용자 LUT 소비 확장
+
+내장 27종의 bytes/SHA/33³ 계약은 그대로입니다. M2 로더는 동일 B7LT-v1 헤더에서
+size 2~65, 정확한 길이 `16+6*size³`도 허용합니다. 사용자 `.cube`는 SAF로 읽고
+red-fastest RGB uint16 B7LT로 저장합니다. 값 범위는 [0,1], 양자화는 round-to-nearest-even입니다.
+TITLE, DOMAIN_MIN/MAX는 앱 내부의 같은 ID `.json` sidecar에 보관합니다.
+DOMAIN은 생략 시 [0,1], 채널별 max>min·유한수이며 보간 좌표는
+`clamp((rgb-DOMAIN_MIN)/(DOMAIN_MAX-DOMAIN_MIN),0,1)*(size-1)`입니다.
+원래 크기/격자를 보존하며 DOMAIN 재격자화에 따른 경계 근사는 없습니다.
+바이너리만 다른 곳으로 복사하면 비기본 DOMAIN/TITLE을 복원할 수 없으므로 sidecar와 한 쌍입니다.
+가져온 뒤에는 SAF 원문에 재접근하지 않습니다. 원래 TITLE/DOMAIN/격자는 sidecar와 B7LT로 유지합니다.
+
+중복/잘못된 헤더, 1D/혼합 LUT, 크기 범위 밖, 행 수 불일치, 비유한 값, [0,1] 밖 출력,
+잘못된 DOMAIN/지원하지 않는 지시문은 원문을 포함하지 않는 한 줄 사유로 거부합니다.
+파일은 32MiB, 한 줄 4096자 제한입니다. 출력이 음수/1 초과인 HDR `.cube`는 M2 범위 밖입니다.
+내장·사용자 B7LT는 로딩 때 SHA256과 헤더/길이를 검사합니다.

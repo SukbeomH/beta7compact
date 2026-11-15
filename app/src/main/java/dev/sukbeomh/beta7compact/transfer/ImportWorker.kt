@@ -13,6 +13,7 @@ import dev.sukbeomh.beta7compact.DiagnosticEvent
 import dev.sukbeomh.beta7compact.DiagnosticLog
 import dev.sukbeomh.beta7compact.MainActivity
 import dev.sukbeomh.beta7compact.R
+import dev.sukbeomh.beta7compact.recipe.RecipeWorker
 import dev.sukbeomh.beta7compact.core.ImportPipeline
 import dev.sukbeomh.beta7compact.library.RoomJournal
 import kotlinx.coroutines.CancellationException
@@ -29,7 +30,7 @@ class ImportWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             app.useUsb { camera ->
                 val store = MediaOriginalStore(app)
                 store.cleanOrphans(app.db.photos().uris().toSet())
-                ImportPipeline(RoomJournal(app.db.photos()), store, File(app.filesDir, "import.part"))
+                ImportPipeline(RoomJournal(app.db.photos()) { key, uri, now -> RecipeWorker.imported(app, key, uri, now) }, store, File(app.filesDir, "import.part"))
                     .run(camera, { !isStopped }) { done, total ->
                         setProgress(workDataOf("done" to done, "total" to total))
                         setForeground(info(done, total))

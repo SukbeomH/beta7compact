@@ -50,10 +50,20 @@ interface PhotoDao {
     @Query("UPDATE photos SET uri = :uri WHERE `key` = :key") suspend fun staged(key: String, uri: String)
     @Query("UPDATE photos SET uri = :uri, imported = :now WHERE `key` = :key") suspend fun complete(key: String, uri: String, now: Long)
 }
-@Database(entities = [Photo::class], version = 3, exportSchema = true)
+@Database(entities = [Photo::class, SavedRecipe::class, RecipeResult::class, RecipeJob::class], version = 4, exportSchema = true)
 abstract class LibraryDb : RoomDatabase() {
     abstract fun photos(): PhotoDao
+    abstract fun recipes(): RecipeDao
     companion object {
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS recipes (id TEXT NOT NULL, name TEXT NOT NULL, json TEXT NOT NULL, favorite INTEGER NOT NULL, PRIMARY KEY(id))")
+                db.execSQL("CREATE TABLE IF NOT EXISTS recipe_results (id TEXT NOT NULL, photoKey TEXT NOT NULL, uri TEXT NOT NULL, recipeJson TEXT NOT NULL, created INTEGER NOT NULL, PRIMARY KEY(id), FOREIGN KEY(photoKey) REFERENCES photos(`key`) ON UPDATE NO ACTION ON DELETE NO ACTION)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recipe_results_photoKey ON recipe_results(photoKey)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS recipe_jobs (id TEXT NOT NULL, batchId TEXT NOT NULL, photoKey TEXT NOT NULL, recipeJson TEXT NOT NULL, created INTEGER NOT NULL, status TEXT NOT NULL, uri TEXT, encoded INTEGER NOT NULL, error TEXT, PRIMARY KEY(id))")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recipe_jobs_batchId ON recipe_jobs(batchId)")
+            }
+        }
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE photos ADD COLUMN contentHash TEXT DEFAULT NULL")
@@ -67,12 +77,16 @@ abstract class LibraryDb : RoomDatabase() {
         }
     }
 }
-class RoomJournal(private val dao: PhotoDao) : ImportJournal {
+class RoomJournal(private val dao: PhotoDao,
+    private val onComplete: (suspend (String, String, Long) -> Unit)? = null) : ImportJournal {
     override suspend fun pending() = dao.pending().map { it.cameraObject() }
     override suspend fun completedItems() = dao.all().filter { it.imported != null }.map { it.cameraObject() }
     override suspend fun contentHash(key: String) = dao.get(key)?.contentHash
     override suspend fun hashed(key: String, hash: String) = dao.hashed(key, hash)
     override suspend fun uri(key: String) = dao.get(key)?.uri
     override suspend fun staged(key: String, uri: String) = dao.staged(key, uri)
-    override suspend fun completed(key: String, uri: String) = dao.complete(key, uri, System.currentTimeMillis())
+    override suspend fun completed(key: String, uri: String) {
+        val now = System.currentTimeMillis()
+        onComplete?.invoke(key, uri, now) ?: dao.complete(key, uri, now)
+    }
 }

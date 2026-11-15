@@ -72,4 +72,23 @@ class LibraryMigrationContractTest {
         dao.enqueue(listOf(Photo.from(elsewhere)))
         assertEquals(setOf(original.key, elsewhere.key), dao.rows.keys)
     }
+    @Test fun recipeCompletionHookRunsOnceAndDefaultJournalStillPreservesOriginalFields() = runBlocking {
+        val photo = Photo.from(CameraObject(1, 2, "PUBLIC.JPG", 4, 123)).copy(contentHash = "synthetic")
+        val dao = Dao(listOf(photo))
+        var calls = 0
+        val journal = RoomJournal(dao) { key, uri, now ->
+            calls++
+            assertEquals(photo.key, key)
+            assertTrue(now > 0)
+            dao.complete(key, uri, now)
+        }
+        journal.completed(photo.key, "content://synthetic/original")
+        assertEquals(1, calls)
+        val completed = dao.get(photo.key)!!
+        assertEquals(photo.contentHash, completed.contentHash)
+        assertEquals(photo.cameraTime, completed.cameraTime)
+        assertEquals(photo.recipe, completed.recipe)
+        assertEquals("content://synthetic/original", completed.uri)
+    }
+
 }

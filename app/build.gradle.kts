@@ -6,19 +6,23 @@ plugins {
 }
 android {
     namespace = "dev.sukbeomh.beta7compact"
+    useLibrary("android.test.runner", false)
+    useLibrary("android.test.base", false)
     compileSdk = 35
     buildToolsVersion = "35.0.0"
     defaultConfig {
         applicationId = "dev.sukbeomh.beta7compact"
         minSdk = 29
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.1.2"
+        testInstrumentationRunner = "android.test.InstrumentationTestRunner"
+        versionCode = 4
+        versionName = "0.2.0"
     }
     signingConfigs.getByName("debug") { storeFile = rootProject.file(".android-user/debug.keystore") }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    sourceSets.getByName("main").assets.srcDir("../assets")
     lint { abortOnError = true }
 }
 kapt { arguments { arg("room.schemaLocation", "$projectDir/schemas") } }

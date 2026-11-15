@@ -205,6 +205,7 @@ fun MainScreen(activity: MainActivity, app: App) {
                         Text("GPS 좌표는 화면·로그·DB에 기록하지 않습니다")
                     } }
                     if (page == 3) {
+                        AutoRecipeSetting(app)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("raw PTP로 가져오기", Modifier.weight(1f))
                             Switch(raw, onCheckedChange = { raw = it; app.settings.edit().putBoolean("raw", it).apply(); objects = emptyList(); scanUsb() }, enabled = !working && !busy)
@@ -255,17 +256,7 @@ fun MainScreen(activity: MainActivity, app: App) {
                         }
                     }
                 } else {
-                    val photos = records.filter { it.imported != null }
-                    Text("가져온 원본 ${photos.size}개")
-                    LazyVerticalGrid(columns = GridCells.Adaptive(140.dp), modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(photos, key = { it.key }) { photo ->
-                            PhotoTile(photo.name, true, false, photos.filter { it.pair == photo.pair }.map { it.cameraObject().mime }.toSet().containsAll(setOf("image/jpeg", "image/x-sony-arw")),
-                                thumb = { libraryThumb(app, photo.uri!!) }, onClick = {
-                                    try { activity.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(photo.uri), photo.cameraObject().mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
-                                    catch (e: Exception) { error = "이 원본 형식을 열 앱이 없습니다" }
-                                })
-                        }
-                    }
+                    RecipeLibrary(app, records.filter { it.imported != null })
                 }
             }
         }
