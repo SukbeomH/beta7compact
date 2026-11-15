@@ -12,11 +12,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import dev.sukbeomh.beta7compact.ui.RecipeImportDialog
+import dev.sukbeomh.beta7compact.recipe.RecipeShare
 import dev.sukbeomh.beta7compact.core.LinkEvent
 import dev.sukbeomh.beta7compact.ui.MainScreen
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
+    private var sharedRecipe by mutableStateOf<String?>(null)
     val refresh = MutableStateFlow(0)
     private val app get() = application as App
     var permissionResult: ((Boolean) -> Unit)? = null
@@ -39,9 +45,23 @@ class MainActivity : ComponentActivity() {
             addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         }
         ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
-        setContent { MainScreen(this, app) }
+        receiveRecipe(intent)
+        setContent {
+            MainScreen(this, app)
+            sharedRecipe?.let { code -> androidx.compose.runtime.key(code) {
+                RecipeImportDialog(app,code,close={sharedRecipe=null})
+            } }
+        }
     }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); refresh.value++ }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); receiveRecipe(intent); refresh.value++ }
+    private fun receiveRecipe(intent: Intent?) {
+        if(intent?.action==Intent.ACTION_SEND && intent.type=="text/plain") {
+            val text=intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
+            sharedRecipe=if(text!=null && text.length<=RecipeShare.MAX_CODE_CHARS) text.toString() else "x".repeat(RecipeShare.MAX_CODE_CHARS+1)
+            intent.removeExtra(Intent.EXTRA_TEXT)
+            intent.action=null
+        }
+    }
     override fun onDestroy() { unregisterReceiver(receiver); super.onDestroy() }
     fun usbPermission() {
         val device = dev.sukbeomh.beta7compact.usb.UsbAccess.device(this)

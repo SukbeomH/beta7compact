@@ -91,7 +91,7 @@ object PhotoRenderer {
             val tag=field.get(null) as String
             if(tag !in structural) from.getAttribute(tag)?.let { to.setAttribute(tag,it) }
         }
-        to.setAttribute(ExifInterface.TAG_ORIENTATION,"1");to.setAttribute(ExifInterface.TAG_SOFTWARE,"beta7compact 0.2.0")
+        to.setAttribute(ExifInterface.TAG_ORIENTATION,"1");to.setAttribute(ExifInterface.TAG_SOFTWARE,"beta7compact 0.3.0")
         to.setAttribute(ExifInterface.TAG_IMAGE_WIDTH,width.toString());to.setAttribute(ExifInterface.TAG_IMAGE_LENGTH,height.toString())
         to.setAttribute(ExifInterface.TAG_PIXEL_X_DIMENSION,width.toString());to.setAttribute(ExifInterface.TAG_PIXEL_Y_DIMENSION,height.toString())
         to.setAttribute(ExifInterface.TAG_COLOR_SPACE,"1");to.saveAttributes()

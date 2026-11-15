@@ -22,7 +22,10 @@ class GpuParityTest : InstrumentationTestCase() {
                 val lut=assets.open("luts/${entry.getString("path")}").use { Lut.read(it) }
                 GpuEngine(lut).use { gpu ->
                     for(transform in InputTransform.entries) {
-                        val recipe=Recipe(entry.getString("id"),.73f,transform,WhiteBalance(.2f,-.3f),.4f,Grain(3f,.6f,-718),.4f)
+                        val curve=ToneCurve(listOf(CurvePoint(0f,0f),CurvePoint(.3f,.24f),CurvePoint(.7f,.76f),CurvePoint(1f,1f)))
+                        val edits=ColorEdits(-20f,15f,12f,-8f,18f,Curves(curve,curve,curve,curve),
+                            List(8) { HslBand((it-4)*8f,(it-4)*10f,(it-4)*5f) },SplitTone(230f,35f,45f,25f,-10f))
+                        val recipe=Recipe(entry.getString("id"),.73f,transform,WhiteBalance(.2f,-.3f),.4f,Grain(3f,.6f,-718),.4f,edits=edits)
                         val result=gpu.render(bitmap,recipe,x=511,y=255,fullWidth=6000,fullHeight=4000)
                         try {
                             for(y in 0..15) for(x in 0..15) {

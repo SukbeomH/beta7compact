@@ -14,6 +14,8 @@ data class RecipeJob(@PrimaryKey val id: String, val batchId: String, val photoK
     val encoded: Boolean = false, val error: String? = null)
 @Dao
 interface RecipeDao {
+    @Query("SELECT name FROM recipes WHERE id != :exceptId") suspend fun names(exceptId: String = ""): List<String>
+    @Query("DELETE FROM recipes WHERE id = :id") suspend fun delete(id: String)
     @Query("SELECT * FROM recipes ORDER BY favorite DESC, name") fun observe(): Flow<List<SavedRecipe>>
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun save(recipe: SavedRecipe)
     @Query("UPDATE recipes SET favorite = :favorite WHERE id = :id") suspend fun favorite(id: String, favorite: Boolean)

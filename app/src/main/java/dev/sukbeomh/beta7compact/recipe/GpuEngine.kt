@@ -63,6 +63,17 @@ class GpuEngine(private val lut: Lut) : AutoCloseable {
         fun f(name: String,v: Float) = glUniform1f(glGetUniformLocation(program,name),v)
         f("strength",recipe.strength);f("temperature",recipe.wb.temperature);f("tint",recipe.wb.tint);f("ev",recipe.ev)
         f("grainSize",recipe.grain.size);f("grainAmount",recipe.grain.amount);f("vignette",recipe.vignette)
+        val edits=recipe.edits
+        f("highlights",edits.highlights);f("shadows",edits.shadows);f("contrast",edits.contrast)
+        f("saturation",edits.saturation);f("vibrance",edits.vibrance)
+        val curves=edits.curves.list()
+        glUniform3fv(glGetUniformLocation(program,"points[0]"),64,curves.flatMap { it.packed().toList() }.toFloatArray(),0)
+        glUniform4iv(glGetUniformLocation(program,"counts"),1,curves.map { it.points.size }.toIntArray(),0)
+        glUniform3fv(glGetUniformLocation(program,"bands[0]"),8,edits.hsl.flatMap { listOf(it.hue,it.saturation,it.luminance) }.toFloatArray(),0)
+        val t=edits.split
+        glUniform4f(glGetUniformLocation(program,"split"),t.shadowHue,t.shadowSaturation,t.highlightHue,t.highlightSaturation)
+        f("balance",t.balance)
+        glUniform1i(glGetUniformLocation(program,"recipeVersion"),recipe.version)
         glUniform1i(glGetUniformLocation(program,"seed"),recipe.grain.seed)
         glUniform1i(glGetUniformLocation(program,"transform"),if (recipe.inputTransform == InputTransform.NONE) 0 else 1)
         glUniform2f(glGetUniformLocation(program,"origin"),x.toFloat(),y.toFloat())
@@ -97,7 +108,11 @@ class GpuEngine(private val lut: Lut) : AutoCloseable {
         precision highp sampler3D;
         uniform sampler2D source;
         uniform sampler3D look;
-        uniform int size, seed, transform;
+        uniform int size, seed, transform, recipeVersion;
+        uniform vec3 points[64],bands[8];
+        uniform ivec4 counts;
+        uniform float highlights,shadows,contrast,saturation,vibrance,balance;
+        uniform vec4 split;
         uniform float strength,temperature,tint,ev,grainSize,grainAmount,vignette;
         uniform vec2 origin,fullSize,pixelScale;
         uniform vec3 domainMin,domainMax;
@@ -118,6 +133,46 @@ class GpuEngine(private val lut: Lut) : AutoCloseable {
             h=(h^(h>>13))*1274126177u; h=h^(h>>16);
             return float(h&65535u)/65535.0-0.5;
         }
+        float curve(float v,int channel) {
+            int n=counts[channel]; int i=0;
+            for(int j=0;j<15;j++) { if(j<n-1 && points[channel*16+j].x<=v) i=j; }
+            vec3 a=points[channel*16+i],b=points[channel*16+i+1];
+            float h=b.x-a.x,t=clamp((v-a.x)/h,0.0,1.0);
+            return clamp((2.0*t*t*t-3.0*t*t+1.0)*a.y+(t*t*t-2.0*t*t+t)*h*a.z+
+                (-2.0*t*t*t+3.0*t*t)*b.y+(t*t*t-t*t)*h*b.z,min(a.y,b.y),max(a.y,b.y));
+        }
+        vec3 toHsl(vec3 c) {
+            float hi=max(c.r,max(c.g,c.b)),lo=min(c.r,min(c.g,c.b));
+            float d=hi-lo,l=(hi+lo)*0.5;
+            if(d<0.0000001) return vec3(0,0,l);
+            float h=hi==c.r?(c.g-c.b)/d:(hi==c.g?(c.b-c.r)/d+2.0:(c.r-c.g)/d+4.0);
+            return vec3(mod(h*60.0+360.0,360.0),d/(1.0-abs(2.0*l-1.0)),l);
+        }
+        vec3 toRgb(float hue,float s,float l) {
+            float h=mod(hue+720.0,360.0)/60.0,c=(1.0-abs(2.0*l-1.0))*s;
+            float x=c*(1.0-abs(mod(h,2.0)-1.0)),m=l-c/2.0;
+            vec3 v=h<1.0?vec3(c,x,0):h<2.0?vec3(x,c,0):h<3.0?vec3(0,c,x):h<4.0?vec3(0,x,c):h<5.0?vec3(x,0,c):vec3(c,0,x);
+            return v+m;
+        }
+        vec3 edit(vec3 c) {
+            float l=dot(c,vec3(0.2126,0.7152,0.0722));
+            float shift=(shadows/100.0*(1.0-l)*(1.0-l)+highlights/100.0*l*l)*0.25;
+            c=clamp((c+shift-0.5)*exp2(contrast/100.0)+0.5,0.0,1.0);
+            c=vec3(curve(curve(c.r,0),1),curve(curve(c.g,0),2),curve(curve(c.b,0),3));
+            vec3 hsl=toHsl(c);
+            float centers[8]=float[8](0.0,30.0,60.0,120.0,180.0,240.0,270.0,300.0);
+            int i=0;for(int j=0;j<8;j++) if(centers[j]<=hsl.x) i=j;
+            int next=(i+1)%8;float end=next==0?360.0:centers[next];
+            float t=(hsl.x-centers[i])/(end-centers[i]);t=t*t*(3.0-2.0*t);
+            vec3 band=mix(bands[i],bands[next],t)/100.0;
+            float h=hsl.x+band.x*30.0;
+            float s=clamp(hsl.y*(1.0+saturation/100.0+vibrance/100.0*(1.0-hsl.y))*(1.0+band.y),0.0,1.0);
+            float light=clamp(hsl.z+band.z*0.25,0.0,1.0);
+            c=toRgb(h,s,light);
+            t=clamp((light-0.5)*2.0-balance/100.0,-1.0,1.0)*0.5+0.5;
+            return clamp(c+(toRgb(split.x,1.0,0.5)-0.5)*(1.0-t)*split.y/500.0+
+                (toRgb(split.z,1.0,0.5)-0.5)*t*split.w/500.0,0.0,1.0);
+        }
         void main() {
             vec4 src=texelFetch(source,ivec2(gl_FragCoord.xy),0);
             vec3 c=src.a>0.0?src.rgb/src.a:vec3(0);
@@ -126,9 +181,11 @@ class GpuEngine(private val lut: Lut) : AutoCloseable {
                 vec3 m=vec3(dot(v,vec3(1.6269474,-0.5401385,-0.0868089)),dot(v,vec3(-0.1785155,1.4179409,-0.2394254)),dot(v,vec3(-0.0444361,-0.19591997,1.2403561)));
                 c=clamp(vec3(enc(m.r),enc(m.g),enc(m.b)),0.0,1.0);
             }
-            c=mix(c,sampleLut(c),strength);
+            if(recipeVersion==1) c=clamp(mix(c,sampleLut(c),strength),0.0,1.0);
             c=vec3(lin(c.r),lin(c.g),lin(c.b))*exp2(vec3(temperature*0.5,-tint*0.5,-temperature*0.5)+ev);
             c=clamp(vec3(enc(c.r),enc(c.g),enc(c.b)),0.0,1.0);
+            c=edit(c);
+            if(recipeVersion==2) c=clamp(mix(c,sampleLut(c),strength),0.0,1.0);
             vec2 pos=origin+(gl_FragCoord.xy-0.5)*pixelScale;
             float l=dot(c,vec3(0.2126,0.7152,0.0722));
             float grain=noise(ivec2(floor(pos/grainSize)))*grainAmount*0.2*(0.25+0.75*sqrt(l*(1.0-l)));

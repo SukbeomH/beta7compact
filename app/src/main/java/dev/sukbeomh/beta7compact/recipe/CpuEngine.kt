@@ -20,12 +20,21 @@ object CpuEngine {
         h = h xor (h ushr 16)
         return (h and 65535)/65535f-0.5f
     }
+    /** Coordinate-independent part, also used by the 33-cube baker. */
+    fun color(rgb: FloatArray,lut: Lut,recipe: Recipe): FloatArray {
+        var base=if(recipe.inputTransform==InputTransform.NONE) rgb else input(rgb)
+        fun look(c: FloatArray): FloatArray {
+            val sampled=lut.sample(c)
+            return FloatArray(3) { (c[it]+(sampled[it]-c[it])*recipe.strength).coerceIn(0f,1f) }
+        }
+        if(recipe.version==1) base=look(base) // Preserve immutable M2 snapshots.
+        val gains=floatArrayOf(2f.pow(recipe.wb.temperature*.5f),2f.pow(-recipe.wb.tint*.5f),2f.pow(-recipe.wb.temperature*.5f))
+        val encoded=FloatArray(3) { srgb(linear(base[it])*gains[it]*2f.pow(recipe.ev)).coerceIn(0f,1f) }
+        val edited=ColorMath.apply(encoded,recipe.edits)
+        return if(recipe.version==1) edited else look(edited)
+    }
     fun pixel(rgb: FloatArray, lut: Lut, recipe: Recipe, x: Float, y: Float, width: Int, height: Int): FloatArray {
-        val base = if (recipe.inputTransform == InputTransform.NONE) rgb else input(rgb)
-        val look = lut.sample(base)
-        val gains = floatArrayOf(2f.pow(recipe.wb.temperature*0.5f),2f.pow(-recipe.wb.tint*0.5f),2f.pow(-recipe.wb.temperature*0.5f))
-        val color = FloatArray(3) { linear(base[it]+(look[it]-base[it])*recipe.strength)*gains[it]*2f.pow(recipe.ev) }
-        val encoded = FloatArray(3) { srgb(color[it]).coerceIn(0f,1f) }
+        val encoded = color(rgb,lut,recipe)
         val luma = encoded[0]*0.2126f+encoded[1]*0.7152f+encoded[2]*0.0722f
         val n = noise(floor(x/recipe.grain.size).toInt(),floor(y/recipe.grain.size).toInt(),recipe.grain.seed)
         val g = n*recipe.grain.amount*0.2f*(0.25f+0.75f*sqrt(luma*(1-luma)))

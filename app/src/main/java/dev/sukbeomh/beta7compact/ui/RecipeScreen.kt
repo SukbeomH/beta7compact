@@ -35,6 +35,8 @@ import java.util.UUID
 fun RecipeLibrary(app: App, photos: List<Photo>) {
     val scope=rememberCoroutineScope()
     var selected by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var importing by remember { mutableStateOf(false) }
+    if(importing) RecipeImportDialog(app,close={importing=false})
     var selectionMode by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<List<Photo>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -44,6 +46,7 @@ fun RecipeLibrary(app: App, photos: List<Photo>) {
         RecipeEditor(app,editing,onBack={ editing=emptyList() });return
     }
     Column {
+        TextButton(onClick={importing=true}) { Text("레시피 코드 붙여넣기") }
         Text("가져온 원본 ${photos.size}개 · 사진을 눌러 레시피 편집")
         Row {
             TextButton(onClick={selectionMode=!selectionMode;selected=emptySet()}) { Text(if(selectionMode) "선택 해제" else "여러 장 선택") }
@@ -80,7 +83,12 @@ fun RecipeLibrary(app: App, photos: List<Photo>) {
 @Composable
 private fun RecipeEditor(app: App, photos: List<Photo>,onBack: () -> Unit) {
     val scope=rememberCoroutineScope();val store=remember { RecipeStore(app) };val photo=photos.first()
-    var recipe by remember { mutableStateOf(Recipe()) }
+    val history=remember { RecipeHistory() }
+    var recipe by remember { mutableStateOf(history.current) }
+    fun change(next: Recipe) { history.set(next);recipe=history.current }
+    var tab by remember { mutableIntStateOf(0) }
+    var baking by remember { mutableStateOf(false) }
+    var bakeSnapshot by remember { mutableStateOf<Recipe?>(null) }
     var entries by remember { mutableStateOf<List<LutEntry>>(emptyList()) }
     var category by remember { mutableStateOf("color_negative") }
     var original by remember { mutableStateOf<PhotoRenderer.Preview?>(null) }
@@ -89,12 +97,11 @@ private fun RecipeEditor(app: App, photos: List<Photo>,onBack: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) };var status by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) };var name by remember { mutableStateOf("내 레시피") }
     val exportWork by remember { WorkManager.getInstance(app).getWorkInfosForUniqueWorkFlow(RecipeWorker.NAME) }.collectAsStateWithLifecycle(emptyList())
-    val saved by app.db.recipes().observe().collectAsStateWithLifecycle(emptyList())
     val results by remember(photo.key) { app.db.recipes().results(photo.key) }.collectAsStateWithLifecycle(emptyList())
     suspend fun reload() { entries=withContext(Dispatchers.IO) { store.entries() } }
     val pick=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if(uri!=null) scope.launch {
-            try { val id=withContext(Dispatchers.IO) { store.importCube(uri) };reload();recipe=recipe.copy(lutId=id);category="user";error=null }
+            try { val id=withContext(Dispatchers.IO) { store.importCube(uri) };reload();change(recipe.copy(lutId=id,requiredLutName=""));category="user";error=null }
             catch(e: CancellationException) { throw e }
             catch(e: Exception) {
                 val message=e.message
@@ -102,6 +109,21 @@ private fun RecipeEditor(app: App, photos: List<Photo>,onBack: () -> Unit) {
             }
             catch(e: OutOfMemoryError) { error="LUT 파일을 가져올 메모리가 부족합니다" }
         }
+    }
+    val exportCube=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+        val snapshot=bakeSnapshot
+        if(uri!=null && snapshot!=null) scope.launch {
+            baking=true
+            try {
+                withContext(Dispatchers.IO) {
+                    val lut=store.load(snapshot.lutId)
+                    app.contentResolver.openOutputStream(uri,"wt")?.bufferedWriter(Charsets.UTF_8)?.use { RecipeBaker.writeCube(snapshot,lut,it) }
+                        ?: error("출력 파일을 열 수 없습니다")
+                };status="33³ .cube 저장 완료 · 입력 변환은 LUT 앞에서 유지 · 그레인·비네트 제외";error=null
+            } catch(e: CancellationException) { throw e }
+            catch(e: Exception) { error="LUT를 내보낼 수 없습니다" }
+            finally { baking=false;bakeSnapshot=null }
+        } else bakeSnapshot=null
     }
     LaunchedEffect(photo.key) {
         try { reload();original=withContext(Dispatchers.IO) { PhotoRenderer.preview(app,photo) }
@@ -128,92 +150,77 @@ private fun RecipeEditor(app: App, photos: List<Photo>,onBack: () -> Unit) {
         catch(e: OutOfMemoryError) { after=null;error=PhotoRenderer.reason(e) }
         finally { rendering=false }
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(6.dp)) {
-        Row {
-            TextButton(onClick=onBack) { Text("라이브러리") }
-            Button(onClick={
-                saving=true;scope.launch {
-                    try { RecipeWorker.start(app,photos.map { it.key },recipe);status="${photos.size}장 저장 대기열에 추가했습니다";error=null }
-                    catch(e: CancellationException) { throw e }
-                    catch(e: Exception) { error="저장 대기열을 만들지 못했습니다" }
-                    finally { saving=false }
-                }
-            },enabled=!saving && original!=null && after!=null && !rendering) { Text(if(photos.size>1) "${photos.size}장 저장" else "저장") }
-        }
-        (exportWork.firstOrNull { it.state==androidx.work.WorkInfo.State.RUNNING } ?: exportWork.firstOrNull { !it.state.isFinished })?.let { w ->
-            Text("저장 ${w.progress.getInt("done",0)} / ${w.progress.getInt("total",0)}")
-            w.progress.getString("error")?.let { Text(it,color=MaterialTheme.colorScheme.error) }
-        }
-        if(photo.name.endsWith(".arw",true)) Text("RAW(ARW): 카메라 내장 미리보기 JPEG를 편집합니다. 전체 RAW 현상은 지원하지 않습니다.")
-        val display=if(compare) before else after ?: before
-        display?.let { image ->
-            Image(image.asImageBitmap(),if(compare) "처리 전" else "레시피 미리보기",Modifier.fillMaxWidth().height(260.dp).pointerInput(Unit) {
-                detectTapGestures(onPress={compare=true;try { awaitRelease() } finally { compare=false }})
-            })
-        }
-        Text(if(rendering) "미리보기 처리 중…" else "미리보기를 길게 눌러 전/후 비교")
-        error?.let { Text(it,color=MaterialTheme.colorScheme.error) };status?.let { Text(it) }
-        LazyRow { items(listOf("none","color_negative","slide","cinema_print","bw","creative","user")) { c ->
-            FilterChip(selected=category==c,onClick={category=c},label={Text(when(c) { "none"->"원본";"color_negative"->"네거";"slide"->"슬라이드";"cinema_print"->"시네마";"bw"->"흑백";"creative"->"크리에이티브";else->"사용자" })})
-        } }
-        LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-            items(entries.filter { it.category==category },key={it.id}) { entry ->
-                var thumb by remember(entry.id) { mutableStateOf<Bitmap?>(null) }
-                LaunchedEffect(entry.id,original) {
-                    thumb=withContext(Dispatchers.Default) { synchronized(PhotoRenderer.lock) {
-                        runCatching {
-                            if(entry.preview!=null) app.assets.open("luts/${entry.preview}").use { BitmapFactory.decodeStream(it) }
-                            else original?.bitmap?.let { b ->
-                                val small=Bitmap.createScaledBitmap(b,96,96,true)
-                                try { GpuEngine(store.load(entry.id)).use { it.render(small,Recipe(lutId=entry.id)) } } finally { if(small!==b) small.recycle() }
-                            }
-                        }.getOrNull()
-                    } }
-                }
-                OutlinedCard(onClick={recipe=recipe.copy(lutId=entry.id)},modifier=Modifier.width(116.dp)) {
-                    thumb?.let { Image(it.asImageBitmap(),entry.name,Modifier.fillMaxWidth().height(72.dp)) }
-                    Text((if(recipe.lutId==entry.id) "✓ " else "")+entry.name,modifier=Modifier.padding(4.dp),maxLines=2)
-                }
-            }
-        }
-        TextButton(onClick={pick.launch(arrayOf("*/*"))}) { Text("사용자 .cube 가져오기 (2~65)") }
-        Control("LUT 강도 ${(recipe.strength*100).toInt()}%",recipe.strength,0f..1f) { recipe=recipe.copy(strength=it) }
-        Row {
-            Text("S-Log3/S-Gamut3.Cine JPEG",Modifier.weight(1f))
-            Switch(recipe.inputTransform!=InputTransform.NONE,onCheckedChange={recipe=recipe.copy(inputTransform=if(it) InputTransform.SLOG3_SGAMUT3_CINE else InputTransform.NONE)})
-        }
-        Text("로그 JPEG에만 켜세요 · 기본 꺼짐")
-        Control("WB 온도",recipe.wb.temperature,-1f..1f) { recipe=recipe.copy(wb=recipe.wb.copy(temperature=it)) }
-        Control("WB 틴트",recipe.wb.tint,-1f..1f) { recipe=recipe.copy(wb=recipe.wb.copy(tint=it)) }
-        Control("노출 ${"%.2f".format(recipe.ev)} EV",recipe.ev,-5f..5f) { recipe=recipe.copy(ev=it) }
-        Control("그레인 크기 ${recipe.grain.size.toInt()}px",recipe.grain.size,1f..32f) { recipe=recipe.copy(grain=recipe.grain.copy(size=it)) }
-        Control("그레인 강도",recipe.grain.amount,0f..1f) { recipe=recipe.copy(grain=recipe.grain.copy(amount=it)) }
-        TextButton(onClick={recipe=recipe.copy(grain=recipe.grain.copy(seed=recipe.grain.seed+1))}) { Text("그레인 시드 ${recipe.grain.seed} · 변경") }
-        Control("비네트",recipe.vignette,0f..1f) { recipe=recipe.copy(vignette=it) }
-        OutlinedTextField(name,{name=it.take(80)},label={Text("레시피 이름")})
-        FlowRow {
-            TextButton(onClick={scope.launch {
-                try { app.db.recipes().save(SavedRecipe(UUID.randomUUID().toString(),name.ifBlank { "내 레시피" },recipe.toJson()));status="레시피를 저장했습니다" }
-                catch(e: Exception) { error="레시피를 저장하지 못했습니다" }
-            }}) { Text("레시피 보관") }
-            TextButton(onClick={app.settings.edit().putString("defaultRecipe",recipe.toJson()).apply();status="기본 레시피로 지정했습니다 · 자동 적용은 설정에서 켜세요"}) { Text("기본 레시피로 지정") }
-        }
-        saved.forEach { s ->
+    @Composable fun Preview(modifier: Modifier) {
+        Column(modifier,verticalArrangement=Arrangement.spacedBy(6.dp)) {
             Row {
-                TextButton(onClick={try { recipe=Recipe.fromJson(s.json);status=s.name } catch(e: Exception) { error="레시피를 읽을 수 없습니다" }},modifier=Modifier.weight(1f)) { Text(s.name) }
-                TextButton(onClick={scope.launch { try { app.db.recipes().favorite(s.id,!s.favorite) } catch(e: Exception) { error="즐겨찾기를 저장하지 못했습니다" } }}) { Text(if(s.favorite) "★" else "☆") }
+                TextButton(onClick=onBack) { Text("라이브러리") }
+                Button(onClick={
+                    val snapshot=recipe;saving=true;scope.launch {
+                        try { RecipeWorker.start(app,photos.map { it.key },snapshot);status="${photos.size}장 저장 대기열에 추가했습니다";error=null }
+                        catch(e: Exception) { error="저장 대기열을 만들지 못했습니다" }
+                        finally { saving=false }
+                    }
+                },enabled=!saving && original!=null && after!=null && !rendering) { Text(if(photos.size>1) "${photos.size}장 저장" else "저장") }
+            }
+            if(photo.name.endsWith(".arw",true)) Text("RAW · 카메라 내장 JPEG만 편집")
+            val display=if(compare) before else after ?: before
+            display?.let { image ->
+                Image(image.asImageBitmap(),if(compare) "처리 전" else "레시피 미리보기",Modifier.fillMaxWidth().height(280.dp).pointerInput(Unit) {
+                    detectTapGestures(onPress={compare=true;try { awaitRelease() } finally { compare=false }})
+                })
+            }
+            Text(if(rendering) "미리보기 처리 중…" else "미리보기를 길게 눌러 전/후 비교")
+            error?.let { Text(it,color=MaterialTheme.colorScheme.error) };status?.let { Text(it) }
+            (exportWork.firstOrNull { it.state==androidx.work.WorkInfo.State.RUNNING } ?: exportWork.firstOrNull { !it.state.isFinished })?.let { w ->
+                Text("저장 ${w.progress.getInt("done",0)} / ${w.progress.getInt("total",0)}")
+                w.progress.getString("error")?.let { Text(it,color=MaterialTheme.colorScheme.error) }
             }
         }
-        results.forEach { result -> TextButton(onClick={
-            try { app.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(result.uri),"image/jpeg").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
-            catch(e: Exception) { error="결과 사진을 열 수 없습니다" }
-        }) { Text("저장 결과 · ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(result.created))}") } }
     }
-}
-
-@Composable
-private fun Control(label: String,value: Float,range: ClosedFloatingPointRange<Float>,change: (Float)->Unit) {
-    Text(label);Slider(value,onValueChange=change,valueRange=range)
+    @Composable fun Panel(modifier: Modifier) {
+        Column(modifier,verticalArrangement=Arrangement.spacedBy(6.dp)) {
+            Row {
+                TextButton(enabled=history.canUndo,onClick={recipe=history.undo()}) { Text("실행 취소") }
+                TextButton(enabled=history.canRedo,onClick={recipe=history.redo()}) { Text("다시 실행") }
+            }
+            TabRow(tab) { listOf("기본","톤커브","HSL","효과").forEachIndexed { i,label -> Tab(tab==i,{tab=i},text={Text(label)}) } }
+            if(tab==0) {
+                LazyRow { items(listOf("none","color_negative","slide","cinema_print","bw","creative","user")) { c ->
+                    FilterChip(selected=category==c,onClick={category=c},label={Text(when(c) { "none"->"원본";"color_negative"->"네거";"slide"->"슬라이드";"cinema_print"->"시네마";"bw"->"흑백";"creative"->"크리에이티브";else->"사용자" })})
+                } }
+                LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                    items(entries.filter { it.category==category },key={it.id}) { entry ->
+                        var thumb by remember(entry.id) { mutableStateOf<Bitmap?>(null) }
+                        LaunchedEffect(entry.id) { thumb=withContext(Dispatchers.IO) {
+                            entry.preview?.let { runCatching { app.assets.open("luts/$it").use { input -> BitmapFactory.decodeStream(input) } }.getOrNull() }
+                        } }
+                        OutlinedCard(onClick={change(recipe.copy(lutId=entry.id,requiredLutName=""))},modifier=Modifier.width(116.dp)) {
+                            thumb?.let { Image(it.asImageBitmap(),entry.name,Modifier.fillMaxWidth().height(72.dp)) }
+                            Text((if(recipe.lutId==entry.id) "✓ " else "")+entry.name,modifier=Modifier.padding(4.dp),maxLines=2)
+                        }
+                    }
+                }
+                TextButton(onClick={pick.launch(arrayOf("*/*"))}) { Text("사용자 .cube 가져오기 (2~65)") }
+            }
+            TextButton(onClick={change(Recipe(inputTransform=recipe.inputTransform))}) { Text("색 보정 초기화 · 입력 변환 유지") }
+            ColorControls(tab,recipe) { change(it) }
+            Text("구운 LUT 재사용: 색 보정을 초기화하고 LUT를 선택하세요. 입력 변환은 유지합니다.")
+            TextButton(enabled=!baking && entries.any { it.id==recipe.lutId },onClick={bakeSnapshot=recipe;exportCube.launch("beta7compact-recipe.cube")}) { Text(if(baking) "LUT 굽는 중…" else "현재 색을 33³ .cube로 내보내기") }
+            RecipeManager(app,recipe,name,{name=it.take(80)}) { next,label -> change(next);name=label;status=label }
+            results.forEach { result -> TextButton(onClick={
+                try { app.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(result.uri),"image/jpeg").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)) }
+                catch(e: Exception) { error="결과 사진을 열 수 없습니다" }
+            }) { Text("저장 결과 · ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(result.created))}") } }
+        }
+    }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        if(maxWidth>=700.dp) Row(Modifier.fillMaxSize(),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+            Preview(Modifier.weight(1f).verticalScroll(rememberScrollState()))
+            Panel(Modifier.weight(1f).verticalScroll(rememberScrollState()))
+        } else Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Preview(Modifier.fillMaxWidth());Panel(Modifier.fillMaxWidth())
+        }
+    }
 }
 
 @Composable

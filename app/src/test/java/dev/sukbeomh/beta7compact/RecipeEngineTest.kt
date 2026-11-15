@@ -99,7 +99,7 @@ class RecipeEngineTest {
     @Test fun recipeJsonRoundTripsAllParametersAndRejectsInvalidVersionNumbers() {
         val r=Recipe("portra400",.73f,InputTransform.SLOG3_SGAMUT3_CINE,WhiteBalance(-.3f,.8f),1.2f,Grain(3.5f,.75f,Int.MIN_VALUE),.3f)
         assertEquals(r,Recipe.fromJson(r.toJson()));assertEquals(Recipe(),Recipe.fromJson(Recipe().toJson()))
-        for(bad in listOf(r.toJson().replace("\"version\":1","\"version\":2"),r.toJson().replace("0.73","NaN"),
+        for(bad in listOf(r.toJson().replace("\"version\":2","\"version\":3"),r.toJson().replace("0.73","NaN"),
             r.toJson().replace("0.73","1.5"),r.toJson()+"x",r.toJson().replace("\"strength\":0.73","\"strength\":0.73,\"strength\":0.2"))) {
             assertFails { Recipe.fromJson(bad) }
         }

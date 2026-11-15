@@ -53,7 +53,7 @@ class ExportContractTest : InstrumentationTestCase() {
                 assertEquals(16,exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH,0))
                 assertEquals(24,exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH,0))
                 assertEquals("2020:01:02 03:04:05",exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL))
-                assertEquals("beta7compact 0.2.0",exif.getAttribute(ExifInterface.TAG_SOFTWARE))
+                assertEquals("beta7compact 0.3.0",exif.getAttribute(ExifInterface.TAG_SOFTWARE))
             }
             // Simulate interruption after encoding but before publication/Room completion.
             app.contentResolver.update(resultUri,ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING,1) },null,null)
