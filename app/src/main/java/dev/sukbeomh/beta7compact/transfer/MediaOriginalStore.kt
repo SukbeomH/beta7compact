@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import dev.sukbeomh.beta7compact.core.CameraObject
 import dev.sukbeomh.beta7compact.core.OriginalStore
+import dev.sukbeomh.beta7compact.core.PublishedState
 import dev.sukbeomh.beta7compact.core.sha256
 import java.io.File
 
@@ -28,14 +29,26 @@ class MediaOriginalStore(context: Context) : OriginalStore {
             "갤러리 임시 항목을 만들 수 없습니다"
         }.toString()
     }
-    override fun recover(uri: String, size: Long): Boolean {
+    override fun recover(uri: String, size: Long) = publishedState(uri, size) == PublishedState.AVAILABLE
+    override fun publishedState(uri: String, size: Long): PublishedState {
         val target = Uri.parse(uri)
-        return resolver.query(target, arrayOf(MediaStore.Images.Media.IS_PENDING), null, null, null)?.use {
-            if (!it.moveToFirst() || it.getInt(0) != 0) false else {
+        val projection = arrayOf(MediaStore.Images.Media.IS_PENDING)
+        // Include pending rows so a hidden row is never mistaken for a deleted original.
+        val cursor = if (Build.VERSION.SDK_INT >= 30) {
+            resolver.query(target, projection, Bundle().apply {
+                putInt(MediaStore.QUERY_ARG_MATCH_PENDING, MediaStore.MATCH_INCLUDE)
+            }, null)
+        } else {
+            @Suppress("DEPRECATION")
+            resolver.query(MediaStore.setIncludePending(target), projection, null, null, null)
+        }
+        return cursor?.use {
+            if (!it.moveToFirst()) PublishedState.ABSENT
+            else if (it.getInt(0) != 0) PublishedState.UNVERIFIABLE else {
                 check(length(target) == size) { "게시된 원본이 변경되었습니다. 갤러리 상태를 확인하세요" }
-                true
+                PublishedState.AVAILABLE
             }
-        } ?: false
+        } ?: PublishedState.UNVERIFIABLE
     }
     override fun contentHash(uri: String): String? = runCatching {
         resolver.openInputStream(Uri.parse(uri))?.let(::sha256)

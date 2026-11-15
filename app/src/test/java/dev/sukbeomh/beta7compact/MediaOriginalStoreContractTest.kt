@@ -13,7 +13,7 @@ import kotlin.test.*
 
 /** Port of the review's media/ counterexample; collection queries exclude pending by default. */
 class MediaOriginalStoreContractTest {
-    private class Resolver : ContentResolver() {
+    internal class Resolver : ContentResolver() {
         data class Row(val id: Long, val owner: String, val path: String,
                        var pending: Int = 1, var bytes: ByteArray = byteArrayOf())
         val rows = linkedMapOf<String, Row>()
@@ -21,15 +21,16 @@ class MediaOriginalStoreContractTest {
         var bundleQueries = 0
         var legacyQueries = 0
         var nextId = 0L
+        var queryFailure = ""
+        var inputFailure = ""
         override fun insert(uri: Uri, values: ContentValues): Uri {
             val target = Uri.parse("$uri/${++nextId}")
             rows[target.toString()] = Row(nextId, "synthetic.app", values.data["relative_path"] as String)
             return target
         }
         private fun queryRows(uri: Uri, selection: String?, args: Array<String>?, include: Boolean): Cursor {
-            val specific = rows[uri.toString()]
-            val found = if (specific != null) listOf(specific) else {
-                assertNotNull(selection)
+            val specific = rows[uri.toString().substringBefore('?')]
+            val found = if (selection == null) listOfNotNull(specific) else {
                 assertTrue(selection.contains("is_pending = 1"))
                 assertTrue(selection.contains("owner_package_name = ?"))
                 assertTrue(selection.contains("relative_path = ?"))
@@ -46,11 +47,15 @@ class MediaOriginalStoreContractTest {
                 override fun close() {}
             }
         }
-        override fun query(uri: Uri, projection: Array<String>, selection: String?, args: Array<String>?, sort: String?): Cursor {
+        override fun query(uri: Uri, projection: Array<String>, selection: String?, args: Array<String>?, sort: String?): Cursor? {
+            if (queryFailure == "throws") throw java.io.IOException("synthetic query failure")
+            if (queryFailure == "null") return null
             if ("?includePending=1" in uri.toString()) legacyQueries++
             return queryRows(uri, selection, args, "?includePending=1" in uri.toString())
         }
-        override fun query(uri: Uri, projection: Array<String>, args: Bundle?, signal: CancellationSignal?): Cursor {
+        override fun query(uri: Uri, projection: Array<String>, args: Bundle?, signal: CancellationSignal?): Cursor? {
+            if (queryFailure == "throws") throw java.io.IOException("synthetic query failure")
+            if (queryFailure == "null") return null
             bundleQueries++
             assertEquals(MediaStore.MATCH_INCLUDE, args!!.data[MediaStore.QUERY_ARG_MATCH_PENDING])
             @Suppress("UNCHECKED_CAST")
@@ -58,7 +63,14 @@ class MediaOriginalStoreContractTest {
                 args.data[QUERY_ARG_SQL_SELECTION_ARGS] as Array<String>?, true)
         }
         override fun openFileDescriptor(uri: Uri, mode: String) = ParcelFileDescriptor(rows.getValue(uri.toString()).bytes.size.toLong())
-        override fun openInputStream(uri: Uri) = rows.getValue(uri.toString()).bytes.inputStream()
+        override fun openInputStream(uri: Uri): java.io.InputStream? = when (inputFailure) {
+            "throws" -> throw java.io.IOException("synthetic open failure")
+            "read-throws" -> object : java.io.InputStream() {
+                override fun read(): Int = throw java.io.IOException("synthetic stream failure")
+            }
+            "null" -> null
+            else -> rows.getValue(uri.toString()).bytes.inputStream()
+        }
         override fun openOutputStream(uri: Uri, mode: String) = object : ByteArrayOutputStream() {
             override fun close() { rows.getValue(uri.toString()).bytes = toByteArray() }
         }
@@ -89,12 +101,12 @@ class MediaOriginalStoreContractTest {
                 store.cleanOrphans(setOf(known))
                 assertEquals(listOf(orphan), resolver.deleted)
                 assertEquals(setOf(known, published, foreign, otherPath), resolver.rows.keys)
+                assertEquals(if (api >= 30) 1 else 0, resolver.bundleQueries)
+                assertEquals(if (api == 29) 1 else 0, resolver.legacyQueries)
                 assertTrue(store.recover(published, 4))
                 assertEquals(dev.sukbeomh.beta7compact.core.sha256(byteArrayOf(1, 2, 3, 4).inputStream()), store.contentHash(published))
                 assertFailsWith<IllegalStateException> { store.discard(published) }
                 assertEquals(listOf(orphan), resolver.deleted)
-                assertEquals(if (api >= 30) 1 else 0, resolver.bundleQueries)
-                assertEquals(if (api == 29) 1 else 0, resolver.legacyQueries)
             }
         } finally { Build.VERSION.SDK_INT = old }
     }
