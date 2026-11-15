@@ -25,13 +25,13 @@ class MetadataSessionTest {
         assertEquals(listOf("close-native", "open-raw", "read", "close-raw", "open-native"), usb.calls)
         assertEquals("native", usb.owner)
     }
-    @Test fun failedMetadataReadClosesRawAndStopsWithoutOpeningNative() {
+    @Test fun failedMetadataReadClosesRawAndRestoresNative() {
         val usb = Owner()
         assertFails {
             readExclusiveMetadata(usb::closeNative, usb::openRaw, usb::reopenNative) { error("USB disconnected") }
         }
-        assertNull(usb.owner)
-        assertEquals(listOf("close-native", "open-raw", "close-raw"), usb.calls)
+        assertEquals("native", usb.owner)
+        assertEquals(listOf("close-native", "open-raw", "close-raw", "open-native"), usb.calls)
     }
     @Test fun rawOpenAndNativeReopenFailuresNeverLeaveRawOwned() {
         val usb = Owner()
@@ -39,7 +39,7 @@ class MetadataSessionTest {
         assertFails {
             readExclusiveMetadata(usb::closeNative, failRaw, usb::reopenNative) { }
         }
-        assertNull(usb.owner)
+        assertEquals("native", usb.owner)
         assertFails {
             readExclusiveMetadata(usb::closeNative, usb::openRaw, { error("native reopen failed") }) { "metadata" }
         }

@@ -6,6 +6,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.mtp.MtpDevice
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import dev.sukbeomh.beta7compact.core.Camera
 import dev.sukbeomh.beta7compact.core.CameraObject
 import kotlinx.coroutines.sync.Mutex
@@ -52,19 +53,29 @@ private class NativeCamera(private val manager: UsbManager, private val device: 
             connection = opened; mtp = native
         } catch (e: Throwable) { native.close(); opened.close(); throw e }
     }
-    // MtpObjectInfo exposes only epoch seconds, losing the original DateTime (including suffix/DST).
-    // Read it verbatim through a separate, serialized read-only PTP session; never share ownership.
-    private fun <T> metadata(read: (RawCamera) -> T): T =
+    // MtpObjectInfo returns milliseconds, but loses the original DateTime suffix/DST spelling.
+    // Raw metadata is optional. A failure must leave native MTP available for ordinary transfers.
+    private fun <T> metadata(read: (RawCamera) -> T): T? = try {
         readExclusiveMetadata(::close, { RawCamera(manager, device) }, ::openNative, read)
+    } catch (e: Exception) {
+        checkNotNull(mtp) { "MTP 세션을 다시 열 수 없습니다" }
+        // Fixed reason only: never log device identifiers, file metadata or transport dumps.
+        val reason = if (e is PtpResponseException) "PTP 응답 거절" else "raw 메타데이터 접근 실패"
+        Log.i("UsbCamera", "$reason · 보강 없이 MTP로 진행합니다")
+        null
+    }
+    private fun nativeItem(handle: Int, obj: android.mtp.MtpObjectInfo) = CameraObject(
+        handle, obj.storageId, obj.name, obj.compressedSizeLong,
+        obj.dateCreated.takeIf { it > 0 } ?: obj.dateModified, obj.parent)
     override fun list(): List<CameraObject> {
-        val raw = metadata { it.list() }.associateBy { it.handle }
+        val raw = metadata { it.list() }?.associateBy { it.handle }
         val native = checkNotNull(mtp)
         return checkNotNull(native.storageIds) { "카드를 읽을 수 없습니다" }.flatMap { storage ->
             checkNotNull(native.getObjectHandles(storage, 0, 0)) { "사진 목록을 읽을 수 없습니다" }.toList().mapNotNull { handle ->
                 val obj = checkNotNull(native.getObjectInfo(handle)) { "사진 정보를 읽을 수 없습니다" }
-                val item = raw[handle] ?: return@mapNotNull null // Unsupported objects are absent from raw.
+                val item = if (raw == null) nativeItem(handle, obj) else raw[handle] ?: return@mapNotNull null
                 check(nativeMatches(item, obj)) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
-                item
+                item.takeIf { it.valid }
             }
         }
     }
@@ -73,10 +84,12 @@ private class NativeCamera(private val manager: UsbManager, private val device: 
     override fun thumbnail(item: CameraObject): ByteArray? = checkNotNull(mtp).getThumbnail(item.handle)
     override fun download(item: CameraObject, destination: File) {
         val now = metadata { it.info(item.handle) }
-        check(now.key == item.key) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
+        if (now != null) check(now.matchesQueued(item)) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
         val native = checkNotNull(mtp)
         val obj = checkNotNull(native.getObjectInfo(item.handle)) { "수신 대상을 확인할 수 없습니다" }
-        check(nativeMatches(now, obj)) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
+        check(nativeMatches(item, obj) && (now != null || nativeItem(item.handle, obj).matchesQueued(item))) {
+            "카드 내용이 변경되었습니다. 목록을 새로고침하세요"
+        }
         ParcelFileDescriptor.open(destination, ParcelFileDescriptor.MODE_CREATE or
             ParcelFileDescriptor.MODE_TRUNCATE or ParcelFileDescriptor.MODE_READ_WRITE).use {
             check(native.importFile(item.handle, it)) { "MTP 원본 수신에 실패했습니다" }

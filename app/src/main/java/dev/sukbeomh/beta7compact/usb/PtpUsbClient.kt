@@ -15,9 +15,11 @@ interface UsbBulkTransport {
 internal fun <C : Closeable, T> readExclusiveMetadata(closeNative: () -> Unit, openRaw: () -> C,
                                                     reopenNative: () -> Unit, read: (C) -> T): T {
     closeNative()
-    val result = openRaw().use(read)
-    reopenNative()
-    return result
+    try {
+        return openRaw().use(read)
+    } finally {
+        reopenNative()
+    }
 }
 
 /** Only the already active configuration/alternate can be claimed. No USB SET requests. */
@@ -45,7 +47,11 @@ class PtpUsbClient(private val transport: UsbBulkTransport, private val log: (St
 
     fun openSession() {
         check(!session)
-        execute(0x1002, intArrayOf(1))
+        try { execute(0x1002, intArrayOf(1)) }
+        catch (e: PtpResponseException) {
+            // Match AOSP MtpDevice: an existing session is usable; first transaction is 1.
+            if (e.code != 0x201E) throw e
+        }
         session = true
         transaction = 1
     }

@@ -16,7 +16,19 @@ class ContentValues {
 object ContentUris {
     @JvmStatic fun withAppendedId(uri: Uri, id: Long) = Uri.parse("$uri/$id")
 }
-open class Context(val contentResolver: ContentResolver, val packageName: String)
+open class Context(val contentResolver: ContentResolver, val packageName: String) {
+    private var manager: android.hardware.usb.UsbManager? = null
+    constructor(manager: android.hardware.usb.UsbManager) : this(object : ContentResolver() {
+        override fun insert(uri: Uri, values: ContentValues): Uri? = error("unused")
+        override fun query(uri: Uri, projection: Array<String>, selection: String?, args: Array<String>?, sort: String?): Cursor? = error("unused")
+        override fun query(uri: Uri, projection: Array<String>, args: Bundle?, signal: android.os.CancellationSignal?): Cursor? = error("unused")
+        override fun openFileDescriptor(uri: Uri, mode: String): ParcelFileDescriptor? = error("unused")
+        override fun openOutputStream(uri: Uri, mode: String): OutputStream? = error("unused")
+        override fun update(uri: Uri, values: ContentValues, selection: String?, args: Array<String>?): Int = error("unused")
+        override fun delete(uri: Uri, selection: String?, args: Array<String>?): Int = error("unused")
+    }, "synthetic") { this.manager = manager }
+    open fun <T> getSystemService(type: Class<T>): T = type.cast(checkNotNull(manager))
+}
 abstract class ContentResolver {
     companion object {
         const val QUERY_ARG_SQL_SELECTION = "android:query-arg-sql-selection"
