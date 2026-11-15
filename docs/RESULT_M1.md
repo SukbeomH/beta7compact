@@ -17,12 +17,12 @@
 
 | 검증 | 결과 | 증거 |
 | --- | --- | --- |
-| `./gradlew assembleDebug test lint --continue --no-daemon` | BUILD SUCCESSFUL, 종료 0 | [전체 빌드 기록](../dist/validation/gradle.txt) |
-| debug JVM | 38/38 통과, 실패/오류/skip 0 | [테스트별 결과](../dist/validation/tests.txt) |
+| `./gradlew assembleDebug test lint --continue --no-daemon` | BUILD SUCCESSFUL, 종료 0 | 로컬 검증 기록(공개 이력 미포함) |
+| debug JVM | 38/38 통과, 실패/오류/skip 0 | 로컬 검증 기록(공개 이력 미포함) |
 | release JVM | 38/38 통과, 실패/오류/skip 0 | 같은 결과 파일 |
-| lint | 오류 0, 경고 12 | [전체 보고서](../dist/validation/lint.txt) |
-| APK 서명 | v2 검증 성공, 서명자 1 | [서명 검증](../dist/validation/signature.txt) |
-| APK 버전·SDK·동일성 | 0.1.0/code 1, SDK 29/35, 빌드 APK와 배포 APK 바이트 일치 | [메타데이터](../dist/validation/artifact.txt) |
+| lint | 오류 0, 경고 12 | 로컬 검증 기록(공개 이력 미포함) |
+| APK 서명 | v2 검증 성공, 서명자 1 | 로컬 검증 기록(공개 이력 미포함) |
+| APK 버전·SDK·동일성 | 0.1.0/code 1, SDK 29/35, 빌드 APK와 배포 APK 바이트 일치 | 로컬 검증 기록(공개 이력 미포함) |
 
 가짜 카메라가 실제 앱의 `Camera` 인터페이스와 `ImportPipeline`을 통해 원본 수신·게시·완료 기록을 수행합니다. 테스트는 중복/선택/RAW 쌍, 경로·MIME, 짧은 원본 거부, pending 복사 중단, 게시 직후 완료 기록 실패와 중복 없는 복구, 중단 후 다음 파일 재개, handle 변경/카드 누락, 상태머신을 검증합니다. PTP는 조각난 USB 패킷·ZLP·응답/transaction/크기 오류·금지 명령·설정 검증을 포함합니다. PTP 데이터셋과 동등한 합성 MTP 메타데이터의 가져오기 식별자도 비교했습니다. BLE는 공개 문서의 전체 95바이트 벡터 일치, 시간대 미포함 길이, 음수 좌표/시간대와 DST 분리, 잘못된 좌표·설정·상태를 확인했습니다. 테스트 데이터는 합성 또는 공개 프로토콜 예시입니다.
 
@@ -32,8 +32,8 @@ lint 경고는 의존성 업데이트 안내 10개·API 31 전용 스캔 속성 
 
 ## 산출물
 
-- [beta7compact-0.1.0-debug.apk](../dist/beta7compact-0.1.0-debug.apk): 24,176,126 bytes, debug 서명.
-- SHA-256: `d0d0f57f733d174469ad2690ec40a365ff59fb4c8584bf6ad3dd49f59eee41a5` ([검증 파일](../dist/beta7compact-0.1.0-debug.apk.sha256)).
+- APK는 로컬 빌드 또는 비공개 배포로 제공합니다. `dist/` APK·검증 출력은 커밋하지 않습니다.
+- 수정판 APK SHA-256과 검증은 [M1 FIX 결과](RESULT_M1_FIX.md)를 참조하세요.
 - [사용법](../README.md), [실기 체크리스트](M1-DEVICE-CHECK.md), [BLE 근거](BLE-LOCATION.md), Room v1 스키마 및 wrapper.
 
 ## 남은 확인

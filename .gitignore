@@ -12,3 +12,7 @@
 **/device-logs/
 /.idea/
 /.tools/
+
+/dist/
+*.apk
+*.aab

@@ -17,7 +17,9 @@ JDK 17 이상과 Android SDK 35/Build Tools 35.0.0이 필요합니다. `local.pr
 
 Gradle wrapper·캐시·생성된 debug 서명키는 프로젝트 안의 무시 경로를 사용합니다. 외부 의존성은 AndroidX·Kotlin Coroutines와 테스트 도구입니다. Google Play services location은 사용하지 않습니다.
 
-[APK](dist/beta7compact-0.1.0-debug.apk) · [SHA-256](dist/beta7compact-0.1.0-debug.apk.sha256) · [구현 결과](docs/RESULT_M1.md) · [실기 확인](docs/M1-DEVICE-CHECK.md) · [BLE 근거](docs/BLE-LOCATION.md) · [설계](docs/ARCHITECTURE.md)
+APK는 로컬에서 빌드하거나 비공개 배포로 받습니다. `dist/` 산출물은 커밋하지 않습니다.
+
+[구현 결과](docs/RESULT_M1.md) · [실기 확인](docs/M1-DEVICE-CHECK.md) · [BLE 근거](docs/BLE-LOCATION.md) · [설계](docs/ARCHITECTURE.md)
 
 USB 권한을 허용하고 카메라 USB 설정을 MTP로 지정하세요. 중단 후 같은 카드를 연결하고 가져오기 화면의 대기열 재개를 누르세요. 현재 파일은 처음부터 재수신하고 완료 파일은 건너뜁니다. BLE는 카메라의 Bluetooth·페어링·위치정보 연동을 켠 뒤 앱에서 대상을 선택하고 동기화를 켭니다.
 
