@@ -4,7 +4,9 @@ import java.io.Closeable
 import java.io.File
 import java.security.MessageDigest
 import java.time.LocalDateTime
+import java.time.Instant
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /** Only immutable, supported still-image objects enter the queue. No object/delete operations. */
@@ -23,13 +25,20 @@ data class CameraObject(val handle: Int, val storage: Int, val name: String, val
     private fun identity(time: String) = digest("$name\u0000$size\u0000$time")
     val pair: String get() = digest("$storage/$parent/${name.substringBeforeLast('.').lowercase()}/${cameraTime ?: captured}")
     val compatibleKeys: Set<String> by lazy {
-        if (cameraTime != null) setOf(key) else setOf(key, "legacy:$key")
+        if (cameraTime != null) setOf(key) + legacyKeys.map { "mtp:$it" }
+        else setOf(key, "legacy:$key")
     }
     private val legacyKeys: Set<String> by lazy {
-        val wall = runCatching { LocalDateTime.parse(cameraTime?.take(15), clock) }.getOrNull()
-        val epochs = if (wall == null) setOf(0L) else buildSet {
+        val walls = if (cameraTime != null) listOfNotNull(
+            runCatching { LocalDateTime.parse(cameraTime?.take(15), clock) }.getOrNull())
+        else if (captured > 0) listOf(
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(captured), ZoneId.systemDefault()),
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(captured), ZoneOffset.UTC))
+        else emptyList()
+        val epochs = if (walls.isEmpty()) setOf(0L) else buildSet {
+            add(captured)
             // v1 discarded the original clock and timezone. Compare all possible old interpretations.
-            for (zone in ZoneId.getAvailableZoneIds()) {
+            for (wall in walls) for (zone in ZoneId.getAvailableZoneIds()) {
                 val rules = ZoneId.of(zone)
                 add(wall.atZone(rules).toInstant().toEpochMilli())
                 val transition = rules.rules.getTransition(wall)
@@ -42,9 +51,11 @@ data class CameraObject(val handle: Int, val storage: Int, val name: String, val
         epochs.map { identity(it.toString()) }.toSet()
     }
     fun isKnown(keys: Set<String>): Boolean = key in keys ||
-        (cameraTime != null && keys.any { it.startsWith("legacy:") } && legacyKeys.any { "legacy:$it" in keys })
+        (cameraTime == null && "mtp:$key" in keys) ||
+        (keys.any { it.startsWith("legacy:") } && legacyKeys.any { "legacy:$it" in keys })
     fun matchesQueued(queued: CameraObject): Boolean = key == queued.key ||
-        (queued.cameraTime == null && queued.key in legacyKeys)
+        (queued.cameraTime == null && queued.key in legacyKeys) ||
+        (cameraTime == null && queued.cameraTime != null && key in queued.legacyKeys)
     companion object {
         const val PATH = "DCIM/beta7compact/"
         private val clock = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")

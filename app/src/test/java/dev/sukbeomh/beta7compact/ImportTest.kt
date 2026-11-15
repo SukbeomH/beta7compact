@@ -210,6 +210,24 @@ class ImportTest {
         assertEquals(listOf(second), ImportPlan.create(listOf(first, second), first.compatibleKeys))
         assertFalse(second.matchesQueued(first))
     }
+    @Test fun optionalMetadataFallbackRetainsTimezoneAndRawModeCompatibility() {
+        val old = java.util.TimeZone.getDefault()
+        try {
+            for (date in listOf("20200102T030405", "20200102T030405.1Z")) {
+                java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Seoul"))
+                val raw = jpeg.copy(captured = CameraObject.ptpTime(date), cameraTime = date)
+                val fallback = raw.copy(cameraTime = null)
+                java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
+                val current = fallback.copy(captured = CameraObject.ptpTime(date))
+                assertTrue(current.isKnown(fallback.compatibleKeys))
+                assertTrue(current.isKnown(raw.compatibleKeys))
+                assertTrue(raw.isKnown(current.compatibleKeys))
+                assertTrue(current.matchesQueued(fallback))
+                assertTrue(current.matchesQueued(raw))
+                assertTrue(raw.matchesQueued(current))
+            }
+        } finally { java.util.TimeZone.setDefault(old) }
+    }
     @Test fun connectionStateOnlyEntersSessionAfterDiscoveryAndOpen() {
         var state = LinkState.DISCONNECTED
         assertFails { transition(state, LinkEvent.READY) }
