@@ -19,6 +19,10 @@ Gradle wrapper·캐시·생성된 debug 서명키는 프로젝트 안의 무시 
 
 APK는 로컬에서 빌드하거나 비공개 배포로 받습니다. `dist/` 산출물은 커밋하지 않습니다.
 
+MTP 원본 수신에서도 촬영 식별용 DateTime 원문은 별도 읽기 전용 PTP 세션으로 확인합니다. 두 세션은 번갈아 USB를 사용하며, 현재 활성 구성·alternate에 읽기 인터페이스가 없으면 MTP 설정 안내와 함께 중단합니다.
+
+v1→v2 마이그레이션 SQL·기록 보존은 위 테스트 실행 후 `python3 tools/check_m1_migration.py`로 SQLite에서도 확인할 수 있습니다.
+
 [구현 결과](docs/RESULT_M1.md) · [실기 확인](docs/M1-DEVICE-CHECK.md) · [BLE 근거](docs/BLE-LOCATION.md) · [설계](docs/ARCHITECTURE.md)
 
 USB 권한을 허용하고 카메라 USB 설정을 MTP로 지정하세요. 중단 후 같은 카드를 연결하고 가져오기 화면의 대기열 재개를 누르세요. 현재 파일은 처음부터 재수신하고 완료 파일은 건너뜁니다. BLE는 카메라의 Bluetooth·페어링·위치정보 연동을 켠 뒤 앱에서 대상을 선택하고 동기화를 켭니다.

@@ -1,5 +1,6 @@
 package dev.sukbeomh.beta7compact.usb
 
+import dev.sukbeomh.beta7compact.core.CameraObject
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -41,6 +42,8 @@ data class ObjectInfo(val handle: Int, val storage: Int, val format: Int, val si
                       val name: String, val captured: String, val modified: String, val parent: Int = 0) {
     val isJpeg: Boolean get() = format == 0x3801
     val date: String get() = captured.ifEmpty { modified }
+    // Shared by raw transfer and the MtpDevice adapter's read-only metadata pass.
+    fun cameraObject() = CameraObject(handle, storage, name, size, CameraObject.ptpTime(date), parent, date)
 }
 
 object Ptp {

@@ -137,6 +137,79 @@ class ImportTest {
             assertEquals(0, store.count); assertTrue(queue.done.isEmpty()); assertFalse(file.exists())
         } finally { checkNotNull(file.parentFile).deleteRecursively() }
     }
+    // Ported from /tmp/beta7-m1-review-tests/ReviewChecks.kt: real plan + pipeline, synthetic bytes.
+    @Test fun timezoneChangeNeverReplansOrRepublishesTheSameCameraObject() = runBlocking {
+        val old = java.util.TimeZone.getDefault()
+        val file = temp()
+        try {
+            fun obj() = CameraObject(1, 2, "PUBLIC_TEST.JPG", 4,
+                CameraObject.ptpTime("20200102T030405"), cameraTime = "20200102T030405")
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Seoul"))
+            val first = obj(); val queue = Journal(listOf(first)); val store = Store()
+            val camera = FakeCamera(listOf(first))
+            ImportPipeline(queue, store, file).run(camera)
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
+            val second = obj(); camera.objects = listOf(second)
+            assertNotEquals(first.captured, second.captured)
+            assertEquals(first.key, second.key); assertEquals(first.pair, second.pair)
+            assertTrue(ImportPlan.create(camera.objects, queue.done).isEmpty())
+            ImportPipeline(queue, store, file).run(camera)
+            assertEquals(1, store.visible.size); assertEquals(1, store.count)
+            assertEquals(listOf(1), camera.downloads)
+        } finally { java.util.TimeZone.setDefault(old); file.parentFile!!.deleteRecursively() }
+    }
+    @Test fun v1ParallelKeysPreventReimportAndResumeUnderADifferentTimezone() = runBlocking {
+        val old = java.util.TimeZone.getDefault(); val file = temp()
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Seoul"))
+            val legacy = CameraObject(1, 2, "PUBLIC_TEST.JPG", 4, CameraObject.ptpTime("20200102T030405"))
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"))
+            val current = legacy.copy(handle = 11, captured = CameraObject.ptpTime("20200102T030405"),
+                cameraTime = "20200102T030405")
+            assertTrue(ImportPlan.create(listOf(current), legacy.compatibleKeys).isEmpty())
+            val queue = Journal(listOf(legacy)); val store = Store()
+            ImportPipeline(queue, store, file).run(FakeCamera(listOf(current)))
+            assertEquals(setOf(legacy.key), queue.done)
+            assertEquals(1, store.visible.size)
+            assertTrue(queue.uris.containsKey(legacy.key))
+        } finally { java.util.TimeZone.setDefault(old); file.parentFile!!.deleteRecursively() }
+    }
+    @Test fun v1AmbiguousPendingIdentityStopsBeforePublication() = runBlocking {
+        val file = temp()
+        try {
+            val legacy = jpeg.copy(captured = 1577934245000)
+            val candidates = listOf("20200102T030405", "20200102T120405").mapIndexed { index, time ->
+                legacy.copy(handle = index + 1, cameraTime = time)
+            }
+            val store = Store()
+            assertFails { ImportPipeline(Journal(listOf(legacy)), store, file).run(FakeCamera(candidates)) }
+            assertEquals(0, store.count)
+        } finally { file.parentFile!!.deleteRecursively() }
+    }
+    @Test fun rawCameraTimestampIsPreservedVerbatimInIdentity() {
+        val raw = jpeg.copy(cameraTime = "20200102T030405.1+0900")
+        assertEquals(CameraObject.digest("${raw.name}\u0000${raw.size}\u000020200102T030405.1+0900"), raw.key)
+        assertEquals(raw.key, raw.copy(captured = 0).key)
+    }
+    @Test fun migratedV1KeysCoverOriginalSuffixesAndDstGapWithoutDependingOnCurrentTimezone() {
+        val old = java.util.TimeZone.getDefault()
+        try {
+            for (date in listOf("20200102T030405.1+0900", "20200308T023000", "20200308T023000Z")) {
+                java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/New_York"))
+                val legacy = jpeg.copy(captured = CameraObject.ptpTime(date))
+                java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Seoul"))
+                val current = jpeg.copy(captured = CameraObject.ptpTime(date), cameraTime = date)
+                assertTrue(ImportPlan.create(listOf(current), legacy.compatibleKeys).isEmpty())
+                assertTrue(current.matchesQueued(legacy))
+            }
+        } finally { java.util.TimeZone.setDefault(old) }
+    }
+    @Test fun newRecordsWithDifferentCameraClocksNeverMatchThroughLegacyAliases() {
+        val first = jpeg.copy(cameraTime = "20200102T030405")
+        val second = jpeg.copy(cameraTime = "20200102T120405")
+        assertEquals(listOf(second), ImportPlan.create(listOf(first, second), first.compatibleKeys))
+        assertFalse(second.matchesQueued(first))
+    }
     @Test fun connectionStateOnlyEntersSessionAfterDiscoveryAndOpen() {
         var state = LinkState.DISCONNECTED
         assertFails { transition(state, LinkEvent.READY) }

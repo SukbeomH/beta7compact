@@ -39,33 +39,52 @@ object UsbAccess {
     }
 }
 
-private class NativeCamera(manager: UsbManager, device: UsbDevice) : Camera {
-    private val connection = checkNotNull(manager.openDevice(device)) { "USB 장치를 열 수 없습니다" }
-    private val mtp = MtpDevice(device)
-    init {
+private class NativeCamera(private val manager: UsbManager, private val device: UsbDevice) : Camera {
+    private var connection: android.hardware.usb.UsbDeviceConnection? = null
+    private var mtp: MtpDevice? = null
+    init { openNative() }
+    private fun openNative() {
+        val opened = checkNotNull(manager.openDevice(device)) { "USB 장치를 열 수 없습니다" }
+        val native = MtpDevice(device)
         try {
-            check(mtp.open(connection)) { "MTP 세션을 열 수 없습니다" }
-            checkNotNull(mtp.deviceInfo) { "MTP 장치 정보를 읽을 수 없습니다" }
-        } catch (e: Throwable) { mtp.close(); connection.close(); throw e }
+            check(native.open(opened)) { "MTP 세션을 열 수 없습니다" }
+            checkNotNull(native.deviceInfo) { "MTP 장치 정보를 읽을 수 없습니다" }
+            connection = opened; mtp = native
+        } catch (e: Throwable) { native.close(); opened.close(); throw e }
     }
-    override fun list(): List<CameraObject> = checkNotNull(mtp.storageIds) { "카드를 읽을 수 없습니다" }.flatMap { storage ->
-        checkNotNull(mtp.getObjectHandles(storage, 0, 0)) { "사진 목록을 읽을 수 없습니다" }.map { handle ->
-            val obj = checkNotNull(mtp.getObjectInfo(handle)) { "사진 정보를 읽을 수 없습니다" }
-            CameraObject(handle, storage, obj.name, obj.compressedSizeLong,
-                obj.dateCreated.takeIf { it > 0 } ?: obj.dateModified, obj.parent)
+    // MtpObjectInfo exposes only epoch seconds, losing the original DateTime (including suffix/DST).
+    // Read it verbatim through a separate, serialized read-only PTP session; never share ownership.
+    private fun <T> metadata(read: (RawCamera) -> T): T =
+        readExclusiveMetadata(::close, { RawCamera(manager, device) }, ::openNative, read)
+    override fun list(): List<CameraObject> {
+        val raw = metadata { it.list() }.associateBy { it.handle }
+        val native = checkNotNull(mtp)
+        return checkNotNull(native.storageIds) { "카드를 읽을 수 없습니다" }.flatMap { storage ->
+            checkNotNull(native.getObjectHandles(storage, 0, 0)) { "사진 목록을 읽을 수 없습니다" }.toList().mapNotNull { handle ->
+                val obj = checkNotNull(native.getObjectInfo(handle)) { "사진 정보를 읽을 수 없습니다" }
+                val item = raw[handle] ?: return@mapNotNull null // Unsupported objects are absent from raw.
+                check(nativeMatches(item, obj)) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
+                item
+            }
         }
-    }.filter { it.valid }
-    override fun thumbnail(item: CameraObject): ByteArray? = mtp.getThumbnail(item.handle)
+    }
+    private fun nativeMatches(item: CameraObject, obj: android.mtp.MtpObjectInfo) =
+        obj.name == item.name && obj.compressedSizeLong == item.size && obj.storageId == item.storage && obj.parent == item.parent
+    override fun thumbnail(item: CameraObject): ByteArray? = checkNotNull(mtp).getThumbnail(item.handle)
     override fun download(item: CameraObject, destination: File) {
-        val now = checkNotNull(mtp.getObjectInfo(item.handle)) { "수신 대상을 확인할 수 없습니다" }
-        check(CameraObject(item.handle, now.storageId, now.name, now.compressedSizeLong,
-            now.dateCreated.takeIf { it > 0 } ?: now.dateModified, now.parent).key == item.key) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
+        val now = metadata { it.info(item.handle) }
+        check(now.key == item.key) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
+        val native = checkNotNull(mtp)
+        val obj = checkNotNull(native.getObjectInfo(item.handle)) { "수신 대상을 확인할 수 없습니다" }
+        check(nativeMatches(now, obj)) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
         ParcelFileDescriptor.open(destination, ParcelFileDescriptor.MODE_CREATE or
             ParcelFileDescriptor.MODE_TRUNCATE or ParcelFileDescriptor.MODE_READ_WRITE).use {
-            check(mtp.importFile(item.handle, it)) { "MTP 원본 수신에 실패했습니다" }
+            check(native.importFile(item.handle, it)) { "MTP 원본 수신에 실패했습니다" }
         }
     }
-    override fun close() { mtp.close(); connection.close() }
+    override fun close() {
+        try { mtp?.close() } finally { mtp = null; connection?.close(); connection = null }
+    }
 }
 
 private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
@@ -80,23 +99,26 @@ private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
                 return result[0].toInt() and 255
             }
             val active = configuration()
-            val (config, selected) = (0 until device.configurationCount).flatMap { c ->
+            val configurations = (0 until device.configurationCount).flatMap { c ->
                 val cfg = device.getConfiguration(c)
-                (0 until cfg.interfaceCount).map { cfg to cfg.getInterface(it) }
-            }.filter { (_, f) ->
+                (0 until cfg.interfaceCount).map { cfg.id to cfg.getInterface(it) }
+            }
+            val alternates = mutableMapOf<Int, Int>()
+            val selected = activeStillImageInterface(active, configurations, { it.alternateSetting }, { f ->
+                alternates.getOrPut(f.id) {
+                    val result = ByteArray(1)
+                    check(connection.controlTransfer(0x81, 10, 0, f.id, result, 1, 8000) == 1) {
+                        "카메라 설정 → USB 연결 → MTP"
+                    }
+                    result[0].toInt() and 255
+                }
+            }) { f ->
                 val endpoints = (0 until f.endpointCount).map { f.getEndpoint(it) }
                 f.interfaceClass == 6 && endpoints.any { it.type == 2 && it.direction == 128 } &&
                     endpoints.any { it.type == 2 && it.direction == 0 }
-            }.sortedWith(compareBy({ it.first.id != active }, { it.second.alternateSetting != 0 })).firstOrNull()
-                ?: error("카메라 설정 → USB 연결 → MTP")
-            ensureUsbConfiguration(active, config.id, { connection.setConfiguration(config) }, ::configuration, {})
+            }
             check(connection.claimInterface(selected, true)) { "USB 인터페이스를 사용할 수 없습니다" }
             face = selected
-            val alternate = ByteArray(1)
-            check(connection.controlTransfer(0x81, 10, 0, selected.id, alternate, 1, 8000) == 1) { "USB 인터페이스 상태 확인 실패" }
-            if ((alternate[0].toInt() and 255) != selected.alternateSetting) {
-                check(connection.setInterface(selected)) { "USB 인터페이스 선택 실패" }
-            }
             val endpoints = (0 until selected.endpointCount).map { selected.getEndpoint(it) }
             val input = endpoints.first { it.type == UsbConstants.USB_ENDPOINT_XFER_BULK && it.direction == UsbConstants.USB_DIR_IN }
             val output = endpoints.first { it.type == UsbConstants.USB_ENDPOINT_XFER_BULK && it.direction == UsbConstants.USB_DIR_OUT }
@@ -110,15 +132,18 @@ private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
     }
     override fun list(): List<CameraObject> = Ptp.ids(client.read(0x1004)).flatMap { storage ->
         Ptp.ids(client.read(0x1007, storage, 0, 0)).map { handle ->
-            val obj = Ptp.objectInfo(handle, client.read(0x1008, handle))
-            CameraObject(handle, storage, obj.name, obj.size, CameraObject.ptpTime(obj.date), obj.parent)
+            info(handle).also { check(it.storage == storage) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" } }
         }
     }.filter { it.valid }
     override fun thumbnail(item: CameraObject): ByteArray? = try { client.read(0x100A, item.handle) }
         catch (e: PtpResponseException) { null }
+    fun info(handle: Int): CameraObject {
+        val obj = Ptp.objectInfo(handle, client.read(0x1008, handle))
+        return obj.cameraObject()
+    }
     override fun download(item: CameraObject, destination: File) {
-        val now = Ptp.objectInfo(item.handle, client.read(0x1008, item.handle))
-        check(CameraObject(now.handle, now.storage, now.name, now.size, CameraObject.ptpTime(now.date), now.parent).key == item.key) {
+        val now = info(item.handle)
+        check(now.key == item.key) {
             "카드 내용이 변경되었습니다. 목록을 새로고침하세요"
         }
         destination.outputStream().use { client.getObject(item.handle, it, item.size) }

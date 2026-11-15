@@ -11,19 +11,22 @@ interface UsbBulkTransport {
     fun read(bytes: ByteArray, timeoutMs: Int): Int
 }
 
-/** Standard USB GET_CONFIGURATION must succeed before deciding whether to switch. */
-internal fun ensureUsbConfiguration(current: Int, target: Int, set: () -> Boolean,
-                                    read: () -> Int, log: (String) -> Unit) {
-    require(current in 0..255 && target in 1..255)
-    if (current == target) {
-        log("USB setConfiguration SKIP active=$current target=$target (already active)")
-        return
-    }
-    val start = System.nanoTime()
-    val result = set()
-    log("USB setConfiguration active=$current target=$target result=$result ms=${(System.nanoTime() - start) / 1000000}")
-    check(result) { "USB setConfiguration=false target=$target" }
-    check(read() == target) { "USB active configuration does not match target=$target after setConfiguration" }
+/** Native MTP and raw metadata must never own the interface at the same time. */
+internal fun <C : Closeable, T> readExclusiveMetadata(closeNative: () -> Unit, openRaw: () -> C,
+                                                    reopenNative: () -> Unit, read: (C) -> T): T {
+    closeNative()
+    val result = openRaw().use(read)
+    reopenNative()
+    return result
+}
+
+/** Only the already active configuration/alternate can be claimed. No USB SET requests. */
+internal fun <T> activeStillImageInterface(current: Int, configurations: List<Pair<Int, T>>,
+                                         alternate: (T) -> Int, activeAlternate: (T) -> Int,
+                                         stillImageBulk: (T) -> Boolean): T {
+    return configurations.firstOrNull { (config, face) ->
+        config == current && current > 0 && stillImageBulk(face) && alternate(face) == activeAlternate(face)
+    }?.second ?: error("카메라 설정 → USB 연결 → MTP")
 }
 
 /** Read-only PTP operations plus Open/CloseSession. No camera property or shutter writes. */
