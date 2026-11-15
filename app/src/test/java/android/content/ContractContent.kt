@@ -38,6 +38,7 @@ abstract class ContentResolver {
     abstract fun query(uri: Uri, projection: Array<String>, selection: String?, args: Array<String>?, sort: String?): Cursor?
     abstract fun query(uri: Uri, projection: Array<String>, args: Bundle?, signal: android.os.CancellationSignal?): Cursor?
     abstract fun openFileDescriptor(uri: Uri, mode: String): ParcelFileDescriptor?
+    open fun openInputStream(uri: Uri): java.io.InputStream? = null
     abstract fun openOutputStream(uri: Uri, mode: String): OutputStream?
     abstract fun update(uri: Uri, values: ContentValues, selection: String?, args: Array<String>?): Int
     abstract fun delete(uri: Uri, selection: String?, args: Array<String>?): Int

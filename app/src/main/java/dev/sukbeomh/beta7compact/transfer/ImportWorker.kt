@@ -59,6 +59,8 @@ class ImportWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             e is SecurityException -> "권한이 없습니다. 앱에서 권한을 허용하세요"
             e.message?.contains("크기") == true -> "원본 크기가 일치하지 않습니다. 다시 받으세요"
             e.message?.startsWith("카메라 설정") == true -> "카메라 설정 → USB 연결 → MTP"
+            e.message?.contains("원문") == true -> "대기 사진의 원문을 확인할 수 없습니다. 같은 카드를 연결하고 목록을 새로고침하세요"
+            e.message == "카드에서 대기 사진을 찾을 수 없습니다" -> "카드에서 대기 사진을 찾을 수 없습니다. 같은 카드를 연결하세요"
             e.message?.contains("촬영시각이 모호") == true -> "사진 원본을 확정할 수 없습니다. 대기열을 확인하고 다시 받으세요"
             e.message?.startsWith("완료 원본") == true -> "기존 완료 원본을 확인할 수 없습니다. 갤러리 상태를 확인하세요"
             else -> "USB 연결·MTP 설정·카드 상태를 확인하고 다시 받으세요"

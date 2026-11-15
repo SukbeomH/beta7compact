@@ -23,6 +23,7 @@ class LegacyQueueContractTest {
         override suspend fun pending() = rows.values.filter { it.imported == null }.sortedBy { it.captured }
         override suspend fun get(key: String) = rows[key]
         override suspend fun insert(photos: List<Photo>) { photos.forEach { rows.putIfAbsent(it.key, it) } }
+        override suspend fun hashed(key: String, hash: String) { rows[key] = rows.getValue(key).copy(contentHash = hash) }
         override suspend fun staged(key: String, uri: String) { rows[key] = rows.getValue(key).copy(uri = uri) }
         override suspend fun complete(key: String, uri: String, now: Long) {
             if (++completions == failOnComplete) error("synthetic completion interruption")
@@ -33,6 +34,7 @@ class LegacyQueueContractTest {
         var failWrite = false; var count = 0
         val published = mutableSetOf<String>(); val bytes = mutableMapOf<String, ByteArray>()
         override fun recover(uri: String, size: Long) = uri in published && bytes[uri]?.size?.toLong() == size
+        override fun contentHash(uri: String) = bytes[uri]?.inputStream()?.let(::sha256)
         override fun begin(item: CameraObject) = "content://synthetic/${++count}"
         override fun write(uri: String, source: File) {
             bytes[uri] = source.readBytes()
@@ -56,8 +58,8 @@ class LegacyQueueContractTest {
     private fun legacy(zone: String) = current.copy(cameraTime = null, captured =
         LocalDateTime.parse(date, java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss"))
             .atZone(ZoneId.of(zone)).toInstant().toEpochMilli())
-    private val a get() = Photo.from(legacy("Asia/Seoul"))
-    private val b get() = Photo.from(legacy("UTC"))
+    private val a get() = Photo.from(legacy("Asia/Seoul")).copy(key = legacy("Asia/Seoul").metadataKey)
+    private val b get() = Photo.from(legacy("UTC")).copy(key = legacy("UTC").metadataKey)
     private val oldUri = "content://synthetic/old"
     private fun Store.seed(uri: String = oldUri) { published.add(uri); bytes[uri] = byteArrayOf(1, 2, 3, 4) }
     private suspend fun run(dao: Dao, store: Store, camera: Cam) {
@@ -65,24 +67,24 @@ class LegacyQueueContractTest {
         try { ImportPipeline(RoomJournal(dao), store, File(directory, "original.part")).run(camera) }
         finally { directory.deleteRecursively() }
     }
-    @Test fun completedAliasLinksPendingWithoutDownloadOrPublication() = runBlocking {
+    @Test fun completedAliasRequiresHashComparisonAndLinksWithoutPublication() = runBlocking {
         val original = a.copy(uri = oldUri, imported = 123L, recipe = "reserved")
         val dao = Dao(listOf(original, b)); val store = Store().apply { seed() }; val camera = Cam(current)
         dao.enqueue(listOf(Photo.from(current)))
-        assertEquals(2, dao.rows.size)
+        assertEquals(3, dao.rows.size)
         run(dao, store, camera)
-        assertEquals(original, dao.rows.getValue(original.key))
+        assertEquals(original.copy(contentHash = sha256(byteArrayOf(1, 2, 3, 4).inputStream())), dao.rows.getValue(original.key))
         assertEquals(oldUri, dao.rows.getValue(b.key).uri)
         assertTrue(dao.rows.values.all { it.imported != null })
-        assertEquals(0, camera.downloads); assertEquals(0, store.count)
+        assertEquals(1, camera.downloads); assertEquals(0, store.count)
         assertEquals(setOf(oldUri), store.published)
     }
     @Test fun pendingAliasesPublishOnceAndCompleteEveryOriginalKey() = runBlocking {
         val dao = Dao(listOf(a, b)); val store = Store(); val camera = Cam(current)
         dao.enqueue(listOf(Photo.from(current)))
-        assertEquals(2, dao.rows.size)
+        assertEquals(3, dao.rows.size)
         run(dao, store, camera)
-        assertEquals(setOf(a.key, b.key), dao.rows.keys)
+        assertEquals(setOf(a.key, b.key, current.key), dao.rows.keys)
         assertTrue(dao.rows.values.all { it.imported != null })
         assertEquals(1, dao.rows.values.map { it.uri }.distinct().size)
         assertEquals(1, camera.downloads); assertEquals(1, store.count); assertEquals(1, store.published.size)
@@ -92,7 +94,7 @@ class LegacyQueueContractTest {
     @Test fun publishedPendingAliasIsRecoveredEvenWhenItIsLastInQueue() = runBlocking {
         val dao = Dao(listOf(a, b.copy(uri = oldUri))); val store = Store().apply { seed() }; val camera = Cam(current)
         run(dao, store, camera)
-        assertEquals(0, camera.downloads); assertEquals(0, store.count)
+        assertEquals(1, camera.downloads); assertEquals(0, store.count)
         assertTrue(dao.rows.values.all { it.imported != null && it.uri == oldUri })
     }
     @Test fun interruptionBetweenAliasCompletionsNeverRepublishes() = runBlocking {
@@ -121,14 +123,15 @@ class LegacyQueueContractTest {
         run(dao, store, camera)
         assertEquals(oldUri, dao.rows.getValue(a.key).uri); assertEquals(otherUri, dao.rows.getValue(b.key).uri)
         assertEquals(setOf(oldUri, otherUri), store.published)
-        assertEquals(0, camera.downloads); assertEquals(0, store.count)
+        assertEquals(1, camera.downloads); assertEquals(0, store.count)
     }
-    @Test fun missingCompletedOriginalStopsBeforeNewPublication() = runBlocking {
+    @Test fun unreadableCompletedOriginalCannotConfirmEqualityAndKeepsTheOldRecord() = runBlocking {
         val dao = Dao(listOf(a.copy(uri = oldUri, imported = 123), b)); val store = Store(); val camera = Cam(current)
-        val failure = assertFails { run(dao, store, camera) }
-        assertTrue(failure.message!!.startsWith("완료 원본"))
-        assertEquals(0, camera.downloads); assertEquals(0, store.count)
-        assertNull(dao.rows.getValue(b.key).imported)
+        run(dao, store, camera)
+        assertEquals(1, camera.downloads); assertEquals(1, store.count)
+        assertEquals(oldUri, dao.rows.getValue(a.key).uri)
+        assertNotNull(dao.rows.getValue(b.key).imported)
+        assertNotEquals(oldUri, dao.rows.getValue(b.key).uri)
     }
     @Test fun ambiguousPendingSourceStopsTheWholeQueueBeforePublication() = runBlocking {
         val distinct = current.copy(name = "OTHER.JPG")
@@ -138,12 +141,12 @@ class LegacyQueueContractTest {
         assertTrue(failure.message!!.contains("모호"))
         assertEquals(0, store.count); assertEquals(0, camera.downloads)
     }
-    @Test fun ambiguousCompletedAliasStopsBeforeEvenAnExactPendingSourcePublishes() = runBlocking {
+    @Test fun ambiguousCompletedMetadataOnlySuppliesHintsAndHashConfirmsTheSource() = runBlocking {
         val other = current.copy(handle = 99, cameraTime = "20200102T120405")
         val dao = Dao(listOf(b.copy(uri = oldUri, imported = 123), Photo.from(current)))
         val store = Store().apply { seed() }; val camera = Cam(current).apply { objects = listOf(current, other) }
-        assertFails { run(dao, store, camera) }
-        assertEquals(0, store.count); assertEquals(0, camera.downloads)
+        run(dao, store, camera)
+        assertEquals(0, store.count); assertEquals(1, camera.downloads)
         assertEquals(setOf(oldUri), store.published)
     }
 }

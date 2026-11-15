@@ -23,7 +23,7 @@ class RawListingPlanTest {
             val raw = objectFrom(2, dataset("TEST.ARW", 0xb101, 8))
             val mtpMetadata = CameraObject(99, 7, "TEST.JPG", 4, 1577934245000, 8, "20200102T030405")
             assertEquals(8, jpeg.parent); assertEquals(mtpMetadata.key, jpeg.key)
-            val queue = ImportPlan.create(listOf(jpeg, raw), setOf(mtpMetadata.key))
+            val queue = ImportPlan.create(listOf(jpeg, raw), mtpMetadata.compatibleKeys)
             assertEquals(listOf(raw), queue); assertEquals(jpeg.pair, raw.pair)
         } finally { TimeZone.setDefault(old) }
     }

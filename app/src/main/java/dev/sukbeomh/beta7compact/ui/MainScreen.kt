@@ -190,6 +190,7 @@ fun MainScreen(activity: MainActivity, app: App) {
                             item(span = { GridItemSpan(maxLineSpan) }) { Text(date, style = MaterialTheme.typography.titleMedium) }
                             items(photos, key = { "${it.storage}:${it.handle}" }) { obj ->
                                 PhotoTile(obj.name, obj.isKnown(completed), obj.key in selected,
+                                    verification = obj.needsVerification(completed),
                                     pair = photos.filter { it.pair == obj.pair }.map { it.mime }.toSet().containsAll(setOf("image/jpeg", "image/x-sony-arw")),
                                     thumb = { cameraThumb(app, obj, raw, working) }, onClick = {
                                         if (!obj.isKnown(completed) && !working) selected = if (obj.key in selected) selected - obj.key else selected + obj.key
@@ -215,7 +216,7 @@ fun MainScreen(activity: MainActivity, app: App) {
     }
 }
 @Composable
-private fun PhotoTile(name: String, imported: Boolean, selected: Boolean, pair: Boolean, thumb: @Composable () -> Bitmap?, onClick: () -> Unit) {
+private fun PhotoTile(name: String, imported: Boolean, selected: Boolean, pair: Boolean, verification: Boolean = false, thumb: @Composable () -> Bitmap?, onClick: () -> Unit) {
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick), colors = CardDefaults.cardColors(
         containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)) {
         val bitmap = thumb()
@@ -223,7 +224,7 @@ private fun PhotoTile(name: String, imported: Boolean, selected: Boolean, pair: 
         else Box(Modifier.fillMaxWidth().height(110.dp), contentAlignment = Alignment.Center) { Text(name.substringAfterLast('.').uppercase()) }
         Column(Modifier.padding(8.dp)) {
             Text(name, maxLines = 1)
-            Text(if (imported) "가져옴" else if (selected) "선택됨" else "원본", style = MaterialTheme.typography.labelSmall)
+            Text(if (imported) "가져옴" else if (selected) "선택됨" else if (verification) "확인 필요" else "원본", style = MaterialTheme.typography.labelSmall)
             if (pair) Text("RAW + JPEG 쌍", style = MaterialTheme.typography.labelSmall)
         }
     }

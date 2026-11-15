@@ -19,6 +19,7 @@ class LibraryMigrationContractTest {
         override suspend fun pending() = rows.values.filter { it.imported == null }
         override suspend fun get(key: String) = rows[key]
         override suspend fun insert(photos: List<Photo>) { photos.forEach { rows.putIfAbsent(it.key, it) } }
+        override suspend fun hashed(key: String, hash: String) { rows[key] = rows.getValue(key).copy(contentHash = hash) }
         override suspend fun staged(key: String, uri: String) { rows[key] = rows.getValue(key).copy(uri = uri) }
         override suspend fun complete(key: String, uri: String, now: Long) {
             rows[key] = rows.getValue(key).copy(uri = uri, imported = now)
@@ -33,6 +34,9 @@ class LibraryMigrationContractTest {
             null
         } as SupportSQLiteDatabase
         LibraryDb.MIGRATION_1_2.migrate(db)
+        LibraryDb.MIGRATION_2_3.migrate(db)
+        assertEquals(2, LibraryDb.MIGRATION_2_3.startVersion)
+        assertEquals(3, LibraryDb.MIGRATION_2_3.endVersion)
         assertEquals(1, LibraryDb.MIGRATION_1_2.startVersion)
         assertEquals(2, LibraryDb.MIGRATION_1_2.endVersion)
         assertTrue(statements.isNotEmpty())
@@ -40,22 +44,32 @@ class LibraryMigrationContractTest {
             checkNotNull(parentFile).mkdirs(); writeText(statements.joinToString(";\n", postfix = ";\n"))
         }
     }
-    @Test fun migratedCompletedAndStagedRowsKeepTheirKeysUrisAndQueueOwnership() = runBlocking {
+    @Test fun migratedRecordsKeepTheirKeysUrisAndHintsDoNotSuppressEnqueue() = runBlocking {
         val legacy = CameraObject(1, 2, "PUBLIC_TEST.JPG", 4, 1577901845000)
         val current = legacy.copy(handle = 99, cameraTime = "20200102T030405")
         for (imported in listOf(null, 123L)) {
-            val original = Photo.from(legacy).copy(uri = "content://synthetic/1", imported = imported)
+            val original = Photo.from(legacy).copy(key = legacy.metadataKey,
+                uri = "content://synthetic/1", imported = imported, recipe = "reserved")
             val dao = Dao(listOf(original))
             dao.enqueue(listOf(Photo.from(current)))
-            assertEquals(listOf(original), dao.rows.values.toList())
+            assertEquals(original, dao.rows.getValue(original.key))
+            assertEquals(2, dao.rows.size)
             val journal = RoomJournal(dao)
-            if (imported == null) {
-                assertEquals(legacy.key, journal.pending().single().key)
-                journal.completed(legacy.key, original.uri!!)
-                assertTrue(journal.pending().isEmpty())
-            } else assertTrue(journal.pending().isEmpty())
-            assertEquals(original.uri, journal.uri(legacy.key))
-            assertEquals(setOf(legacy.key), dao.rows.keys)
+            assertEquals(original.key, original.cameraObject().key)
+            assertEquals(original.uri, journal.uri(original.key))
+            assertNull(journal.contentHash(original.key))
+            assertEquals(1, journal.pending().count { it.key == current.key })
         }
+    }
+    @Test fun migratedV2RawPrimaryKeyIsPreservedAndExactLocationAllowsHandleChange() = runBlocking {
+        val current = CameraObject(1, 2, "PUBLIC_TEST.JPG", 4, 1577901845000,
+            cameraTime = "20200102T030405")
+        val original = Photo.from(current).copy(key = current.metadataKey, uri = "content://synthetic/1", imported = 123)
+        val dao = Dao(listOf(original))
+        dao.enqueue(listOf(Photo.from(current.copy(handle = 99))))
+        assertEquals(listOf(original), dao.all())
+        val elsewhere = current.copy(parent = 9)
+        dao.enqueue(listOf(Photo.from(elsewhere)))
+        assertEquals(setOf(original.key, elsewhere.key), dao.rows.keys)
     }
 }
