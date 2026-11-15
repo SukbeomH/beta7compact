@@ -87,7 +87,8 @@ private class NativeCamera(private val manager: UsbManager, private val device: 
         if (now != null) check(now.matchesQueued(item)) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
         val native = checkNotNull(mtp)
         val obj = checkNotNull(native.getObjectInfo(item.handle)) { "수신 대상을 확인할 수 없습니다" }
-        check(nativeMatches(item, obj) && (now != null || nativeItem(item.handle, obj).matchesQueued(item))) {
+        check(nativeMatches(item, obj) && if (now != null) nativeMatches(now, obj)
+            else nativeItem(item.handle, obj).matchesQueued(item)) {
             "카드 내용이 변경되었습니다. 목록을 새로고침하세요"
         }
         ParcelFileDescriptor.open(destination, ParcelFileDescriptor.MODE_CREATE or

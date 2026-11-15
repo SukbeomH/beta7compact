@@ -36,4 +36,16 @@ class UsbCameraContractTest {
     @Test fun clearedSessionSupportsNativeListThumbnailAndImport() = transfer(false)
     @Test fun getInterfaceStallLeavesNativeListThumbnailAndImportUsable() = transfer(true, stall = true)
     @Test fun rejectedRawSessionLeavesNativeListThumbnailAndImportUsable() = transfer(true, response = 0x2019)
+    @Test fun changedRawParentStopsImportEvenIfNativeMetadataStillLooksUnchanged() = runBlocking {
+        Wire.reset()
+        val file = Files.createTempFile("mtp-changed", ".part").toFile()
+        try {
+            UsbAccess.use(Context(UsbManager()), false) { camera ->
+                val item = camera.list().single()
+                Wire.rawParent = 99
+                assertFails { camera.download(item, file) }
+                assertEquals(0, Wire.imports)
+            }
+        } finally { file.delete() }
+    }
 }
