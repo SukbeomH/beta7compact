@@ -47,12 +47,28 @@ fun MainScreen(activity: MainActivity, app: App) {
     var error by remember { mutableStateOf<String?>(null) }
     var usbText by remember { mutableStateOf("Sony 카메라를 USB로 연결하세요") }
     var found by remember { mutableStateOf<List<BluetoothDevice>>(emptyList()) }
-    var raw by remember { mutableStateOf(app.settings.getBoolean("raw", false)) }
+    var raw by remember { mutableStateOf(app.settings.getBoolean("raw", true)) }
+    var bleReport by remember { mutableStateOf(ScanReport()) }
+    var bleSearched by remember { mutableStateOf(false) }
+    var bleBusy by remember { mutableStateOf(false) }
+    var bleMessage by remember { mutableStateOf<String?>(null) }
+    var scanJob by remember { mutableStateOf<Job?>(null) }
+    val usbDiagnostic by app.usbDiagnostic.collectAsStateWithLifecycle()
+    DisposableEffect(app) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == "raw") raw = prefs.getBoolean("raw", true)
+        }
+        app.settings.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { app.settings.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     var interval by remember { mutableIntStateOf(app.settings.getInt("interval", 10)) }
     val records by app.db.photos().observe().collectAsStateWithLifecycle(initialValue = emptyList())
     val location by app.locationState.collectAsStateWithLifecycle()
     val linkState by app.usbState.collectAsStateWithLifecycle()
     val refresh by activity.refresh.collectAsStateWithLifecycle()
+    LaunchedEffect(refresh) {
+        found = runCatching { BleScanner.bonded(app, app.settings.getString("camera", null)) }.getOrDefault(emptyList())
+    }
     val work by remember { WorkManager.getInstance(app).getWorkInfosForUniqueWorkFlow(ImportWorker.NAME) }
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val working = work.any { !it.state.isFinished }
@@ -72,7 +88,7 @@ fun MainScreen(activity: MainActivity, app: App) {
                     objects = emptyList(); app.usb(LinkEvent.FOUND); return@launch
                 }
                 app.usb(LinkEvent.LOST); app.usb(LinkEvent.FOUND); app.usb(LinkEvent.OPEN)
-                val list = withContext(Dispatchers.IO) { UsbAccess.use(app, raw) { it.list() } }
+                val list = withContext(Dispatchers.IO) { app.useUsb { it.list() } }
                 objects = list; selected = selected.intersect(list.map { it.key }.toSet())
                 app.usb(LinkEvent.READY); usbText = "사진 ${list.size}개 · 새 사진 ${list.count { !it.isKnown(completed) }}개"
             } catch (e: CancellationException) { throw e }
@@ -111,6 +127,7 @@ fun MainScreen(activity: MainActivity, app: App) {
                     Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
                         Text("USB · ${when(linkState) { LinkState.SESSION -> "연결됨"; LinkState.CONNECTING -> "연결 중"; else -> "연결 확인" }}")
                         Text(usbText)
+                        usbDiagnostic?.let { Text(it) }
                         TextButton(onClick = { try { activity.usbPermission() } catch (e: Exception) { error = "Sony 카메라를 USB로 연결하세요" } }, enabled = !busy && !working) { Text("USB 연결 / 권한 허용") }
                     } }
                     Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
@@ -123,23 +140,49 @@ fun MainScreen(activity: MainActivity, app: App) {
                         TextButton(onClick = {
                             activity.requestBle { granted ->
                                 if (!granted) error = "Bluetooth·정확한 위치·알림 권한을 허용하세요"
-                                else scope.launch {
-                                    busy = true
-                                    try { found = BleScanner.scan(app); if (found.isEmpty()) error = "카메라가 없습니다. 페어링 화면을 열고 다시 검색하세요" }
-                                    catch (e: CancellationException) { throw e }
-                                    catch (e: Exception) { error = "BLE 검색 실패. Bluetooth·위치 기능을 확인하세요" }
-                                    finally { busy = false }
+                                else {
+                                    bleBusy = true; bleSearched = true; bleMessage = null
+                                    scanJob = scope.launch {
+                                        try {
+                                            val result = BleScanner.scan(app, app.settings.getString("camera", null)) {
+                                                bleReport = it; found = it.devices
+                                            }
+                                            if (result.failed) bleMessage = "BLE 검색 실패. Bluetooth·위치 기능을 확인하고 다시 검색하세요"
+                                            if (result.devices.isEmpty()) bleMessage = BleScanner.EMPTY_GUIDANCE
+                                        } catch (e: CancellationException) { throw e }
+                                        catch (e: Exception) {
+                                            DiagnosticLog.record(DiagnosticEvent.BLE_FAILED)
+                                            bleMessage = "BLE 검색 실패. Bluetooth·위치 기능을 확인하고 다시 검색하세요"
+                                        } finally { bleBusy = false }
+                                    }
                                 }
                             }
-                        }, enabled = !busy && !location.running) { Text(if (busy) "처리 중…" else "Sony 카메라 검색") }
+                        }, enabled = !bleBusy && !location.running) {
+                            Text(if (bleBusy) "${if (bleReport.unfiltered) "무필터" else "필터"} 검색 중 (15초)…"
+                                else if (bleSearched) "다시 검색" else "Sony 카메라 검색")
+                        }
+                        if (bleSearched) Text(bleReport.diagnostic)
+                        bleMessage?.let { Text(it) }
                         found.forEachIndexed { index, device ->
                             TextButton(onClick = {
                                 try {
+                                    scanJob?.cancel()
                                     app.settings.edit().putString("camera", device.address).apply()
-                                    check(device.bondState == BluetoothDevice.BOND_BONDED || device.createBond())
-                                    found = emptyList(); error = "카메라와 휴대폰의 페어링 확인을 완료하세요"
-                                } catch (e: Exception) { error = "페어링을 시작할 수 없습니다" }
-                            }) { Text("${device.name ?: "Sony 카메라"} · ${index + 1} 선택") }
+                                    DiagnosticLog.record(DiagnosticEvent.BLE_SELECTED)
+                                    if (device.bondState == BluetoothDevice.BOND_BONDED) {
+                                        bleMessage = "페어링된 카메라를 선택했습니다. 위치정보 연동을 켜세요"
+                                    } else {
+                                        check(device.createBond())
+                                        DiagnosticLog.record(DiagnosticEvent.BLE_BOND_STARTED)
+                                        bleMessage = "카메라와 휴대폰의 페어링 확인을 완료하세요"
+                                    }
+                                } catch (e: Exception) {
+                                    DiagnosticLog.record(DiagnosticEvent.BLE_BOND_FAILED)
+                                    error = "페어링을 시작할 수 없습니다"
+                                }
+                            }, enabled = !location.running) {
+                                Text("${device.name ?: "Sony 카메라"} · ${if (device.bondState == BluetoothDevice.BOND_BONDED) "페어링됨 · " else ""}${index + 1} 선택")
+                            }
                         }
                     } }
                     Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
@@ -149,7 +192,10 @@ fun MainScreen(activity: MainActivity, app: App) {
                                 if (!on) app.stopService(Intent(app, LocationService::class.java))
                                 else activity.requestBle { granted ->
                                     if (!granted) error = "정확한 위치·Bluetooth·알림 권한을 허용하세요"
-                                    else try { androidx.core.content.ContextCompat.startForegroundService(activity, Intent(activity, LocationService::class.java)) }
+                                    else try {
+                                        scanJob?.cancel()
+                                        androidx.core.content.ContextCompat.startForegroundService(activity, Intent(activity, LocationService::class.java))
+                                    }
                                     catch (e: Exception) { error = "앱을 연 상태에서 위치 동기화를 켜세요" }
                                 }
                             })
@@ -163,7 +209,16 @@ fun MainScreen(activity: MainActivity, app: App) {
                             Text("raw PTP로 가져오기", Modifier.weight(1f))
                             Switch(raw, onCheckedChange = { raw = it; app.settings.edit().putBoolean("raw", it).apply(); objects = emptyList(); scanUsb() }, enabled = !working && !busy)
                         }
-                        Text("기본 MtpDevice · 세션 열기 실패 시 raw PTP 1회 대체")
+                        Text("A7C 기본 raw PTP · MTP 읽기 실패 시 같은 동작에서 raw PTP 1회 대체 · 성공 경로 기억")
+                        TextButton(onClick = {
+                            try {
+                                activity.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, DiagnosticLog.shareText())
+                                }, "진단 로그 공유"))
+                            } catch (e: Exception) { error = "진단 로그를 공유할 앱이 없습니다" }
+                        }) { Text("진단 로그 공유") }
+                        Text("이번 앱 실행의 고정 문구 이벤트만 공유합니다")
                         Text("전송 간격 ${interval}초 (5~60초)")
                         Slider(value = interval.toFloat(), onValueChange = { interval = it.toInt(); app.settings.edit().putInt("interval", interval).apply() }, valueRange = 5f..60f, steps = 10)
                         Text("원본: DCIM/beta7compact/ · JPEG / ARW / HIF")
@@ -171,6 +226,7 @@ fun MainScreen(activity: MainActivity, app: App) {
                     }
                 } else if (page == 1) {
                     Text(usbText)
+                    usbDiagnostic?.let { Text(it) }
                     val lastError = workInfo?.outputData?.getString("error") ?: workInfo?.progress?.getString("error")
                     lastError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     if (working) {
@@ -234,7 +290,7 @@ private fun cameraThumb(app: App, obj: CameraObject, raw: Boolean, importing: Bo
     var bitmap by remember(obj.key, raw) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(obj.key, raw, importing) {
         if (!importing) bitmap = withContext(Dispatchers.IO) {
-            runCatching { UsbAccess.use(app, raw) { camera -> camera.thumbnail(obj)?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } } }.getOrNull()
+            runCatching { app.useUsb { camera -> camera.thumbnail(obj)?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } } }.getOrNull()
         }
     }
     return bitmap

@@ -9,11 +9,12 @@ import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
 import androidx.work.*
 import dev.sukbeomh.beta7compact.App
+import dev.sukbeomh.beta7compact.DiagnosticEvent
+import dev.sukbeomh.beta7compact.DiagnosticLog
 import dev.sukbeomh.beta7compact.MainActivity
 import dev.sukbeomh.beta7compact.R
 import dev.sukbeomh.beta7compact.core.ImportPipeline
 import dev.sukbeomh.beta7compact.library.RoomJournal
-import dev.sukbeomh.beta7compact.usb.UsbAccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,7 +25,8 @@ class ImportWorker(context: Context, params: WorkerParameters) : CoroutineWorker
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             setForeground(info(0, 0))
-            UsbAccess.use(app, app.settings.getBoolean("raw", false)) { camera ->
+            DiagnosticLog.record(DiagnosticEvent.IMPORT_STARTED)
+            app.useUsb { camera ->
                 val store = MediaOriginalStore(app)
                 store.cleanOrphans(app.db.photos().uris().toSet())
                 ImportPipeline(RoomJournal(app.db.photos()), store, File(app.filesDir, "import.part"))
@@ -33,9 +35,11 @@ class ImportWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                         setForeground(info(done, total))
                     }
             }
+            DiagnosticLog.record(DiagnosticEvent.IMPORT_DONE)
             Result.success()
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) {
+            DiagnosticLog.record(DiagnosticEvent.IMPORT_FAILED)
             // Error messages are fixed UI text; never persist transport dumps or device identifiers.
             setProgress(workDataOf("error" to reason(e)))
             if (runAttemptCount < 3) Result.retry() else Result.failure(workDataOf("error" to reason(e)))

@@ -16,27 +16,28 @@ import java.io.File
 /** One owner for the physical USB interface, shared by listing, thumbs and the worker. */
 object UsbAccess {
     private val lock = Mutex()
-    suspend fun <T> use(context: Context, raw: Boolean, block: suspend (Camera) -> T): T = lock.withLock {
-        open(context, raw).use { block(it) }
+    suspend fun <T> use(context: Context, raw: Boolean, remember: (Boolean) -> Unit = {},
+                        failed: (MtpFailure) -> Unit = {}, block: suspend (Camera) -> T): T =
+        use(context, { raw }, remember, failed, block)
+    suspend fun <T> use(context: Context, raw: () -> Boolean, remember: (Boolean) -> Unit = {},
+                        failed: (MtpFailure) -> Unit = {}, block: suspend (Camera) -> T): T = lock.withLock {
+        // Read preferences after acquiring ownership: queued thumbnail reads see a prior fallback.
+        open(context, raw(), remember, failed).use { block(it) }
     }
     fun device(context: Context): UsbDevice {
         val candidates = context.getSystemService(UsbManager::class.java).deviceList.values.filter { it.vendorId == 0x054c }
         check(candidates.size == 1) { if (candidates.isEmpty()) "Sony 카메라를 USB로 연결하세요" else "Sony 카메라 한 대만 연결하세요" }
         return candidates.single()
     }
-    private fun open(context: Context, raw: Boolean): Camera {
+    private fun open(context: Context, raw: Boolean, remember: (Boolean) -> Unit, failed: (MtpFailure) -> Unit): Camera {
         val device = device(context)
         val manager = context.getSystemService(UsbManager::class.java)
         check((0 until device.interfaceCount).any { device.getInterface(it).interfaceClass == 6 }) {
             "카메라 설정 → USB 연결 → MTP"
         }
         check(manager.hasPermission(device)) { "USB 접근 권한을 허용하세요" }
-        if (raw) return RawCamera(manager, device)
-        // Retry exactly once through raw PTP only if MtpDevice open/device-info fails.
-        return try { NativeCamera(manager, device) } catch (e: Exception) {
-            if (e is SecurityException) throw e
-            RawCamera(manager, device)
-        }
+        return FallbackCamera(raw, { mtpRead(MtpFailure.OPEN) { NativeCamera(manager, device) } },
+            { RawCamera(manager, device) }, remember, failed)
     }
 }
 
@@ -58,7 +59,8 @@ private class NativeCamera(private val manager: UsbManager, private val device: 
     private fun <T> metadata(read: (RawCamera) -> T): T? = try {
         readExclusiveMetadata(::close, { RawCamera(manager, device) }, ::openNative, read)
     } catch (e: Exception) {
-        checkNotNull(mtp) { "MTP 세션을 다시 열 수 없습니다" }
+        if (e is SecurityException || e is kotlinx.coroutines.CancellationException) throw e
+        if (mtp == null) throw MtpReadException(MtpFailure.OPEN)
         // Fixed reason only: never log device identifiers, file metadata or transport dumps.
         val reason = if (e is PtpResponseException) "PTP 응답 거절" else "raw 메타데이터 접근 실패"
         Log.i("UsbCamera", "$reason · 보강 없이 MTP로 진행합니다")
@@ -70,9 +72,9 @@ private class NativeCamera(private val manager: UsbManager, private val device: 
     override fun list(): List<CameraObject> {
         val raw = metadata { it.list() }?.associateBy { it.handle }
         val native = checkNotNull(mtp)
-        return checkNotNull(native.storageIds) { "카드를 읽을 수 없습니다" }.flatMap { storage ->
-            checkNotNull(native.getObjectHandles(storage, 0, 0)) { "사진 목록을 읽을 수 없습니다" }.toList().mapNotNull { handle ->
-                val obj = checkNotNull(native.getObjectInfo(handle)) { "사진 정보를 읽을 수 없습니다" }
+        return mtpRead(MtpFailure.LIST) { native.storageIds }.flatMap { storage ->
+            mtpRead(MtpFailure.LIST) { native.getObjectHandles(storage, 0, 0) }.toList().mapNotNull { handle ->
+                val obj = mtpRead(MtpFailure.LIST) { native.getObjectInfo(handle) }
                 val item = if (raw == null) nativeItem(handle, obj) else raw[handle] ?: return@mapNotNull null
                 check(nativeMatches(item, obj)) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
                 item.takeIf { it.valid }
@@ -81,19 +83,19 @@ private class NativeCamera(private val manager: UsbManager, private val device: 
     }
     private fun nativeMatches(item: CameraObject, obj: android.mtp.MtpObjectInfo) =
         obj.name == item.name && obj.compressedSizeLong == item.size && obj.storageId == item.storage && obj.parent == item.parent
-    override fun thumbnail(item: CameraObject): ByteArray? = checkNotNull(mtp).getThumbnail(item.handle)
+    override fun thumbnail(item: CameraObject): ByteArray? = mtpRead(MtpFailure.THUMBNAIL) { checkNotNull(mtp).getThumbnail(item.handle) }
     override fun download(item: CameraObject, destination: File) {
         val now = metadata { it.info(item.handle) }
         if (now != null) check(now.matchesQueued(item)) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" }
         val native = checkNotNull(mtp)
-        val obj = checkNotNull(native.getObjectInfo(item.handle)) { "수신 대상을 확인할 수 없습니다" }
+        val obj = mtpRead(MtpFailure.DOWNLOAD) { native.getObjectInfo(item.handle) }
         check(nativeMatches(item, obj) && if (now != null) nativeMatches(now, obj)
             else nativeItem(item.handle, obj).matchesQueued(item)) {
             "카드 내용이 변경되었습니다. 목록을 새로고침하세요"
         }
         ParcelFileDescriptor.open(destination, ParcelFileDescriptor.MODE_CREATE or
             ParcelFileDescriptor.MODE_TRUNCATE or ParcelFileDescriptor.MODE_READ_WRITE).use {
-            check(native.importFile(item.handle, it)) { "MTP 원본 수신에 실패했습니다" }
+            if (!mtpRead(MtpFailure.DOWNLOAD) { native.importFile(item.handle, it) }) throw MtpReadException(MtpFailure.DOWNLOAD)
         }
     }
     override fun close() {

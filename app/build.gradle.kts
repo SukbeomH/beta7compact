@@ -12,8 +12,8 @@ android {
         applicationId = "dev.sukbeomh.beta7compact"
         minSdk = 29
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
     }
     signingConfigs.getByName("debug") { storeFile = rootProject.file(".android-user/debug.keystore") }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }

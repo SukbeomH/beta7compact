@@ -17,7 +17,7 @@ object ContentUris {
     @JvmStatic fun withAppendedId(uri: Uri, id: Long) = Uri.parse("$uri/$id")
 }
 open class Context(val contentResolver: ContentResolver, val packageName: String) {
-    private var manager: android.hardware.usb.UsbManager? = null
+    private var manager: Any? = null
     constructor(manager: android.hardware.usb.UsbManager) : this(object : ContentResolver() {
         override fun insert(uri: Uri, values: ContentValues): Uri? = error("unused")
         override fun query(uri: Uri, projection: Array<String>, selection: String?, args: Array<String>?, sort: String?): Cursor? = error("unused")
@@ -27,6 +27,7 @@ open class Context(val contentResolver: ContentResolver, val packageName: String
         override fun update(uri: Uri, values: ContentValues, selection: String?, args: Array<String>?): Int = error("unused")
         override fun delete(uri: Uri, selection: String?, args: Array<String>?): Int = error("unused")
     }, "synthetic") { this.manager = manager }
+    constructor(manager: android.bluetooth.BluetoothManager) : this(android.hardware.usb.UsbManager()) { this.manager = manager }
     open fun <T> getSystemService(type: Class<T>): T = checkNotNull(type.cast(checkNotNull(manager)))
 }
 abstract class ContentResolver {
