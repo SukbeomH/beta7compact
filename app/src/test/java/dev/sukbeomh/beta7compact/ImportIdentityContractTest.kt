@@ -235,10 +235,17 @@ class ImportIdentityContractTest {
         val a = raw(); val b = a.copy(parent = 9)
         val dao = Dao(listOf(Photo.from(a).copy(uri = OLD, imported = 123)))
         val store = Store().apply { seed(NEW_BYTES); unreadable = true }
-        val cam = Cam(listOf(b)); receive(dao, store, cam)
-        assertEquals(1, store.publications); assertEquals(1, cam.downloads)
+        val cam = Cam(listOf(b))
+        assertFails { receive(dao, store, cam) }
+        assertEquals(0, store.begins); assertEquals(0, store.publications); assertEquals(1, cam.downloads)
+        assertEquals(1, dao.pending().size)
         assertNull(dao.rows.getValue(a.key).contentHash)
         assertContentEquals(NEW_BYTES, store.bytes[OLD])
+        store.unreadable = false
+        run(dao, store, cam)
+        assertEquals(0, store.publications); assertEquals(setOf(OLD), store.published)
+        assertTrue(dao.pending().isEmpty())
+        assertTrue(dao.rows.values.all { it.uri == OLD && it.contentHash == NEW_HASH })
     }
     @Test fun persistedCompletedHashAvoidsRehashingTheExistingOriginal() = runBlocking {
         val a = raw(); val b = a.copy(parent = 9)

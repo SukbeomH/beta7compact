@@ -108,8 +108,14 @@ interface ImportJournal {
     suspend fun contentHash(key: String): String?
     suspend fun hashed(key: String, hash: String)
 }
+enum class PublishedState { AVAILABLE, ABSENT, UNVERIFIABLE }
+enum class OriginalComparison { SAME, DIFFERENT, UNVERIFIABLE, ABSENT }
+
 interface OriginalStore {
     fun recover(uri: String, size: Long): Boolean
+    // Only an empty URI-row query proves ABSENT. A failed recovery alone cannot prove absence.
+    fun publishedState(uri: String, size: Long): PublishedState =
+        if (recover(uri, size)) PublishedState.AVAILABLE else PublishedState.UNVERIFIABLE
     fun contentHash(uri: String): String?
     fun begin(item: CameraObject): String
     fun write(uri: String, source: File)
@@ -152,16 +158,24 @@ class ImportPipeline(private val journal: ImportJournal, private val store: Orig
                 "서로 다른 원문 대기 사진입니다. 대기열을 확인하세요"
             }
         }
-        // Read failures cannot confirm equality. Published originals remain untouched.
+        // Staged recovery still requires both a journaled hash and readable published bytes.
         fun publishedHash(uri: String, size: Long): String? = runCatching {
             if (store.recover(uri, size)) store.contentHash(uri) else null
         }.getOrNull()
-        suspend fun completedHash(record: CameraObject): Pair<String, String>? {
-            val uri = journal.uri(record.key) ?: return null
-            val hash = journal.contentHash(record.key) ?: publishedHash(uri, record.size)?.also {
+        suspend fun compareCompleted(record: CameraObject, receivedHash: String): Pair<OriginalComparison, String?> {
+            val uri = journal.uri(record.key) ?: return OriginalComparison.UNVERIFIABLE to null
+            val state = runCatching { store.publishedState(uri, record.size) }
+                .getOrDefault(PublishedState.UNVERIFIABLE)
+            when (state) {
+                PublishedState.ABSENT -> return OriginalComparison.ABSENT to uri
+                PublishedState.UNVERIFIABLE -> return OriginalComparison.UNVERIFIABLE to uri
+                PublishedState.AVAILABLE -> Unit
+            }
+            val hash = journal.contentHash(record.key) ?: runCatching { store.contentHash(uri) }.getOrNull()?.also {
+                // Persist every successful lazy read, including DIFFERENT rows. Storage failures abort.
                 journal.hashed(record.key, it)
-            } ?: return null
-            return if (runCatching { store.recover(uri, record.size) }.getOrDefault(false)) uri to hash else null
+            } ?: return OriginalComparison.UNVERIFIABLE to uri
+            return (if (hash == receivedHash) OriginalComparison.SAME else OriginalComparison.DIFFERENT) to uri
         }
         temp.parentFile?.mkdirs()
         try {
@@ -190,12 +204,14 @@ class ImportPipeline(private val journal: ImportJournal, private val store: Orig
                 // Include previously completed groups, so legacy aliases publish only once even
                 // across an interruption between row completions.
                 var existing = recovered?.first ?: published.entries.firstOrNull { it.value == hash }?.key
-                if (existing == null) {
-                    for (record in journal.completedItems().filter { it.size == item.size }) {
-                        val original = completedHash(record)
-                        if (original?.second == hash) { existing = original.first; break }
-                    }
+                // Inspect every required original, even after a SAME result or staged recovery.
+                // One unreadable original must not silently turn into a new publication/completion.
+                val comparisons = journal.completedItems().filter { it.size == item.size }
+                    .map { compareCompleted(it, hash) }
+                check(comparisons.none { it.first == OriginalComparison.UNVERIFIABLE }) {
+                    "완료 원본을 비교할 수 없습니다. 갤러리 상태를 확인하고 다시 시도하세요"
                 }
+                if (existing == null) existing = comparisons.firstOrNull { it.first == OriginalComparison.SAME }?.second
                 // Persist the received hash BEFORE staging or publishing for crash recovery.
                 pending.forEach { journal.hashed(it.key, hash) }
                 previous.values.distinct().filter { uri ->

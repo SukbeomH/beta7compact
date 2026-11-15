@@ -31,10 +31,10 @@ class LegacyQueueContractTest {
         }
     }
     private class Store : OriginalStore {
-        var failWrite = false; var count = 0
+        var failWrite = false; var count = 0; var unreadable = false
         val published = mutableSetOf<String>(); val bytes = mutableMapOf<String, ByteArray>()
         override fun recover(uri: String, size: Long) = uri in published && bytes[uri]?.size?.toLong() == size
-        override fun contentHash(uri: String) = bytes[uri]?.inputStream()?.let(::sha256)
+        override fun contentHash(uri: String) = if (unreadable) null else bytes[uri]?.inputStream()?.let(::sha256)
         override fun begin(item: CameraObject) = "content://synthetic/${++count}"
         override fun write(uri: String, source: File) {
             bytes[uri] = source.readBytes()
@@ -65,7 +65,10 @@ class LegacyQueueContractTest {
     private suspend fun run(dao: Dao, store: Store, camera: Cam) {
         val directory = Files.createTempDirectory("legacy-queue").toFile()
         try { ImportPipeline(RoomJournal(dao), store, File(directory, "original.part")).run(camera) }
-        finally { directory.deleteRecursively() }
+        finally {
+            assertFalse(File(directory, "original.part").exists())
+            directory.deleteRecursively()
+        }
     }
     @Test fun completedAliasRequiresHashComparisonAndLinksWithoutPublication() = runBlocking {
         val original = a.copy(uri = oldUri, imported = 123L, recipe = "reserved")
@@ -126,12 +129,19 @@ class LegacyQueueContractTest {
         assertEquals(1, camera.downloads); assertEquals(0, store.count)
     }
     @Test fun unreadableCompletedOriginalCannotConfirmEqualityAndKeepsTheOldRecord() = runBlocking {
-        val dao = Dao(listOf(a.copy(uri = oldUri, imported = 123), b)); val store = Store(); val camera = Cam(current)
+        val original = a.copy(uri = oldUri, imported = 123)
+        val dao = Dao(listOf(original, b)); val store = Store().apply { seed(); unreadable = true }
+        val camera = Cam(current)
+        assertFails { run(dao, store, camera) }
+        assertEquals(1, camera.downloads); assertEquals(0, store.count)
+        assertEquals(original, dao.rows.getValue(a.key)); assertEquals(b, dao.rows.getValue(b.key))
+        assertEquals(setOf(oldUri), store.published)
+        store.unreadable = false
         run(dao, store, camera)
-        assertEquals(1, camera.downloads); assertEquals(1, store.count)
+        assertEquals(0, store.count); assertEquals(setOf(oldUri), store.published)
         assertEquals(oldUri, dao.rows.getValue(a.key).uri)
         assertNotNull(dao.rows.getValue(b.key).imported)
-        assertNotEquals(oldUri, dao.rows.getValue(b.key).uri)
+        assertEquals(oldUri, dao.rows.getValue(b.key).uri)
     }
     @Test fun ambiguousPendingSourceStopsTheWholeQueueBeforePublication() = runBlocking {
         val distinct = current.copy(name = "OTHER.JPG")
