@@ -27,7 +27,7 @@ open class Context(val contentResolver: ContentResolver, val packageName: String
         override fun update(uri: Uri, values: ContentValues, selection: String?, args: Array<String>?): Int = error("unused")
         override fun delete(uri: Uri, selection: String?, args: Array<String>?): Int = error("unused")
     }, "synthetic") { this.manager = manager }
-    open fun <T> getSystemService(type: Class<T>): T = type.cast(checkNotNull(manager))
+    open fun <T> getSystemService(type: Class<T>): T = checkNotNull(type.cast(checkNotNull(manager)))
 }
 abstract class ContentResolver {
     companion object {

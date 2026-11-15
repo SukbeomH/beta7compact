@@ -18,13 +18,13 @@ class UsbDevice(val cfgs:List<UsbConfiguration> = listOf(UsbConfiguration())){
 }
 object Wire {
  var session=false;var nativeOwned=false;var preserveSession=true;var stallAlternate=false
- var openResponse=0x2001;var nativeEpoch=1L;var imports=0;var thumbnails=0;var controls=0
+ var rawParent=8;var openResponse=0x2001;var nativeEpoch=1L;var imports=0;var thumbnails=0;var controls=0
  var nativeOpens=0;var nativeCloses=0;var rawOpens=0;var setCalls=0;var closed=0
  val operations=mutableListOf<Int>()
  val date="20200308T023000.1Z"
- fun reset(persist:Boolean=true,stall:Boolean=false){session=false;nativeOwned=false;preserveSession=persist;stallAlternate=stall;nativeOpens=0;nativeCloses=0;rawOpens=0;setCalls=0;closed=0;operations.clear();openResponse=0x2001;nativeEpoch=1L;imports=0;thumbnails=0;controls=0}
+ fun reset(persist:Boolean=true,stall:Boolean=false){session=false;nativeOwned=false;preserveSession=persist;stallAlternate=stall;nativeOpens=0;nativeCloses=0;rawOpens=0;setCalls=0;closed=0;operations.clear();rawParent=8;openResponse=0x2001;nativeEpoch=1L;imports=0;thumbnails=0;controls=0}
  fun str(s:String)=byteArrayOf((s.length+1).toByte())+(s+"\u0000").toByteArray(Charsets.UTF_16LE)
- fun objectInfo()=buffer(52).putInt(2).putShort(0x3801.toShort()).putShort(0).putInt(4).apply{position(38);putInt(8);position(52)}.array()+str("PUBLIC_TEST.JPG")+str(date)+byteArrayOf(0,0)
+ fun objectInfo()=buffer(52).putInt(2).putShort(0x3801.toShort()).putShort(0).putInt(4).apply{position(38);putInt(rawParent);position(52)}.array()+str("PUBLIC_TEST.JPG")+str(date)+byteArrayOf(0,0)
 }
 class UsbManager(val dev:UsbDevice=UsbDevice()){
  val deviceList=hashMapOf("synthetic" to dev)
