@@ -89,3 +89,65 @@ git diff --check
 자료 확인 과정에서 Sony pro 도메인 직접 PDF 다운로드는 HTTP 403, 로컬 PDF 추출은
 도구 부재/압축 스트림 추출 실패가 있었습니다. 공식 웹 문서와 원색 기반 행렬 도출 및 수식 테스트로 검증했습니다.
 최종 전체 게이트·마이그레이션·산출물 검사에 실패하거나 제외한 제품 테스트는 없습니다.
+
+## M2-R1 — 유한 버퍼 .cube 파싱 수정
+
+2026-11-15 UTC. `feat/m2-recipe-engine`의 `952162da` 위에서 차단 M2-R1만 수정했습니다.
+
+- SAF 가져오기는 원본 `InputStream`을 파서에 직접 전달합니다. UTF-8 디코더 앞에서
+  전체 입력 **32MiB(33,554,432바이트)** 상한을 읽는 중 적용합니다.
+  남은 바이트 + 초과 확인용 1바이트까지만 읽으며, 초과 시 즉시 거부합니다.
+  정확히 32MiB인 정상 입력은 허용합니다. 다중 바이트 TITLE/주석도 원본 바이트로 셉니다.
+- `readLine`/`forEachLine`을 제거했습니다. 1024자 읽기 버퍼와 최대 4096자 줄 버퍼를 사용하며,
+  줄을 구성하는 중 4097번째 문자에서 append 전에 거부합니다.
+  공백·주석을 제거하기 전 원시 줄에 적용하고 LF/CRLF/CR 및 마지막 개행 없는 줄을 유지합니다.
+  직접 `Reader`를 받는 경로에도 전체 32Mi 문자 상한을 별도로 적용합니다.
+  Reader만으로 원본 인코딩의 바이트 수를 알 수 없으므로 SAF의 바이트 제한은 InputStream 경로가 담당합니다.
+- 상한 거부는 기존 고정 한 줄 **`.cube 파일이 너무 큽니다`**를 유지하며 원문을 포함하지 않습니다.
+- `/tmp/beta7-review-m2/ReviewProbe.kt`의 합성 Reader 반례를
+  `app/src/test/java/dev/sukbeomh/beta7compact/CubeParserBoundsTest.kt`로 이식했습니다.
+  테스트는 거대 문자열/파일을 미리 만들지 않고 TITLE·주석·공백·데이터 줄을 요청된 버퍼에 생성합니다.
+  Reader는 8KiB/16MiB/512MiB/1GiB, InputStream은 32KiB/16MiB/512MiB/1GiB를 검사합니다.
+  소비량 예산을 넘으면 테스트 자체가 실패하므로 EOF/OOM까지 읽는 구현을 허용하지 않습니다.
+  Reader 소비량은 줄 시작 + 4097 + 1024자 이내,
+  InputStream은 줄 시작 + 4097자의 UTF-8 바이트 + 디코더 read-ahead 8192바이트 이내임을 단언합니다.
+- ASCII/UTF-8 주석을 포함한 정확히 32MiB 입력 허용과 **33,554,433바이트에서 거부**,
+  Reader 전체 문자 상한, 4096자 TITLE/공백/주석/데이터 허용 및 4097자 거부를 검사합니다.
+  합성 InputStream의 정상 65³, BOM/TITLE/인용부호 안 `#`/주석/채널별 DOMAIN도 확인합니다.
+  기존 117개 테스트의 정상 크기·공개 LUT·잘못된 파일 회귀는 그대로 유지했습니다.
+
+원래 `ReviewProbeKt`를 별도 JVM `-Xmx64m`으로 수정 전/후 클래스에 실행한 결과:
+
+| 대상 | 합성 입력 길이 | 거부 전 소비 문자 수 | 결과 |
+| --- | ---: | ---: | --- |
+| 수정 전 리뷰 클래스 | 16,777,216 | 16,777,216 | IllegalArgumentException, 기존 고정 문구 |
+| 수정 후 Debug 클래스 | 1,073,741,824 | 4,097 | IllegalArgumentException, 같은 고정 문구 |
+
+반례 로그는 `/tmp/beta7-m2-r1-probe-before.log`, `/tmp/beta7-m2-r1-probe-after.log`입니다.
+Android 실기·SAF provider에서 실행한 결과가 아니라 로컬 JVM 파서 검증입니다.
+
+이번 수정의 최종 게이트:
+
+```sh
+ANDROID_HOME=/home/agent/camera-recipe-app/.android-sdk \
+ANDROID_SDK_ROOT=/home/agent/camera-recipe-app/.android-sdk \
+./gradlew assembleDebug test lint --continue --no-daemon
+python3 tools/check_m1_migration.py
+python3 tools/check_m2_migration.py
+git diff --check
+```
+
+| 검사 | 실행 결과 |
+| --- | --- |
+| assembleDebug / test / lint | 종료 0, BUILD SUCCESSFUL, 1분 34초, 84 tasks 중 23 executed |
+| Debug / Release JVM 테스트 | 각각 125건(기존 117 + 새 상한 회귀 8), failures/errors/skipped 모두 0 |
+| lint | 오류 0, 기존 경고 13개 유지 |
+| M1 / M2 migration 검사 | 각각 종료 0, fresh schema·기존 원본 필드·FK·integrity 보존 |
+| 작업 차이 공백 검사 | 종료 0 |
+| 로컬 APK | `dist/beta7compact-0.2.0-debug.apk`, assembleDebug 출력과 bytes 동일, versionCode 4 / 0.2.0 |
+
+APK SHA256: `09ff9fec258e52f63f3138b64c5c6c99e7bd8f4039d81319273797564966573b`.
+`dist/`와 APK는 Git 제외 상태이며 커밋에 넣지 않습니다. 외부 의존성 변경은 없습니다.
+게이트 로그는 `/tmp/beta7-m2-r1-gate.log`, 마이그레이션 로그는
+`/tmp/beta7-m2-r1-migration-m1.log`, `/tmp/beta7-m2-r1-migration-m2.log`입니다.
+이번 수정에서도 계측 테스트/Android 실기 실행은 하지 않았으며 앞서 기록한 실기 미검증 범위는 유지합니다.

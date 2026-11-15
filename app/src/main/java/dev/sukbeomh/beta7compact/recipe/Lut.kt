@@ -53,16 +53,38 @@ data class Lut(val size: Int, val values: FloatArray, val title: String = "사�
 }
 
 object CubeParser {
+    private const val MAX_BYTES = 32 * 1024 * 1024
+    private const val MAX_LINE_CHARS = 4096
+    private const val TOO_LARGE = ".cube 파일이 너무 큽니다"
+
+    /** Limit raw bytes before the UTF-8 decoder can read ahead. The caller owns the stream. */
+    fun parse(input: InputStream): Lut = parse(object : InputStream() {
+        private var consumed = 0
+        override fun read(): Int {
+            val value = input.read()
+            if (value >= 0) {
+                consumed++
+                require(consumed <= MAX_BYTES) { TOO_LARGE }
+            }
+            return value
+        }
+        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+            val count = input.read(buffer, offset, minOf(length, MAX_BYTES - consumed + 1))
+            if (count > 0) {
+                consumed += count
+                require(consumed <= MAX_BYTES) { TOO_LARGE }
+            }
+            return count
+        }
+    }.reader(Charsets.UTF_8))
+
     /** Reject 1D, mixed, non-finite, duplicate headers, unsupported directives and trailing data. */
     fun parse(reader: Reader): Lut {
         var size = 0; var title = "사용자 LUT"; var count = 0
         var values: FloatArray? = null
         var min = floatArrayOf(0f,0f,0f); var max = floatArrayOf(1f,1f,1f)
         val seen = mutableSetOf<String>()
-        var chars = 0
-        reader.buffered().forEachLine { raw ->
-            chars += raw.length + 1
-            require(chars <= 32 * 1024 * 1024 && raw.length <= 4096) { ".cube 파일이 너무 큽니다" }
+        boundedLines(reader) { raw ->
             // # inside a quoted TITLE is retained.
             var quoted = false
             val line = raw.takeWhile { if (it == '"') quoted = !quoted; it != '#' || quoted }.trim().removePrefix("\uFEFF").trim()
@@ -95,6 +117,34 @@ object CubeParser {
         val data = values ?: throw IllegalArgumentException("LUT_3D_SIZE가 없습니다")
         require(count == data.size) { "LUT 행 개수가 부족합니다" }
         return Lut(size, data, title, min, max)
+    }
+
+    private fun boundedLines(reader: Reader, consume: (String) -> Unit) {
+        val buffer = CharArray(1024)
+        val line = StringBuilder(MAX_LINE_CHARS)
+        var chars = 0
+        var afterCr = false
+        while (true) {
+            // A Reader has no byte encoding. Its character cap is an additional guard;
+            // the InputStream overload enforces the actual encoded byte cap for imports.
+            val count = reader.read(buffer, 0, minOf(buffer.size,
+                MAX_LINE_CHARS - line.length + 1, MAX_BYTES - chars + 1))
+            if (count < 0) break
+            for (i in 0 until count) {
+                require(++chars <= MAX_BYTES) { TOO_LARGE }
+                val c = buffer[i]
+                if (afterCr && c == '\n') { afterCr = false; continue }
+                afterCr = c == '\r'
+                if (c == '\r' || c == '\n') {
+                    consume(line.toString())
+                    line.setLength(0)
+                } else {
+                    require(line.length < MAX_LINE_CHARS) { TOO_LARGE }
+                    line.append(c)
+                }
+            }
+        }
+        if (line.isNotEmpty()) consume(line.toString())
     }
 }
 

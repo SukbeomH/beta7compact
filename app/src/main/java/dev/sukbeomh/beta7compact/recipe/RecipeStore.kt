@@ -45,7 +45,7 @@ class RecipeStore(private val context: Context) {
         return lut.copy(domainMin=domain("domainMin",floatArrayOf(0f,0f,0f)),domainMax=domain("domainMax",floatArrayOf(1f,1f,1f)))
     }
     fun importCube(uri: Uri): String {
-        val lut = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { CubeParser.parse(it) }
+        val lut = context.contentResolver.openInputStream(uri)?.use { CubeParser.parse(it) }
             ?: error("LUT 파일을 읽을 수 없습니다")
         val id = "user-${UUID.randomUUID()}"; val bytes = lut.encode()
         val binary = File(directory,"$id.lut16"); val metadata = File(directory,"$id.json")
