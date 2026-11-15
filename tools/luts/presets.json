@@ -1,0 +1,206 @@
+[
+  {
+    "id": "portra160",
+    "display_name": "Portra 160 계열 · Endura 인화",
+    "category": "color_negative",
+    "source": "spectral",
+    "negative": "KODAK_PORTRA_160",
+    "print": "KODAK_ENDURA_PREMIER"
+  },
+  {
+    "id": "portra400",
+    "display_name": "Portra 400 계열 · Endura 인화",
+    "category": "color_negative",
+    "source": "spectral",
+    "negative": "KODAK_PORTRA_400",
+    "print": "KODAK_ENDURA_PREMIER"
+  },
+  {
+    "id": "portra800",
+    "display_name": "Portra 800 계열 · Endura 인화",
+    "category": "color_negative",
+    "source": "spectral",
+    "negative": "KODAK_PORTRA_800",
+    "print": "KODAK_ENDURA_PREMIER"
+  },
+  {
+    "id": "ektar100",
+    "display_name": "Ektar 100 계열 · Endura 인화",
+    "category": "color_negative",
+    "source": "spectral",
+    "negative": "KODAK_EKTAR_100",
+    "print": "KODAK_ENDURA_PREMIER"
+  },
+  {
+    "id": "gold200",
+    "display_name": "Gold 200 계열 · Endura 인화",
+    "category": "color_negative",
+    "source": "spectral",
+    "negative": "KODAK_GOLD_200",
+    "print": "KODAK_ENDURA_PREMIER"
+  },
+  {
+    "id": "pro400h",
+    "display_name": "Pro 400H 계열 · Endura 인화",
+    "category": "color_negative",
+    "source": "spectral",
+    "negative": "FUJI_PRO_400H",
+    "print": "KODAK_ENDURA_PREMIER"
+  },
+  {
+    "id": "superia400",
+    "display_name": "Superia X-Tra 400 계열 · Endura 인화",
+    "category": "color_negative",
+    "source": "spectral",
+    "negative": "FUJI_SUPERIA_XTRA_400",
+    "print": "KODAK_ENDURA_PREMIER"
+  },
+  {
+    "id": "vista100",
+    "display_name": "Vista 100 계열 · Endura 인화",
+    "category": "color_negative",
+    "source": "spectral",
+    "negative": "AGFA_VISTA_100",
+    "print": "KODAK_ENDURA_PREMIER"
+  },
+  {
+    "id": "velvia50",
+    "display_name": "Velvia 50 계열 · 슬라이드",
+    "category": "slide",
+    "source": "spectral",
+    "negative": "FUJI_VELVIA_50",
+    "print": null
+  },
+  {
+    "id": "provia100",
+    "display_name": "Provia 100F 계열 · 슬라이드",
+    "category": "slide",
+    "source": "spectral",
+    "negative": "FUJI_PROVIA_100F",
+    "print": null
+  },
+  {
+    "id": "kodachrome64",
+    "display_name": "Kodachrome 64 계열 · 슬라이드",
+    "category": "slide",
+    "source": "spectral",
+    "negative": "KODACHROME_64",
+    "print": null
+  },
+  {
+    "id": "ektachrome100",
+    "display_name": "Ektachrome 100D 계열 · 슬라이드",
+    "category": "slide",
+    "source": "spectral",
+    "negative": "KODAK_EKTACHROME_100D",
+    "print": null
+  },
+  {
+    "id": "print2383",
+    "display_name": "Vision3 250D + 2383 계열 인화",
+    "category": "cinema_print",
+    "source": "spectral",
+    "negative": "KODAK_5207",
+    "print": "KODAK_2383"
+  },
+  {
+    "id": "print2393",
+    "display_name": "Vision3 250D + 2393 계열 인화",
+    "category": "cinema_print",
+    "source": "spectral",
+    "negative": "KODAK_5207",
+    "print": "KODAK_2393"
+  },
+  {
+    "id": "print3513",
+    "display_name": "Vision3 250D + 3513 계열 인화",
+    "category": "cinema_print",
+    "source": "spectral",
+    "negative": "KODAK_5207",
+    "print": "FUJI_3513"
+  },
+  {
+    "id": "astia100",
+    "display_name": "Fuji Astia 100F 계열",
+    "category": "slide",
+    "source": "t3mujinpack",
+    "file": "haldcluts/t3mujinpack - Color Slide - Fuji Astia 100F.png"
+  },
+  {
+    "id": "sensia100",
+    "display_name": "Fuji Sensia 100 계열",
+    "category": "slide",
+    "source": "t3mujinpack",
+    "file": "haldcluts/t3mujinpack - Color Slide - Fuji Sensia 100.png"
+  },
+  {
+    "id": "trix400",
+    "display_name": "Kodak Tri-X 400 계열",
+    "category": "bw",
+    "source": "t3mujinpack",
+    "file": "haldcluts/t3mujinpack - Black and White - Kodak Tri-X 400.png"
+  },
+  {
+    "id": "hp5",
+    "display_name": "Ilford HP5 Plus 400 계열",
+    "category": "bw",
+    "source": "t3mujinpack",
+    "file": "haldcluts/t3mujinpack - Black and White - Ilford HP5 Plus 400.png"
+  },
+  {
+    "id": "delta100",
+    "display_name": "Ilford Delta 100 계열",
+    "category": "bw",
+    "source": "t3mujinpack",
+    "file": "haldcluts/t3mujinpack - Black and White - Ilford Delta 100.png"
+  },
+  {
+    "id": "acros100",
+    "display_name": "Fuji Neopan Acros 100 계열",
+    "category": "bw",
+    "source": "t3mujinpack",
+    "file": "haldcluts/t3mujinpack - Black and White - Fuji Neopan Acros 100.png"
+  },
+  {
+    "id": "apx100",
+    "display_name": "AGFA APX 100 계열",
+    "category": "bw",
+    "source": "t3mujinpack",
+    "file": "haldcluts/t3mujinpack - Black and White - AGFA APX 100.png"
+  },
+  {
+    "id": "blockbuster",
+    "display_name": "틸 섀도 · 웜 하이라이트",
+    "category": "creative",
+    "source": "editorhub",
+    "file": "eh-blockbuster.cube"
+  },
+  {
+    "id": "midnight",
+    "display_name": "차가운 야간",
+    "category": "creative",
+    "source": "editorhub",
+    "file": "eh-midnight.cube"
+  },
+  {
+    "id": "neon-punch",
+    "display_name": "마젠타 · 시안 네온",
+    "category": "creative",
+    "source": "editorhub",
+    "file": "eh-neon-punch.cube"
+  },
+  {
+    "id": "matte-fade",
+    "display_name": "따뜻한 매트",
+    "category": "creative",
+    "source": "editorhub",
+    "file": "eh-matte-fade.cube"
+  },
+  {
+    "id": "golden-hour",
+    "display_name": "골든 아워",
+    "category": "creative",
+    "source": "editorhub",
+    "file": "eh-golden-hour.cube"
+  }
+]

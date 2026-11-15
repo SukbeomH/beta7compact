@@ -1,0 +1,9 @@
+# Headless imports of the pinned Spectral Film LUT checkout; no GUI dependency.
+colour-science>=0.4.7
+numpy>=2.4.6
+scipy>=1.17.1
+numba>=0.67.0
+matplotlib>=3.11.0
+networkx>=3.6.1
+Pillow>=12
+pypng==0.20220715.0

@@ -1,0 +1,1522 @@
+{
+  "schema_version": 1,
+  "luts": [
+    {
+      "id": "portra160",
+      "display_name": "Portra 160 계열 · Endura 인화",
+      "category": "color_negative",
+      "path": "portra160.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "1ce076978806a859a729a11ac70662b4eb066d1bd3f4f9604d32d3a01bf4bdbe",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/kodak_portra_160.py",
+            "sha256": "dbd90fae9879faaee4657c7d1fa200f8ddc2d789ad4d8e96d98c95f11f26a7f1"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_endura_premier.py",
+            "sha256": "ebb7eb73ec42da0c6eb8611d5eee36721e37e34870e324c3d74047ab5a7c26e6"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/portra160.png",
+        "sha256": "d917a7ffdad231cde8b58aadf7a47f316c110dcba0e383c31b79430b2495ae04"
+      }
+    },
+    {
+      "id": "portra400",
+      "display_name": "Portra 400 계열 · Endura 인화",
+      "category": "color_negative",
+      "path": "portra400.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "1e0b36fdfb60fd40de78b14cc33798333b5d317e4a648863e0a4dd00e893d261",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/kodak_portra_400.py",
+            "sha256": "d106bac4d95834be6e696b89b40e9341792341a45172e61ffde273d3d763c682"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_endura_premier.py",
+            "sha256": "ebb7eb73ec42da0c6eb8611d5eee36721e37e34870e324c3d74047ab5a7c26e6"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/portra400.png",
+        "sha256": "a57eaf0d39b5586e1bbac79006a2c5a3f3f77a9fb6cc2c5016b1355d3a599b87"
+      }
+    },
+    {
+      "id": "portra800",
+      "display_name": "Portra 800 계열 · Endura 인화",
+      "category": "color_negative",
+      "path": "portra800.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "640500ce645ec135907c94b60d8e93aba94a786c716bcb8ae0037fc125e2078f",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/kodak_portra_800.py",
+            "sha256": "920871369f463701a0d0ef970c6fe246824679a5f15c7a9eee4c37bf55be78f7"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_endura_premier.py",
+            "sha256": "ebb7eb73ec42da0c6eb8611d5eee36721e37e34870e324c3d74047ab5a7c26e6"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/portra800.png",
+        "sha256": "61944ee748f5c5ea343dfb4e00c353ea0cf05978c7e5aac8e1c512ecb0c3d367"
+      }
+    },
+    {
+      "id": "ektar100",
+      "display_name": "Ektar 100 계열 · Endura 인화",
+      "category": "color_negative",
+      "path": "ektar100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "f622fe7d9a3d370e223e38094ac8b79ffc39d3de57eaca948eaaa04d05649314",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/kodak_ektar_100.py",
+            "sha256": "6b90215b645e1950cd4b5326cdc3c004879439f14f85e6ccae3ec2a45128fd31"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_endura_premier.py",
+            "sha256": "ebb7eb73ec42da0c6eb8611d5eee36721e37e34870e324c3d74047ab5a7c26e6"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/ektar100.png",
+        "sha256": "be61f07b16f74923bb731a56870f800bc332a2abb1e32327410949ceb6c35b13"
+      }
+    },
+    {
+      "id": "gold200",
+      "display_name": "Gold 200 계열 · Endura 인화",
+      "category": "color_negative",
+      "path": "gold200.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "f6b9f99ae2ca7652c4e882b3185c170f2743d95ad0b3bac0cf645e2cb127d34b",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/kodak_gold_200.py",
+            "sha256": "b5395aa5952d8d2f3b7e43bcdcf741b9abcddf95a464ca98c4836a926f6c3317"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_endura_premier.py",
+            "sha256": "ebb7eb73ec42da0c6eb8611d5eee36721e37e34870e324c3d74047ab5a7c26e6"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/gold200.png",
+        "sha256": "036f0abc6e21a77a3ac0f5b840927d64be7e4394653caa375a5d1b9681747c14"
+      }
+    },
+    {
+      "id": "pro400h",
+      "display_name": "Pro 400H 계열 · Endura 인화",
+      "category": "color_negative",
+      "path": "pro400h.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "4992da136677a222d8caa425e61c35921424f1b4b3dc7a329a5ac1afdae89f85",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/fuji_pro_400h.py",
+            "sha256": "f16563f3fc9947ea05f0c10cd8620efb9b42ca9ac6a5723291d399762af89171"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_endura_premier.py",
+            "sha256": "ebb7eb73ec42da0c6eb8611d5eee36721e37e34870e324c3d74047ab5a7c26e6"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/pro400h.png",
+        "sha256": "0e99ca566fa67471ce91840fcf9cd091a587dff08aa2d48f0c8ff2d3faa22a7b"
+      }
+    },
+    {
+      "id": "superia400",
+      "display_name": "Superia X-Tra 400 계열 · Endura 인화",
+      "category": "color_negative",
+      "path": "superia400.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "1f2636bcbbfb130277ccb598f3efc191816dd6d50090f18fc1ecb5eda8a2c83f",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/fuji_superia_xtra_400.py",
+            "sha256": "9ea937e5572efb699d4b3cf45e28181c3106456253e7e31a2f00a60438b7c7d5"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_endura_premier.py",
+            "sha256": "ebb7eb73ec42da0c6eb8611d5eee36721e37e34870e324c3d74047ab5a7c26e6"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/superia400.png",
+        "sha256": "c8aae6cb37d2b786572403eb99e69dfd92505cea3ce19a467ab16bb0e7eebb07"
+      }
+    },
+    {
+      "id": "vista100",
+      "display_name": "Vista 100 계열 · Endura 인화",
+      "category": "color_negative",
+      "path": "vista100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "4cae63d67e815b3bd791b99b00bbcd3f481d0e59b20523b5045aec6ef1f0c6de",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/agfa_vista_100.py",
+            "sha256": "57d9455c7eb56f25ae5e21dfcbcc30cf2359e25e9d59f357e0b0e3d5630c9410"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_endura_premier.py",
+            "sha256": "ebb7eb73ec42da0c6eb8611d5eee36721e37e34870e324c3d74047ab5a7c26e6"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/vista100.png",
+        "sha256": "441e4c92e40dfcbb55485acc475cfc03c3862eb2ce676a5568c765fe04a8e30a"
+      }
+    },
+    {
+      "id": "velvia50",
+      "display_name": "Velvia 50 계열 · 슬라이드",
+      "category": "slide",
+      "path": "velvia50.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "7a1825e9f92280ce63fa02c3d3d415b26307116f1305a494fe4f05910cfe04f6",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 0.5
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/reversal_film/fuji_velvia_50.py",
+            "sha256": "4a9c61abee7c319d0ec0ac62ff758f3314628c983c905d1d579a6c6fc301f26c"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/velvia50.png",
+        "sha256": "d0b84af9b1ceb08a5a61d4244ca02ed3d853b05da9d192c2f5b72d27704c3a8b"
+      }
+    },
+    {
+      "id": "provia100",
+      "display_name": "Provia 100F 계열 · 슬라이드",
+      "category": "slide",
+      "path": "provia100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "7a6844694bf70c43a4542cd737fea5406cebfe91047bd07556953fce3e524997",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 0.3
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/reversal_film/fuji_provia_100f.py",
+            "sha256": "fccb65db0ceb804479d1a64f639a6d225c90bed6bce3ae7a5d7e2f4e43e2b4aa"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/provia100.png",
+        "sha256": "b417592f2ed352933087a0363edff3f986e49e9ac64e985579cc3d29d98abb92"
+      }
+    },
+    {
+      "id": "kodachrome64",
+      "display_name": "Kodachrome 64 계열 · 슬라이드",
+      "category": "slide",
+      "path": "kodachrome64.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "f4bc1cb13c96e075c1adf0168ad184c4ec1ac8eed862f2fcf5cb33755744bd3a",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 0.3
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/reversal_film/kodachrome_64.py",
+            "sha256": "e4a795c07196a659f743d19b57d9b018f7b332176add8c7dc7dc5790de735332"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/kodachrome64.png",
+        "sha256": "e5525ff31cf73dd7c8df296b9079431f28d65f69387f1c8e29118dda2fe85db3"
+      }
+    },
+    {
+      "id": "ektachrome100",
+      "display_name": "Ektachrome 100D 계열 · 슬라이드",
+      "category": "slide",
+      "path": "ektachrome100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "fcc405113186043d4074bffc5c825c196b730e7f917acf54db2a741e41231dec",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 0.3
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/reversal_film/kodak_ektachrome_100d.py",
+            "sha256": "88af6a98fdd32643eed66e76db98486940753355668ff005a9077192ed9bd00e"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/ektachrome100.png",
+        "sha256": "de10d4ea732a9041cc8f194b65dc2440bf49919c02c2f5e8445dd2e6f9f83152"
+      }
+    },
+    {
+      "id": "print2383",
+      "display_name": "Vision3 250D + 2383 계열 인화",
+      "category": "cinema_print",
+      "path": "print2383.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "fe6bd50e60f708009ed1e6778eb6f382b64b9bc2daa2300ec23a4c1c217704ff",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/kodak_5207.py",
+            "sha256": "41f245be2ab091502c6a68f9a925fe8d99bae8ca243d4860fbccb6b48ef25350"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_2383.py",
+            "sha256": "67b8754d6f50c6c5ba2966cbbc275ca0d9c043dceacf0830cd7f135ceb8dc2c1"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/print2383.png",
+        "sha256": "d4b32b718e1a865ff87219ed1f5afe13d4996f6005fd6b188c89b9848db5ca03"
+      }
+    },
+    {
+      "id": "print2393",
+      "display_name": "Vision3 250D + 2393 계열 인화",
+      "category": "cinema_print",
+      "path": "print2393.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "4772cd1b1fb6ec430d43ebfd377d30bca24448d261a97df1c98bd4e8f2437380",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/kodak_5207.py",
+            "sha256": "41f245be2ab091502c6a68f9a925fe8d99bae8ca243d4860fbccb6b48ef25350"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/kodak_2393.py",
+            "sha256": "fdf377b2943694874c85ed6767be658c4f7ba8c9a5e2c3fa09c6911889c9cf94"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/print2393.png",
+        "sha256": "caf447383e226d1f57ca5b5041646006595a039f63fb7493078a9120dc3f7399"
+      }
+    },
+    {
+      "id": "print3513",
+      "display_name": "Vision3 250D + 3513 계열 인화",
+      "category": "cinema_print",
+      "path": "print3513.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "b6173c82b63c485806c9cff7e0a93ec2a2380fbb3c94051978e6e798f7a1cc3a",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "Jan Lohse",
+      "source": {
+        "provider": "spectral",
+        "repo": "https://github.com/JanLohse/spectral_film_lut",
+        "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+        "url": "https://github.com/JanLohse/spectral_film_lut",
+        "parameters": {
+          "mode": "full",
+          "input_colorspace": "sRGB",
+          "exp_kelvin": 6500,
+          "tint": 0.0,
+          "exp_comp": 0.0,
+          "adx_coding": true,
+          "adx_scaling": 1.0,
+          "red_light": 0.0,
+          "green_light": 0.0,
+          "blue_light": 0.0,
+          "projector_kelvin": 6500,
+          "white_clip": true,
+          "white_balance": 1,
+          "output_gamut": "Rec. 709",
+          "sat_adjust": 1.0,
+          "shadow_comp": 0.0,
+          "gamma_func": "sRGB",
+          "push_pull": 0.0,
+          "inversion": false,
+          "custom_inversion": false,
+          "inversion_gamma": 3.0,
+          "idealized_curve": false,
+          "apd_intermediate": false,
+          "reference_negative": null,
+          "upsampling_method": "SFL upsampling",
+          "color_masking": 1.0
+        },
+        "gray_value": 0.18,
+        "lut_size": 33,
+        "linear_scaling": 1.0,
+        "filter_mode": null,
+        "files": [
+          {
+            "path": "src/spectral_film_lut/film_spectral.py",
+            "sha256": "04eeab95e8184dbad54897cb92308b8d19c5c9887356c517ee3838c472523279"
+          },
+          {
+            "path": "src/spectral_film_lut/negative_film/kodak_5207.py",
+            "sha256": "41f245be2ab091502c6a68f9a925fe8d99bae8ca243d4860fbccb6b48ef25350"
+          },
+          {
+            "path": "src/spectral_film_lut/print_film/fuji_3513di.py",
+            "sha256": "eb3e34d3fa160ec20c8a262316d38346b9eaef329d01ef5e1d68580b09eee13d"
+          },
+          {
+            "path": "src/spectral_film_lut/utils.py",
+            "sha256": "3c6c45c3b5b7f2fc2e75740819b5809c20d1740dda06aeecd09e3daa37873a13"
+          }
+        ]
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/print3513.png",
+        "sha256": "e8a8bd458f635ae88916e13e4b2338553926c61f6bfde12134a2a867545d7406"
+      }
+    },
+    {
+      "id": "astia100",
+      "display_name": "Fuji Astia 100F 계열",
+      "category": "slide",
+      "path": "astia100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "76d348a4205963e2a65bcc5d264800942804204ca0d95d553998a1fc35c35c07",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "João Almeida",
+      "source": {
+        "provider": "t3mujinpack",
+        "repo": "https://github.com/t3mujin/t3mujinpack",
+        "commit": "0b421f3e25209ed78253d1724a29cc6255c5e7fe",
+        "url": "https://github.com/t3mujin/t3mujinpack",
+        "files": [
+          {
+            "path": "haldcluts/t3mujinpack - Color Slide - Fuji Astia 100F.png",
+            "sha256": "6c32ca40f5411fa0f7d407139136869d84ebfb3a75c0529c2fa7e1207f4906e0"
+          }
+        ],
+        "source_size": 144,
+        "source_bit_depth": 8,
+        "method": "Hald red-fastest decode; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/astia100.png",
+        "sha256": "9c9d393f6a915331cdaa808466341a84e2a42e05a1c3cc08e1692803daa497e2"
+      }
+    },
+    {
+      "id": "sensia100",
+      "display_name": "Fuji Sensia 100 계열",
+      "category": "slide",
+      "path": "sensia100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "14568132eb88673791f56e7f7b6a3c81613134d60c7ada2374ad8bab8688cb2b",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "João Almeida",
+      "source": {
+        "provider": "t3mujinpack",
+        "repo": "https://github.com/t3mujin/t3mujinpack",
+        "commit": "0b421f3e25209ed78253d1724a29cc6255c5e7fe",
+        "url": "https://github.com/t3mujin/t3mujinpack",
+        "files": [
+          {
+            "path": "haldcluts/t3mujinpack - Color Slide - Fuji Sensia 100.png",
+            "sha256": "8fcfe3abadf4f164f85b5ef5d3a41474ec279f0f94bed4e8486080fc7e03d1c9"
+          }
+        ],
+        "source_size": 144,
+        "source_bit_depth": 8,
+        "method": "Hald red-fastest decode; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/sensia100.png",
+        "sha256": "18a742a65f4593a0cf6be8763e528b1f7ad85e03039a2e0ad2480f6e4e0c4291"
+      }
+    },
+    {
+      "id": "trix400",
+      "display_name": "Kodak Tri-X 400 계열",
+      "category": "bw",
+      "path": "trix400.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "f04a495f3e59e586b655fa9b3c5647010ab336744841c9025885a0b54f5d7390",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "João Almeida",
+      "source": {
+        "provider": "t3mujinpack",
+        "repo": "https://github.com/t3mujin/t3mujinpack",
+        "commit": "0b421f3e25209ed78253d1724a29cc6255c5e7fe",
+        "url": "https://github.com/t3mujin/t3mujinpack",
+        "files": [
+          {
+            "path": "haldcluts/t3mujinpack - Black and White - Kodak Tri-X 400.png",
+            "sha256": "4982b8bb2267073168839adc3915901cbb57a23810a12e730049342b7b08bf32"
+          }
+        ],
+        "source_size": 144,
+        "source_bit_depth": 8,
+        "method": "Hald red-fastest decode; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/trix400.png",
+        "sha256": "e13b8fd60fdd6556cbf2aa6161644318efad97b4b9e1321dea8833dd060682b1"
+      }
+    },
+    {
+      "id": "hp5",
+      "display_name": "Ilford HP5 Plus 400 계열",
+      "category": "bw",
+      "path": "hp5.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "5f87888438ff617b599ffa362332779ba8bbf4b80e92cb8ba75a78ca5c183f3c",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "João Almeida",
+      "source": {
+        "provider": "t3mujinpack",
+        "repo": "https://github.com/t3mujin/t3mujinpack",
+        "commit": "0b421f3e25209ed78253d1724a29cc6255c5e7fe",
+        "url": "https://github.com/t3mujin/t3mujinpack",
+        "files": [
+          {
+            "path": "haldcluts/t3mujinpack - Black and White - Ilford HP5 Plus 400.png",
+            "sha256": "753f05a4e373d4cd196624daf472ad370894ca5659090c5c02606fd8805ec1d1"
+          }
+        ],
+        "source_size": 144,
+        "source_bit_depth": 8,
+        "method": "Hald red-fastest decode; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/hp5.png",
+        "sha256": "d727a1cc14fd9460250b0616cab37efca9982fe5fb2f67fe0e8abe2a86408ff1"
+      }
+    },
+    {
+      "id": "delta100",
+      "display_name": "Ilford Delta 100 계열",
+      "category": "bw",
+      "path": "delta100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "f6df903a22c6cd446169c228d9703e94d46aa741d8509d59273fbc092de6186a",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "João Almeida",
+      "source": {
+        "provider": "t3mujinpack",
+        "repo": "https://github.com/t3mujin/t3mujinpack",
+        "commit": "0b421f3e25209ed78253d1724a29cc6255c5e7fe",
+        "url": "https://github.com/t3mujin/t3mujinpack",
+        "files": [
+          {
+            "path": "haldcluts/t3mujinpack - Black and White - Ilford Delta 100.png",
+            "sha256": "96f24353c897f02d99f8d31a502e9955b09efd0e976c22b52f86b6ea0bcf058b"
+          }
+        ],
+        "source_size": 144,
+        "source_bit_depth": 8,
+        "method": "Hald red-fastest decode; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/delta100.png",
+        "sha256": "7e2af51c3954638459bd5e49d714ca1a93059f46f55ef9d65049f4de2addfca5"
+      }
+    },
+    {
+      "id": "acros100",
+      "display_name": "Fuji Neopan Acros 100 계열",
+      "category": "bw",
+      "path": "acros100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "82b0fac13f2fd7485ae79a881f525542198e1fcf24464a0b1bce46c4491fac7c",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "João Almeida",
+      "source": {
+        "provider": "t3mujinpack",
+        "repo": "https://github.com/t3mujin/t3mujinpack",
+        "commit": "0b421f3e25209ed78253d1724a29cc6255c5e7fe",
+        "url": "https://github.com/t3mujin/t3mujinpack",
+        "files": [
+          {
+            "path": "haldcluts/t3mujinpack - Black and White - Fuji Neopan Acros 100.png",
+            "sha256": "a71934edddbd42aff4bc7d4f70f093220f0755fb9464c943e3aa33211e000c71"
+          }
+        ],
+        "source_size": 144,
+        "source_bit_depth": 8,
+        "method": "Hald red-fastest decode; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/acros100.png",
+        "sha256": "7c316dc70a0768961c5bfb24913682cddab538de76aadde6d1682df6013179b1"
+      }
+    },
+    {
+      "id": "apx100",
+      "display_name": "AGFA APX 100 계열",
+      "category": "bw",
+      "path": "apx100.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "8ec2cde453dbe8539a6fc70346398abcf9e5a689897cc3541494a9156951c464",
+      "bytes": 215638,
+      "license_spdx": "MIT",
+      "author": "João Almeida",
+      "source": {
+        "provider": "t3mujinpack",
+        "repo": "https://github.com/t3mujin/t3mujinpack",
+        "commit": "0b421f3e25209ed78253d1724a29cc6255c5e7fe",
+        "url": "https://github.com/t3mujin/t3mujinpack",
+        "files": [
+          {
+            "path": "haldcluts/t3mujinpack - Black and White - AGFA APX 100.png",
+            "sha256": "d8908ce4f610d45eb39451675d9108dd6154bf0b763d0413dda06639a26f89f9"
+          }
+        ],
+        "source_size": 144,
+        "source_bit_depth": 8,
+        "method": "Hald red-fastest decode; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/apx100.png",
+        "sha256": "9222f1dfe8c6e3bd319569e2251226787aef79ed2d33c7a6b51053d09e6d553d"
+      }
+    },
+    {
+      "id": "blockbuster",
+      "display_name": "틸 섀도 · 웜 하이라이트",
+      "category": "creative",
+      "path": "blockbuster.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "c813f2d1cbf63638f1aa3d7aa055bc876a17ab805ce45eb11f0df2378cc5a2b8",
+      "bytes": 215638,
+      "license_spdx": "CC0-1.0",
+      "author": "EditorHub Originals / editor-hub.com",
+      "source": {
+        "provider": "editorhub",
+        "repo": null,
+        "commit": null,
+        "url": "https://editor-hub.com/assets/luts",
+        "files": [
+          {
+            "path": "eh-blockbuster.cube",
+            "sha256": "246a89ea2d610f808b7f3ebdffb3bbae923ba7c9567b93587647501a47d734fa",
+            "url": "https://editor-hub.com/luts/eh-blockbuster.cube"
+          }
+        ],
+        "source_size": 33,
+        "method": "CUBE red-fastest import; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/blockbuster.png",
+        "sha256": "9b4e0f00afe5b2cab91b54c59a40a4b056ff5f5197869a6c91197f5c6fea38ab"
+      }
+    },
+    {
+      "id": "midnight",
+      "display_name": "차가운 야간",
+      "category": "creative",
+      "path": "midnight.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "1613387b1cc2b126ae965500186eb6e84fc25c743ad8e829923295382e24c9b5",
+      "bytes": 215638,
+      "license_spdx": "CC0-1.0",
+      "author": "EditorHub Originals / editor-hub.com",
+      "source": {
+        "provider": "editorhub",
+        "repo": null,
+        "commit": null,
+        "url": "https://editor-hub.com/assets/luts",
+        "files": [
+          {
+            "path": "eh-midnight.cube",
+            "sha256": "d8933051ead722314144ce2b4421079b3d721916afb46ae8f3aa58f3070216ad",
+            "url": "https://editor-hub.com/luts/eh-midnight.cube"
+          }
+        ],
+        "source_size": 33,
+        "method": "CUBE red-fastest import; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/midnight.png",
+        "sha256": "56eadf96c6daf93fc8ff3da770dfdd72ca8608175af0e9819901fc5c72272359"
+      }
+    },
+    {
+      "id": "neon-punch",
+      "display_name": "마젠타 · 시안 네온",
+      "category": "creative",
+      "path": "neon-punch.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "95501a14bf2a45772bad8b0ed320e40ac05b2e07e47b7b8d1347f6d15fc30abd",
+      "bytes": 215638,
+      "license_spdx": "CC0-1.0",
+      "author": "EditorHub Originals / editor-hub.com",
+      "source": {
+        "provider": "editorhub",
+        "repo": null,
+        "commit": null,
+        "url": "https://editor-hub.com/assets/luts",
+        "files": [
+          {
+            "path": "eh-neon-punch.cube",
+            "sha256": "7df08ee67a2348da63884be41feb4403925ad4db285768fe1c971404a5bd0c46",
+            "url": "https://editor-hub.com/luts/eh-neon-punch.cube"
+          }
+        ],
+        "source_size": 33,
+        "method": "CUBE red-fastest import; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/neon-punch.png",
+        "sha256": "bb6fa78cb50bc33471ace1a8738bf2f03054f3b44de55e6064dd227115db1f38"
+      }
+    },
+    {
+      "id": "matte-fade",
+      "display_name": "따뜻한 매트",
+      "category": "creative",
+      "path": "matte-fade.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "4df3abe5afc2a9b8b6138dc64f18dfa87e92e3b55d9c37a97383a7b21b738fde",
+      "bytes": 215638,
+      "license_spdx": "CC0-1.0",
+      "author": "EditorHub Originals / editor-hub.com",
+      "source": {
+        "provider": "editorhub",
+        "repo": null,
+        "commit": null,
+        "url": "https://editor-hub.com/assets/luts",
+        "files": [
+          {
+            "path": "eh-matte-fade.cube",
+            "sha256": "2ce7f7332869fa1c485fda774bb1311bb7e9d9ded36afbbbb33ed2089b43d6f1",
+            "url": "https://editor-hub.com/luts/eh-matte-fade.cube"
+          }
+        ],
+        "source_size": 33,
+        "method": "CUBE red-fastest import; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/matte-fade.png",
+        "sha256": "091f3ce82e4d37e473ee5a41fa97687d1f325cf059d97e85d6c291d9209114f1"
+      }
+    },
+    {
+      "id": "golden-hour",
+      "display_name": "골든 아워",
+      "category": "creative",
+      "path": "golden-hour.lut16",
+      "size": 33,
+      "format": "B7LT-v1",
+      "input_color_space": "sRGB",
+      "output_color_space": "sRGB",
+      "sha256": "df88e1506d6c94cc20e30fc642442ff72af8118cb6ecf9627f4e0349a81cec8b",
+      "bytes": 215638,
+      "license_spdx": "CC0-1.0",
+      "author": "EditorHub Originals / editor-hub.com",
+      "source": {
+        "provider": "editorhub",
+        "repo": null,
+        "commit": null,
+        "url": "https://editor-hub.com/assets/luts",
+        "files": [
+          {
+            "path": "eh-golden-hour.cube",
+            "sha256": "520230530986090ff0d3b9629281de5b83725d0d98922ac9a69b0ea89b7484d4",
+            "url": "https://editor-hub.com/luts/eh-golden-hour.cube"
+          }
+        ],
+        "source_size": 33,
+        "method": "CUBE red-fastest import; encoded-sRGB trilinear resampling to 33^3"
+      },
+      "conversion": "encoded-sRGB trilinear 33^3; round-to-nearest-even UNORM16; RGB red-fastest LE",
+      "preview": {
+        "path": "previews/golden-hour.png",
+        "sha256": "332cc263f2ec91b606f0f3c4f5473595220a44e877158c20e4b99aa9d25ef921"
+      }
+    }
+  ]
+}

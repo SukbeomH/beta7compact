@@ -1,0 +1,35 @@
+{
+  "spectral": {
+    "repo": "https://github.com/JanLohse/spectral_film_lut",
+    "commit": "a15043f6fe2d365d0c359d22e0868076800916d9",
+    "author": "Jan Lohse",
+    "license": "MIT",
+    "license_file": "licenses/spectral-MIT.txt",
+    "license_sha256": "3cdc90b3e7727be6e5930102fadeaf35cf3d3bd7c492b90d6d16fb9ad8c3a1bd"
+  },
+  "t3mujinpack": {
+    "repo": "https://github.com/t3mujin/t3mujinpack",
+    "commit": "0b421f3e25209ed78253d1724a29cc6255c5e7fe",
+    "author": "João Almeida",
+    "license": "MIT",
+    "license_file": "licenses/t3mujinpack-MIT.txt",
+    "license_sha256": "b1a3f6e97b17b4532ff92c34d6db4b1ad8edd3317096389e7617234d8221a576"
+  },
+  "editorhub": {
+    "repo": null,
+    "commit": null,
+    "author": "EditorHub Originals / editor-hub.com",
+    "license": "CC0-1.0",
+    "license_file": "licenses/CC0-1.0.txt",
+    "url": "https://editor-hub.com/assets/luts",
+    "retrieved": "2026-11-15",
+    "files": {
+      "eh-blockbuster.cube": "246a89ea2d610f808b7f3ebdffb3bbae923ba7c9567b93587647501a47d734fa",
+      "eh-midnight.cube": "d8933051ead722314144ce2b4421079b3d721916afb46ae8f3aa58f3070216ad",
+      "eh-neon-punch.cube": "7df08ee67a2348da63884be41feb4403925ad4db285768fe1c971404a5bd0c46",
+      "eh-matte-fade.cube": "2ce7f7332869fa1c485fda774bb1311bb7e9d9ded36afbbbb33ed2089b43d6f1",
+      "eh-golden-hour.cube": "520230530986090ff0d3b9629281de5b83725d0d98922ac9a69b0ea89b7484d4"
+    },
+    "license_sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+  }
+}

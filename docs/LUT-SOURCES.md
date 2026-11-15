@@ -27,4 +27,29 @@
 ## 제안 구성 (초기 내장 세트 20~30종)
 - 컬러 네거 8, 슬라이드 6, 시네마 인화 3, B&W 5, 크리에이티브 5
 - 빌드: `tools/luts/`에 생성·변환 스크립트(재현 가능), 결과물 + `assets/luts/manifest.json`(이름, 분류, 출처, 라이선스, 원본 URL·커밋, 변환 방법) + `NOTICE`
+
+## 실제 채택·원문 재확인 (2026-11-15)
+
+아래 두 저장소를 직접 clone하고 해당 commit의 LICENSE 원문을 읽었습니다.
+원문 사본과 SHA256은 `tools/luts/licenses/`, `tools/luts/sources.lock.json`에 있습니다.
+
+| 출처 | 고정 commit / 파일 | 확인한 고지 | 채택 |
+|---|---|---|---:|
+| [Spectral Film LUT](https://github.com/JanLohse/spectral_film_lut/tree/a15043f6fe2d365d0c359d22e0868076800916d9) | `a15043f6fe2d365d0c359d22e0868076800916d9` | MIT, Copyright (c) 2026 Jan Lohse | 15 |
+| [t3mujinpack](https://github.com/t3mujin/t3mujinpack/tree/0b421f3e25209ed78253d1724a29cc6255c5e7fe) | `0b421f3e25209ed78253d1724a29cc6255c5e7fe` | MIT, Copyright (c) 2017 João Almeida | 7 |
+| [EditorHub Originals](https://editor-hub.com/assets/luts) | `eh-blockbuster`, `eh-midnight`, `eh-neon-punch`, `eh-matte-fade`, `eh-golden-hour`의 `.cube` | 각 파일 첫 줄에 EditorHub Originals / editor-hub.com / CC0 선언 | 5 |
+
+EditorHub는 Git commit이 없으므로 URL·조회일·파일별 SHA256으로 고정하고,
+원본 `.cube`를 gzip으로 저장했습니다. 첫 줄 고지와 파일별 카탈로그 항목의 연결 기록은
+`tools/luts/sources/editorhub/provenance.json`에 있습니다. CC0 법문 원문은
+[SPDX license-list-data](https://github.com/spdx/license-list-data/blob/main/text/CC0-1.0.txt)에서
+다운로드해 읽고 `licenses/CC0-1.0.txt`에 보관했습니다. 모든 원문은 배포 NOTICE에 포함합니다.
+
+FreshLUTs 커뮤니티 파일은 이번에 파일별 출처·권리 확인을 수행하지 않아 제외했습니다.
+EditorHub가 함께 배포하는 Film-Luts 자료도 기존 제3자 소유 고지 문제로 제외했습니다.
+Striped Purple은 초기 세트에 필요하지 않아 미채택, spektrafilm/Natron은 앞선 보류 결정을 유지합니다.
+표시 이름은 계열·특성 설명입니다. 필름 원본, 특정 카메라 또는 Darktable GUI 재현을 주장하지 않습니다.
+
+최종 구성은 컬러 네거 8 / 슬라이드 6 / 시네마 인화 3 / B&W 5 / 크리에이티브 5입니다.
+수치 검증의 실행 결과와 한계는 `docs/LUT-VALIDATION.md`를 참조하십시오.
 - 검증: 데스크톱 기준 적용 결과와 앱 GPU 결과 ΔE 비교, 중립 회색 램프 보존 확인
