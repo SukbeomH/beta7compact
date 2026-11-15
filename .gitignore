@@ -1,0 +1,14 @@
+/.gradle/
+/.gradle-home/
+/.android-user/
+/.kotlin/
+/local.properties
+/**/build/
+/.validation/
+*.keystore
+*.jks
+.env*
+**/probe-logs/
+**/device-logs/
+/.idea/
+/.tools/
