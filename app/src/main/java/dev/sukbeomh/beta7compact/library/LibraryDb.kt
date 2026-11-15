@@ -49,6 +49,7 @@ abstract class LibraryDb : RoomDatabase() {
 }
 class RoomJournal(private val dao: PhotoDao) : ImportJournal {
     override suspend fun pending() = dao.pending().map { it.cameraObject() }
+    override suspend fun completedItems() = dao.all().filter { it.imported != null }.map { it.cameraObject() }
     override suspend fun uri(key: String) = dao.get(key)?.uri
     override suspend fun staged(key: String, uri: String) = dao.staged(key, uri)
     override suspend fun completed(key: String, uri: String) = dao.complete(key, uri, System.currentTimeMillis())
