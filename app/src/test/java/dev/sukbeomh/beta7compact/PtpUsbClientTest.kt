@@ -123,22 +123,26 @@ class PtpUsbClientTest {
         assertTrue(logs.any { "returned=0 (ZLP)" in it })
     }
 
-    @Test fun alreadyActiveConfigurationNeverCallsSetOrRequery() {
-        ensureUsbConfiguration(2, 2, { fail("must not reset active configuration") }, { fail("must not requery") }, logs::add)
-        assertTrue(logs.single().contains("setConfiguration SKIP"))
+    private data class Face(val alternate: Int, val active: Int, val bulk: Boolean = true)
+    @Test fun onlyActiveConfigurationAndAlternateAreUsed() {
+        val otherConfig = Face(0, 0)
+        val inactiveAlternate = Face(0, 1)
+        val active = Face(1, 1)
+        var queries = 0
+        val selected = activeStillImageInterface(2, listOf(1 to otherConfig, 2 to inactiveAlternate, 2 to active),
+            { it.alternate }, { queries++; it.active }, { it.bulk })
+        assertSame(active, selected)
+        assertEquals(2, queries) // Never query the other configuration.
     }
-
-    @Test fun differentConfigurationSetsOnceThenVerifies() {
-        val calls = mutableListOf<String>()
-        ensureUsbConfiguration(1, 2, { calls.add("set"); true }, { calls.add("read"); 2 }, logs::add)
-        assertEquals(listOf("set", "read"), calls)
-        assertTrue(logs.any { "result=true" in it && "ms=" in it })
-    }
-
-    @Test fun configurationFailureAndWrongReadbackStop() {
-        assertFails { ensureUsbConfiguration(1, 2, { false }, { fail("set failed") }, logs::add) }
-        assertFails { ensureUsbConfiguration(1, 2, { true }, { 1 }, logs::add) }
-        assertFails { ensureUsbConfiguration(-1, 2, { fail("unknown active") }, { 2 }, logs::add) }
+    @Test fun unavailableConfigurationAlternateOrBulkStopsWithMtpGuidance() {
+        for ((config, face) in listOf(1 to Face(0, 0), 2 to Face(1, 0), 2 to Face(0, 0, false))) {
+            val failure = assertFailsWith<IllegalStateException> {
+                activeStillImageInterface(2, listOf(config to face), { it.alternate }, { it.active }, { it.bulk })
+            }
+            assertEquals("카메라 설정 → USB 연결 → MTP", failure.message)
+        }
+        assertFails { activeStillImageInterface(0, listOf(2 to Face(0, 0)),
+            { it.alternate }, { it.active }, { it.bulk }) }
     }
 
     @Test fun cameraErrorKeepsResponseCodeAndStillClosesOpenSession() {

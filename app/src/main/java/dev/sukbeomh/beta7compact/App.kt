@@ -9,7 +9,8 @@ import dev.sukbeomh.beta7compact.core.transition
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class App : Application() {
-    val db by lazy { Room.databaseBuilder(this, LibraryDb::class.java, "library.db").build() }
+    val db by lazy { Room.databaseBuilder(this, LibraryDb::class.java, "library.db")
+        .addMigrations(LibraryDb.MIGRATION_1_2).build() }
     val settings by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     val usbState = MutableStateFlow(LinkState.DISCONNECTED)
     val locationState = MutableStateFlow(LocationStatus())

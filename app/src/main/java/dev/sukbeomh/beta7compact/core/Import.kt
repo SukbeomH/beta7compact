@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter
 
 /** Only immutable, supported still-image objects enter the queue. No object/delete operations. */
 data class CameraObject(val handle: Int, val storage: Int, val name: String, val size: Long,
-                        val captured: Long, val parent: Int = 0) {
+                        val captured: Long, val parent: Int = 0, val cameraTime: String? = null) {
     val mime: String? get() = when (name.substringAfterLast('.', "").lowercase()) {
         "jpg", "jpeg" -> "image/jpeg"
         "arw" -> "image/x-sony-arw"
@@ -18,10 +18,36 @@ data class CameraObject(val handle: Int, val storage: Int, val name: String, val
     }
     val valid: Boolean get() = mime != null && size in 1..0xfffffff0L &&
         name.isNotBlank() && name.length <= 255 && name.none { it == '/' || it == '\\' || it.code < 32 }
-    val key: String get() = digest("$name\u0000$size\u0000$captured")
-    val pair: String get() = digest("$storage/$parent/${name.substringBeforeLast('.').lowercase()}/$captured")
+    // null is reserved for v1 records, whose original camera clock was not persisted.
+    val key: String get() = identity(cameraTime ?: captured.toString())
+    private fun identity(time: String) = digest("$name\u0000$size\u0000$time")
+    val pair: String get() = digest("$storage/$parent/${name.substringBeforeLast('.').lowercase()}/${cameraTime ?: captured}")
+    val compatibleKeys: Set<String> by lazy {
+        if (cameraTime != null) setOf(key) else setOf(key, "legacy:$key")
+    }
+    private val legacyKeys: Set<String> by lazy {
+        val wall = runCatching { LocalDateTime.parse(cameraTime?.take(15), clock) }.getOrNull()
+        val epochs = if (wall == null) setOf(0L) else buildSet {
+            // v1 discarded the original clock and timezone. Compare all possible old interpretations.
+            for (zone in ZoneId.getAvailableZoneIds()) {
+                val rules = ZoneId.of(zone)
+                add(wall.atZone(rules).toInstant().toEpochMilli())
+                val transition = rules.rules.getTransition(wall)
+                if (transition?.isGap == true) {
+                    // Native mktime may resolve a nonexistent DST wall clock in either direction.
+                    add(wall.minusSeconds(transition.duration.seconds).atZone(rules).toInstant().toEpochMilli())
+                }
+            }
+        }
+        epochs.map { identity(it.toString()) }.toSet()
+    }
+    fun isKnown(keys: Set<String>): Boolean = key in keys ||
+        (cameraTime != null && keys.any { it.startsWith("legacy:") } && legacyKeys.any { "legacy:$it" in keys })
+    fun matchesQueued(queued: CameraObject): Boolean = key == queued.key ||
+        (queued.cameraTime == null && queued.key in legacyKeys)
     companion object {
         const val PATH = "DCIM/beta7compact/"
+        private val clock = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss")
         fun digest(value: String) = MessageDigest.getInstance("SHA-256").digest(value.toByteArray())
             .joinToString("") { "%02x".format(it.toInt() and 255) }
         fun ptpTime(value: String): Long = if (value.isBlank()) 0 else runCatching {
@@ -39,7 +65,7 @@ interface Camera : Closeable {
 
 object ImportPlan {
     fun create(objects: List<CameraObject>, completed: Set<String>, selected: Set<String>? = null) =
-        objects.filter { it.valid && it.key !in completed && (selected == null || it.key in selected) }
+        objects.filter { it.valid && !it.isKnown(completed) && (selected == null || it.key in selected) }
             .distinctBy { it.key }.sortedWith(compareBy<CameraObject> { it.captured }.thenBy { it.name })
 }
 
@@ -72,7 +98,7 @@ class ImportPipeline(private val journal: ImportJournal, private val store: Orig
                      private val temp: File) {
     suspend fun run(camera: Camera, active: () -> Boolean = { true }, progress: suspend (Int, Int) -> Unit = { _, _ -> }) {
         val queue = journal.pending()
-        val current = camera.list().filter { it.valid }.associateBy { it.key }
+        val current = camera.list().filter { it.valid }.distinctBy { it.key }
         temp.parentFile?.mkdirs()
         try {
             queue.forEachIndexed { index, queued ->
@@ -82,19 +108,21 @@ class ImportPipeline(private val journal: ImportJournal, private val store: Orig
                     journal.completed(queued.key, previous)
                 } else {
                     if (previous != null) store.discard(previous)
-                    val item = checkNotNull(current[queued.key]) { "카드에서 대기 사진을 찾을 수 없습니다" }
+                    val matches = current.filter { it.matchesQueued(queued) }
+                    check(matches.size <= 1) { "기존 대기 사진의 촬영시각이 모호합니다. 대기열을 확인하세요" }
+                    val item = checkNotNull(matches.singleOrNull()) { "카드에서 대기 사진을 찾을 수 없습니다" }
                     temp.delete()
                     camera.download(item, temp)
                     check(active()) { "가져오기가 중단되었습니다" }
                     check(temp.length() == item.size) { "원본 크기가 일치하지 않습니다" }
                     val uri = store.begin(item)
-                    try { journal.staged(item.key, uri) }
+                    try { journal.staged(queued.key, uri) }
                     catch (e: Throwable) { store.discard(uri); throw e }
                     // On interruption the journal retains this URI. Retry validates or deletes it.
                     store.write(uri, temp)
                     check(active()) { "가져오기가 중단되었습니다" }
                     store.publish(uri, item.size)
-                    journal.completed(item.key, uri)
+                    journal.completed(queued.key, uri)
                 }
                 progress(index + 1, queue.size)
             }

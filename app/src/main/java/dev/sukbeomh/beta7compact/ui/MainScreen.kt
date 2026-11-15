@@ -57,7 +57,7 @@ fun MainScreen(activity: MainActivity, app: App) {
         .collectAsStateWithLifecycle(initialValue = emptyList())
     val working = work.any { !it.state.isFinished }
     val workInfo = work.firstOrNull()
-    val completed = records.filter { it.imported != null }.map { it.key }.toSet()
+    val completed = records.filter { it.imported != null }.flatMap { it.cameraObject().compatibleKeys }.toSet()
     fun scanUsb() {
         if (busy || working) return
         scope.launch {
@@ -74,7 +74,7 @@ fun MainScreen(activity: MainActivity, app: App) {
                 app.usb(LinkEvent.LOST); app.usb(LinkEvent.FOUND); app.usb(LinkEvent.OPEN)
                 val list = withContext(Dispatchers.IO) { UsbAccess.use(app, raw) { it.list() } }
                 objects = list; selected = selected.intersect(list.map { it.key }.toSet())
-                app.usb(LinkEvent.READY); usbText = "사진 ${list.size}개 · 새 사진 ${list.count { it.key !in completed }}개"
+                app.usb(LinkEvent.READY); usbText = "사진 ${list.size}개 · 새 사진 ${list.count { !it.isKnown(completed) }}개"
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 objects = emptyList(); app.usb(LinkEvent.ERROR)
@@ -189,10 +189,10 @@ fun MainScreen(activity: MainActivity, app: App) {
                         grouped.forEach { (date, photos) ->
                             item(span = { GridItemSpan(maxLineSpan) }) { Text(date, style = MaterialTheme.typography.titleMedium) }
                             items(photos, key = { "${it.storage}:${it.handle}" }) { obj ->
-                                PhotoTile(obj.name, obj.key in completed, obj.key in selected,
+                                PhotoTile(obj.name, obj.isKnown(completed), obj.key in selected,
                                     pair = photos.filter { it.pair == obj.pair }.map { it.mime }.toSet().containsAll(setOf("image/jpeg", "image/x-sony-arw")),
                                     thumb = { cameraThumb(app, obj, raw, working) }, onClick = {
-                                        if (obj.key !in completed && !working) selected = if (obj.key in selected) selected - obj.key else selected + obj.key
+                                        if (!obj.isKnown(completed) && !working) selected = if (obj.key in selected) selected - obj.key else selected + obj.key
                                     })
                             }
                         }
