@@ -68,6 +68,13 @@ Material 3(Compose `material3` 1.3.1, 이미 의존성에 있음) 위에 얹는 
 - 도입 방식: 필요한 아이콘만 벡터 드로어블(XML)로 복사(라이브러리 추가 없음, 결정 Q3 권장안).
 - 사용 목록(예정): `photo_camera, photo_library, palette, settings, usb, download, check_circle, compare, undo, redo, tune, star, share, qr_code_2, error, refresh, close, raw_on, restart_alt`.
 
+### 2026-11-16 픽셀 아이콘 전환
+
+- **UI 아이콘 15종은 자체 제작 픽셀 아이콘**(`res/drawable/pixel_*.xml`)으로 바꿨다: 내비 탭 4종(카메라·사진·레시피·설정)과 뒤로, 다시 스캔, 초기화, USB, 선택됨, 세부 조정, 원본 보기, 실행 취소, 다시 실행, 즐겨찾기, 공유. 18 × 18 격자, 선 굵기 2칸, **표시 크기 18dp**(한 칸 1dp, `BetaTokens.pixelIcon`). 터치 타깃은 48dp 그대로.
+- Material Symbols는 `download, qr_code_2, error, close, raw_on` 5종만 남는다(24dp). 고지 문서의 사용 목록도 이 5종이다.
+- **필름 아이콘**(`ui/components/FilmIcon.kt`): 실제 필름을 본뜬 내장 LUT 22종은 색 차트 썸네일 대신 32 × 32 픽셀 파트로네에 이름과 ISO를 3 × 5 픽셀 글자로 넣어 그린다. 크리에이티브·사용자 LUT는 기존 썸네일을 유지한다. 제조사 로고나 서체는 쓰지 않는다.
+- **레시피 카드**: 적용 사진이 없으면 LUT의 필름 아이콘을, 필름이 없는 LUT나 LUT 미연결이면 무채색 파트로네를 보인다. LUT 선택 외에 조정이 있는 레시피(`isAdjusted`)는 썸네일 오른쪽 아래에 세부 조정 배지를 겹친다.
+
 ## 7. edge-to-edge
 
 targetSdk 35+ 기기에서 강제([원문](https://developer.android.com/develop/ui/views/layout/edge-to-edge)). 사진 미리보기는 상태바 아래까지, 컨트롤은 `WindowInsets.safeDrawing` 패딩.

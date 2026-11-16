@@ -16,6 +16,7 @@ object BetaTokens {
     val cardRadius = 12.dp
     val thumbnailRadius = 8.dp
     val touchTarget = 48.dp
+    val pixelIcon = 18.dp
 }
 val BetaColors = darkColorScheme(
     primary = Color(0xFF8FD0B8), onPrimary = Color(0xFF00382B),

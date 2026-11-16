@@ -1,5 +1,8 @@
 package dev.sukbeomh.beta7compact.ui
 
+import dev.sukbeomh.beta7compact.recipe.Grain
+import dev.sukbeomh.beta7compact.recipe.Recipe
+
 /** Platform-free decisions; dimensions are the current app window in dp, not display size. */
 enum class AppTab(val label: String) { CAMERA("카메라"), PHOTOS("사진"), RECIPES("레시피"), SETTINGS("설정") }
 enum class WindowClass { COMPACT, MEDIUM, EXPANDED }
@@ -44,6 +47,14 @@ fun navigate(state: NavigationState, action: NavigationAction): NavigationState 
     }
     NavigationAction.ImportFinished -> state // Completion only offers an explicit View action.
     NavigationAction.ViewImported -> NavigationState(AppTab.PHOTOS)
+}
+
+/** True when a recipe changes more than its LUT choice. The baseline is the editor's own reset, which keeps
+ * the LUT and input transform; format version, grain seed and the size of invisible grain are not adjustments. */
+fun isAdjusted(recipe: Recipe): Boolean {
+    val grain = if (recipe.grain.amount == 0f) Grain() else recipe.grain.copy(seed = Grain().seed)
+    val baseline = Recipe(lutId = recipe.lutId, inputTransform = recipe.inputTransform, requiredLutName = recipe.requiredLutName)
+    return recipe.copy(grain = grain, version = baseline.version) != baseline
 }
 
 /** A 3:2 display box, independent of the image aspect ratio. Units can be dp or px. */

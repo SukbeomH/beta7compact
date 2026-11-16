@@ -76,7 +76,7 @@ internal fun RecipeShareDialog(app: App,value: SharedRecipe,close: ()->Unit) {
     var shareError by remember { mutableStateOf<String?>(null) }
     val code=remember(value) { runCatching { RecipeShare.encode(value) } }
     val matrix=remember(code) { code.mapCatching { RecipeQr.encode(it) } }
-    AlertDialog(onDismissRequest=close,title={Row { dev.sukbeomh.beta7compact.ui.components.Symbol(dev.sukbeomh.beta7compact.R.drawable.symbol_qr_code_2);Text("레시피 공유") }},text={
+    AlertDialog(onDismissRequest=close,title={Row { dev.sukbeomh.beta7compact.ui.components.Symbol(dev.sukbeomh.beta7compact.R.drawable.symbol_qr_code_2, size = 24.dp);Text("레시피 공유") }},text={
         Column(Modifier.verticalScroll(rememberScrollState())) {
             shareError?.let { Text(it,color=MaterialTheme.colorScheme.error) }
             if(value.recipe.lutId.startsWith("user-")) Text("LUT 필요(${value.lutName}) · LUT는 별도로 전달하세요")

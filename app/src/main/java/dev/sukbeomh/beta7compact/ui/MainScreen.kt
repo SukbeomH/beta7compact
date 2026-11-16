@@ -151,7 +151,7 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
         val detailPhoto = records.firstOrNull { it.key == navigation.detailKey }
         val fullScreen = editing || navigation.detailKey != null
         @Composable fun Navigation(rail: Boolean) {
-            val icons = listOf(R.drawable.symbol_photo_camera, R.drawable.symbol_photo_library, R.drawable.symbol_palette, R.drawable.symbol_settings)
+            val icons = listOf(R.drawable.pixel_camera, R.drawable.pixel_photos, R.drawable.pixel_recipes, R.drawable.pixel_settings)
             if (rail) NavigationRail {
                 AppTab.entries.forEachIndexed { i, tab -> NavigationRailItem(navigation.tab == tab,
                     { dispatch(NavigationAction.Tab(tab)) }, icon = { Symbol(icons[i]) }, label = { Text(tab.label) }) }

@@ -1,0 +1,5 @@
+<!-- beta7compact pixel icon, 18 x 18 grid. Original artwork for this app. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="18dp" android:height="18dp" android:viewportWidth="18" android:viewportHeight="18">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M1 3h8v2h-8zM1 13h8v2h-8zM1 3h2v12h-2zM8 1h2v16h-2zM10 3h7v12h-7z" />
+</vector>

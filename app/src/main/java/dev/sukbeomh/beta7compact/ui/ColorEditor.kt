@@ -48,7 +48,7 @@ internal fun Control(label: String,value: Float,range: ClosedFloatingPointRange<
     Row(Modifier.fillMaxWidth().then(resetGesture),verticalAlignment=Alignment.CenterVertically) {
         Text(label,Modifier.weight(1f),style=MaterialTheme.typography.bodyMedium)
         Text(valueLabel,style=MaterialTheme.typography.labelLarge)
-        SymbolButton(R.drawable.symbol_restart_alt,"$label 초기화") { change(reset) }
+        SymbolButton(R.drawable.pixel_reset,"$label 초기화") { change(reset) }
     }
     val tick=MaterialTheme.colorScheme.onSurfaceVariant
     Slider(value,onValueChange=change,valueRange=range,modifier=resetGesture.heightIn(min=48.dp).drawBehind {
