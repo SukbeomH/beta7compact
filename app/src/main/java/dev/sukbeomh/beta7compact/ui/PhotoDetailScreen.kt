@@ -92,7 +92,7 @@ internal data class PhotoPreviewState(val bitmap: Bitmap? = null, val loading: B
         val scrollPage = layout == PaneLayout.STACKED && windowHeight < photoBox(windowWidth).height + 256f
         Column(if (scrollPage) Modifier.verticalScroll(rememberScrollState()) else Modifier.fillMaxSize()) {
             Row(Modifier.heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
-                SymbolButton(R.drawable.symbol_arrow_back, "사진 목록으로", action = back)
+                SymbolButton(R.drawable.pixel_back, "사진 목록으로", action = back)
                 Text(photo.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
             }
             if (layout == PaneLayout.SIDE_BY_SIDE) Row(Modifier.weight(1f)) {

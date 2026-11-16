@@ -143,7 +143,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
     }
     @Composable fun Toolbar() {
         Row(Modifier.fillMaxWidth().heightIn(min=56.dp),verticalAlignment=Alignment.CenterVertically) {
-            SymbolButton(R.drawable.symbol_arrow_back,"사진으로 돌아가기",action=onBack)
+            SymbolButton(R.drawable.pixel_back,"사진으로 돌아가기",action=onBack)
             Text(if(photos.size>1) "${photos.size}장에 적용" else "편집",Modifier.weight(1f),style=MaterialTheme.typography.titleSmall)
             Button(onClick=::save,enabled=!saving && original!=null && after!=null && !rendering,
                 contentPadding=PaddingValues(horizontal=12.dp)) { Text(if(photos.size>1) "${photos.size}장 저장" else "저장") }
@@ -176,7 +176,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                     }
                 }
                 if(photo.name.endsWith(".arw",true)) Row(verticalAlignment=Alignment.CenterVertically) {
-                    Symbol(R.drawable.symbol_raw_on)
+                    Symbol(R.drawable.symbol_raw_on,size=24.dp)
                     Text("RAW · 카메라 내장 JPEG로 편집",color=dev.sukbeomh.beta7compact.ui.theme.BetaTokens.warning)
                 }
                 Text("LUT",style=MaterialTheme.typography.titleSmall)
@@ -197,7 +197,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                         items(shown,key={it.id}) { entry ->
                             var thumb by remember(entry.id) { mutableStateOf<Bitmap?>(null) }
                             LaunchedEffect(entry.id) { thumb=withContext(Dispatchers.IO) {
-                                entry.preview?.let { runCatching { app.assets.open("luts/$it").use(BitmapFactory::decodeStream) }.getOrNull() }
+                                entry.preview?.takeIf { entry.id !in FilmIcons.specs }?.let { runCatching { app.assets.open("luts/$it").use(BitmapFactory::decodeStream) }.getOrNull() }
                             } }
                             Column(Modifier.width(80.dp).semantics { selected=recipe.lutId==entry.id }.clickable {
                                 if(recipe.lutId==entry.id) scope.launch { strengthTarget.bringIntoView() }
@@ -205,9 +205,10 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                             }) {
                                 Box(Modifier.size(72.dp).border(if(recipe.lutId==entry.id) 2.dp else 1.dp,
                                     if(recipe.lutId==entry.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,RoundedCornerShape(8.dp)),contentAlignment=Alignment.Center) {
-                                    if(thumb!=null) Image(thumb!!.asImageBitmap(),null,Modifier.fillMaxSize().padding(2.dp),contentScale=ContentScale.Crop)
+                                    if(entry.id in FilmIcons.specs) FilmIcon(entry.id,Modifier.size(64.dp))
+                                    else if(thumb!=null) Image(thumb!!.asImageBitmap(),null,Modifier.fillMaxSize().padding(2.dp),contentScale=ContentScale.Crop)
                                     else Text(if(entry.id=="identity") "원본" else "LUT")
-                                    if(recipe.lutId==entry.id) Symbol(R.drawable.symbol_check_circle,"선택됨",Modifier.align(Alignment.TopEnd))
+                                    if(recipe.lutId==entry.id) Symbol(R.drawable.pixel_check,"선택됨",Modifier.align(Alignment.TopEnd))
                                 }
                                 Text(entry.name,Modifier.padding(top=4.dp),maxLines=2,style=MaterialTheme.typography.labelSmall)
                             }
@@ -217,7 +218,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                 Column(Modifier.bringIntoViewRequester(strengthTarget)) {
                     Control("강도",recipe.strength,0f..1f,1f,valueLabel="${(recipe.strength*100).toInt()}%") {change(recipe.copy(strength=it))}
                 }
-                TextButton(onClick={details=!details}) { Symbol(R.drawable.symbol_tune);Text(if(details) "세부 조정 접기" else "세부 조정") }
+                TextButton(onClick={details=!details}) { Symbol(R.drawable.pixel_tune);Text(if(details) "세부 조정 접기" else "세부 조정") }
                 if(details) {
                     TabRow(tab) { listOf("기본","톤커브","HSL","효과").forEachIndexed { i,label -> Tab(tab==i,{tab=i},text={Text(label)}) } }
                     ColorControls(tab,recipe) { change(it) }
@@ -232,9 +233,9 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                 results.forEach { result -> TextButton(onClick={try { openPhoto(app,result.uri) } catch(e: Exception) {error="결과 사진을 열 수 없습니다"}}) {Text("저장 결과 열기")} }
             }
             Row(Modifier.fillMaxWidth().padding(horizontal=8.dp),verticalAlignment=Alignment.CenterVertically) {
-            SymbolButton(R.drawable.symbol_compare,if(compare) "보정 사진 보기" else "원본 보기") { compare=!compare }
-            SymbolButton(R.drawable.symbol_undo,"실행 취소",history.canUndo) { onRecipeChange(history.undo()) }
-            SymbolButton(R.drawable.symbol_redo,"다시 실행",history.canRedo) { onRecipeChange(history.redo()) }
+            SymbolButton(R.drawable.pixel_compare,if(compare) "보정 사진 보기" else "원본 보기") { compare=!compare }
+            SymbolButton(R.drawable.pixel_undo,"실행 취소",history.canUndo) { onRecipeChange(history.undo()) }
+            SymbolButton(R.drawable.pixel_redo,"다시 실행",history.canRedo) { onRecipeChange(history.redo()) }
                 Spacer(Modifier.weight(1f))
                 EditorRecipeSave(app,recipe,name,changeName,onArchived) {status=it}
             }

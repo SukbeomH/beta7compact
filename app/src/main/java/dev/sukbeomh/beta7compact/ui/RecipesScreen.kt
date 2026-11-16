@@ -3,6 +3,10 @@ package dev.sukbeomh.beta7compact.ui
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +44,14 @@ import kotlinx.coroutines.flow.*
                 finally { saving = false }
             }
         }) { Text("보관") } }, dismissButton = { TextButton(enabled = !saving, onClick = { showing = false }) { Text("취소") } })
+}
+
+/** Marks a saved recipe that changes more than its LUT choice; sits over the card thumbnail. */
+@Composable private fun AdjustedBadge(modifier: Modifier) {
+    Box(modifier.size(20.dp).background(MaterialTheme.colorScheme.surface, CircleShape).padding(2.dp)
+        .background(MaterialTheme.colorScheme.primary, CircleShape), contentAlignment = Alignment.Center) {
+        Icon(painterResource(R.drawable.pixel_tune), "조정 적용됨", Modifier.size(9.dp), tint = MaterialTheme.colorScheme.onPrimary)
+    }
 }
 
 @Composable fun RecipesScreen(app: App, photos: () -> Unit) {
@@ -98,7 +110,7 @@ import kotlinx.coroutines.flow.*
                 Text("편집기 LUT 스트립의 ‘보관’에서 이 레시피를 선택하세요.", style = MaterialTheme.typography.bodySmall)
                 TextButton(enabled = entry != null && !running, onClick = {
                     sharing = SharedRecipe(value.name, recipe, if (recipe.lutId.startsWith("user-")) entry!!.name else "")
-                }) { Symbol(R.drawable.symbol_share); Text("공유 / QR") }
+                }) { Symbol(R.drawable.pixel_share); Text("공유 / QR") }
                 TextButton(enabled = entry != null && !running, onClick = {
                     app.settings.edit().putString("defaultRecipe", value.json).apply(); defaultJson = value.json; message = "기본 레시피로 지정했습니다"
                 }) { Text("기본으로 지정") }
@@ -130,17 +142,20 @@ import kotlinx.coroutines.flow.*
                     val entry = entries.firstOrNull { it.id == recipe?.lutId }
                     OutlinedCard(onClick = { selected = if (selected == value.id && !wide) null else value.id }, modifier = Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                            val image = photoThumbnail(app, sample(value))
-                            if (image != null) Image(image.asImageBitmap(), null, Modifier.size(64.dp), contentScale = ContentScale.Crop)
-                            else Icon(androidx.compose.ui.res.painterResource(R.drawable.symbol_palette), null, Modifier.size(64.dp).padding(16.dp))
+                            Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+                                val image = photoThumbnail(app, sample(value))
+                                if (image != null) Image(image.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                else FilmIcon(entry?.id, Modifier.size(32.dp))
+                                if (recipe != null && isAdjusted(recipe)) AdjustedBadge(Modifier.align(Alignment.BottomEnd).padding(8.dp))
+                            }
                             Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {
                                 Text(value.name, style = MaterialTheme.typography.titleMedium)
                                 Text(entry?.name ?: "LUT 필요 · 연결", style = MaterialTheme.typography.bodySmall,
                                     color = if (entry == null) dev.sukbeomh.beta7compact.ui.theme.BetaTokens.warning else MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             IconToggleButton(value.favorite, { favorite -> task { app.db.recipes().favorite(value.id, favorite) } }, enabled = !running) {
-                                Icon(androidx.compose.ui.res.painterResource(R.drawable.symbol_star), if (value.favorite) "즐겨찾기 해제" else "즐겨찾기",
-                                    tint = if (value.favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(painterResource(R.drawable.pixel_star), if (value.favorite) "즐겨찾기 해제" else "즐겨찾기",
+                                    Modifier.size(dev.sukbeomh.beta7compact.ui.theme.BetaTokens.pixelIcon), tint = if (value.favorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }

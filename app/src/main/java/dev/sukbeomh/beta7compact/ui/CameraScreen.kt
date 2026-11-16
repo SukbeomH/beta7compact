@@ -37,7 +37,7 @@ import java.util.*
                     }
                 } }
                 OutlinedButton(onClick = pick, enabled = connected && !busy && !working, modifier = Modifier.fillMaxWidth()) { Text("골라서 가져오기") }
-                TextButton(onClick = scan, enabled = !busy && !working) { Symbol(dev.sukbeomh.beta7compact.R.drawable.symbol_refresh); Text("다시 스캔") }
+                TextButton(onClick = scan, enabled = !busy && !working) { Symbol(dev.sukbeomh.beta7compact.R.drawable.pixel_refresh); Text("다시 스캔") }
                 if (pendingCount > 0 && !working) WorkBanner("중단된 가져오기", 0, pendingCount, "이어서 받기", resume)
             }
         }

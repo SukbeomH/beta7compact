@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.work.WorkInfo
@@ -24,11 +25,12 @@ import dev.sukbeomh.beta7compact.ui.theme.BetaTokens
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 
-@Composable fun Symbol(id: Int, description: String? = null, modifier: Modifier = Modifier) {
-    Icon(painterResource(id), description, modifier.size(24.dp))
+/** Pixel icons sit on an 18-cell grid, so 18dp keeps one cell per dp; pass 24dp for the remaining Material Symbols. */
+@Composable fun Symbol(id: Int, description: String? = null, modifier: Modifier = Modifier, size: Dp = BetaTokens.pixelIcon) {
+    Icon(painterResource(id), description, modifier.size(size))
 }
-@Composable fun SymbolButton(id: Int, label: String, enabled: Boolean = true, action: () -> Unit) {
-    IconButton(onClick = action, enabled = enabled, modifier = Modifier.size(BetaTokens.touchTarget)) { Symbol(id, label) }
+@Composable fun SymbolButton(id: Int, label: String, enabled: Boolean = true, size: Dp = BetaTokens.pixelIcon, action: () -> Unit) {
+    IconButton(onClick = action, enabled = enabled, modifier = Modifier.size(BetaTokens.touchTarget)) { Symbol(id, label, size = size) }
 }
 @Composable fun ScreenTitle(title: String, modifier: Modifier = Modifier, actions: @Composable RowScope.() -> Unit = {}) {
     Row(modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -40,7 +42,7 @@ import kotlinx.coroutines.CancellationException
     Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
         Row(Modifier.heightIn(min = 48.dp).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(painterResource(R.drawable.symbol_usb), null, Modifier.size(20.dp),
+            Icon(painterResource(R.drawable.pixel_usb), null, Modifier.size(BetaTokens.pixelIcon),
                 tint = if (healthy) MaterialTheme.colorScheme.primary else BetaTokens.warning)
             Text(label, style = MaterialTheme.typography.labelLarge)
         }
@@ -51,9 +53,9 @@ import kotlinx.coroutines.CancellationException
         shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
         Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Symbol(R.drawable.symbol_error)
+                Symbol(R.drawable.symbol_error, size = 24.dp)
                 Text(message, Modifier.weight(1f).padding(horizontal = 8.dp), style = MaterialTheme.typography.bodyMedium)
-                dismiss?.let { SymbolButton(R.drawable.symbol_close, "오류 닫기", action = it) }
+                dismiss?.let { SymbolButton(R.drawable.symbol_close, "오류 닫기", size = 24.dp, action = it) }
             }
             TextButton(onClick = action, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer)) { Text(actionLabel) }
         }
@@ -62,7 +64,7 @@ import kotlinx.coroutines.CancellationException
 @Composable fun EmptyState(title: String, detail: String, actionLabel: String, action: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(painterResource(R.drawable.symbol_photo_library), null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(painterResource(R.drawable.pixel_photos), null, Modifier.size(54.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(onClick = action) { Text(actionLabel) }
@@ -82,7 +84,7 @@ import kotlinx.coroutines.CancellationException
         if (badge.isNotEmpty()) Surface(Modifier.align(Alignment.BottomStart).padding(4.dp), color = BetaTokens.matte.copy(alpha = .8f)) {
             Text(badge, Modifier.padding(4.dp), color = BetaTokens.warning, style = MaterialTheme.typography.labelSmall)
         }
-        if (selected) Icon(painterResource(R.drawable.symbol_check_circle), "선택됨", Modifier.align(Alignment.TopEnd).padding(4.dp).size(24.dp), tint = MaterialTheme.colorScheme.primary)
+        if (selected) Icon(painterResource(R.drawable.pixel_check), "선택됨", Modifier.align(Alignment.TopEnd).padding(4.dp).size(BetaTokens.pixelIcon), tint = MaterialTheme.colorScheme.primary)
         if (edited) Surface(Modifier.align(Alignment.BottomEnd).padding(4.dp), color = BetaTokens.matte.copy(alpha = .8f)) {
             Text("편집됨", Modifier.padding(4.dp), style = MaterialTheme.typography.labelSmall)
         }
@@ -92,7 +94,7 @@ import kotlinx.coroutines.CancellationException
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Symbol(R.drawable.symbol_download)
+                Symbol(R.drawable.symbol_download, size = 24.dp)
                 Text("$title · $done / $total", Modifier.weight(1f).padding(horizontal = 8.dp), style = MaterialTheme.typography.labelLarge)
                 TextButton(onClick = action) { Text(actionLabel) }
             }
@@ -133,7 +135,7 @@ import kotlinx.coroutines.CancellationException
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("$title 완료" + (if(data.getInt("done", lastTotal)>0) " · ${data.getInt("done", lastTotal)}장" else ""), Modifier.weight(1f))
                 TextButton(onClick = { completed = false; view() }) { Text("보기") }
-                SymbolButton(R.drawable.symbol_close, "완료 알림 닫기") { completed = false }
+                SymbolButton(R.drawable.symbol_close, "완료 알림 닫기", size = 24.dp) { completed = false }
             }
         }
     }

@@ -2,7 +2,7 @@ Material Symbols Rounded (24px, weight 400)
 Copyright Google LLC. Licensed under the Apache License, Version 2.0.
 Source: https://github.com/google/material-design-icons/tree/master/symbols/web
 Changes: SVG paths converted to Android VectorDrawable with viewport Y translation.
-Used icons: photo_camera, photo_library, palette, settings, usb, download, check_circle, compare, undo, redo, tune, star, share, qr_code_2, error, refresh, close, raw_on, restart_alt, arrow_back
+Used icons: download, qr_code_2, error, close, raw_on
 
 
                                  Apache License
