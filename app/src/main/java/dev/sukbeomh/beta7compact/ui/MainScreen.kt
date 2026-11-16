@@ -20,6 +20,7 @@ import dev.sukbeomh.beta7compact.recipe.Recipe
 import dev.sukbeomh.beta7compact.recipe.RecipeWorker
 import dev.sukbeomh.beta7compact.transfer.ImportWorker
 import dev.sukbeomh.beta7compact.ui.components.*
+import dev.sukbeomh.beta7compact.update.UpdateState
 import dev.sukbeomh.beta7compact.usb.UsbAccess
 import kotlinx.coroutines.*
 
@@ -72,6 +73,8 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
     val usbDiagnostic by app.usbDiagnostic.collectAsStateWithLifecycle()
     val link by app.usbState.collectAsStateWithLifecycle()
     val refresh by activity.refresh.collectAsStateWithLifecycle()
+    val update by app.updater.state.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { app.updater.checkIfDue() }
     val records by app.db.photos().observe().collectAsStateWithLifecycle(emptyList())
     val work by remember { WorkManager.getInstance(app).getWorkInfosForUniqueWorkFlow(ImportWorker.NAME) }.collectAsStateWithLifecycle(emptyList())
     val working = work.any { !it.state.isFinished }
@@ -166,6 +169,14 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
                 Column(Modifier.weight(1f).fillMaxHeight().padding(horizontal = if (fullScreen) 0.dp else if (wide) 24.dp else 16.dp)) {
                     ObservedWorkBanner(app, ImportWorker.NAME, "가져오기", { resumeImport() }) { dispatch(NavigationAction.ViewImported) }
                     ObservedWorkBanner(app, RecipeWorker.NAME, "레시피 저장", { RecipeWorker.resume(app) }) { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) }
+                    (update as? UpdateState.Available)?.takeIf { !fullScreen && navigation.tab != AppTab.SETTINGS }?.let { available ->
+                        Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
+                            Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                Text("새 버전 ${available.release.version}", Modifier.weight(1f))
+                                TextButton(onClick = { dispatch(NavigationAction.Tab(AppTab.SETTINGS)) }) { Text("설정에서 업데이트") }
+                            }
+                        }
+                    }
                     error?.let { message -> ErrorBanner(message, if(message.contains("알림") || message.contains("공간")) "앱 설정 열기" else "다시 연결", {
                         if(message.contains("알림") || message.contains("공간")) activity.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,android.net.Uri.parse("package:${app.packageName}")))
                         else resolve()

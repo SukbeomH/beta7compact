@@ -10,8 +10,57 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.sukbeomh.beta7compact.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.sukbeomh.beta7compact.ui.components.*
+import dev.sukbeomh.beta7compact.update.UpdateState
 import kotlinx.coroutines.*
+
+/** Automatic check toggle, manual check and one-tap update from this repository's GitHub releases. */
+@Composable private fun UpdateSetting(app: App) {
+    val updater = app.updater
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val state by updater.state.collectAsStateWithLifecycle()
+    var auto by remember { mutableStateOf(updater.autoCheck) }
+    val busy = state is UpdateState.Checking || state is UpdateState.Downloading || state is UpdateState.Installing
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text("앱을 열 때 새 버전 확인")
+            Text("하루 한 번 · GitHub 릴리즈에 버전만 묻습니다", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(auto, { auto = it; updater.setAutoCheck(it) })
+    }
+    Text("현재 버전 ${BuildConfig.VERSION_NAME}")
+    when (val current = state) {
+        UpdateState.Idle -> Unit
+        UpdateState.Checking -> LinearProgressIndicator(Modifier.fillMaxWidth())
+        is UpdateState.UpToDate -> Text(current.message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        is UpdateState.Available -> {
+            Text("새 버전 ${current.release.version}", style = MaterialTheme.typography.titleMedium)
+            if (current.release.notes.isNotEmpty()) Text(current.release.notes, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 8)
+            Button(onClick = { updater.startInstall(current.release) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text("${current.release.version} 내려받아 설치")
+            }
+            Text("설치는 Android 확인 화면을 거칩니다 · 원본 사진과 설정은 유지됩니다", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        is UpdateState.Downloading -> {
+            val fraction = (current.done.toFloat() / current.release.apkSize).coerceIn(0f, 1f)
+            Text("${current.release.version} 내려받는 중 · ${(fraction * 100).toInt()}%")
+            LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
+        }
+        is UpdateState.Installing -> {
+            Text(if (current.awaitingUser) "${current.release.version} 설치 확인을 기다리는 중입니다" else "${current.release.version} 설치를 준비하는 중입니다")
+            if (current.awaitingUser) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { updater.confirmIntent?.let { runCatching { context.startActivity(it) } } }) { Text("설치 확인 열기") }
+                TextButton(onClick = updater::cancelInstall) { Text("설치 취소") }
+            }
+        }
+        is UpdateState.Failed -> ErrorBanner(current.message, if (current.release != null) "다시 내려받기" else "다시 확인", {
+            current.release?.let(updater::startInstall) ?: updater.checkNow()
+        })
+    }
+    TextButton(onClick = updater::checkNow, enabled = !busy) { Text("지금 확인") }
+}
 
 @Composable fun SettingsScreen(activity: MainActivity, app: App, raw: Boolean, canChange: Boolean, changeRaw: (Boolean) -> Unit, recipes: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
@@ -34,6 +83,8 @@ import kotlinx.coroutines.*
         } }
         Text("위치 연동", style = MaterialTheme.typography.titleSmall)
         OutlinedCard { Column(Modifier.padding(16.dp)) { Text("BLE 위치 동기화 · 준비 중"); Text("GPS 좌표는 화면·로그·DB에 기록하지 않습니다", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+        Text("업데이트", style = MaterialTheme.typography.titleSmall)
+        Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { UpdateSetting(app) } }
         Text("진단 · 정보", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp)) {
             TextButton(onClick = {

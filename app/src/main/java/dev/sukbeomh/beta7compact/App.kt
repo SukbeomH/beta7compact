@@ -14,6 +14,7 @@ class App : Application() {
     val db by lazy { Room.databaseBuilder(this, LibraryDb::class.java, "library.db")
         .addMigrations(LibraryDb.MIGRATION_1_2, LibraryDb.MIGRATION_2_3, LibraryDb.MIGRATION_3_4).build() }
     val settings by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
+    val updater by lazy { dev.sukbeomh.beta7compact.update.Updater(this) }
     val usbState = MutableStateFlow(LinkState.DISCONNECTED)
     val locationState = MutableStateFlow(LocationStatus())
     val usbDiagnostic = MutableStateFlow<String?>(null)
