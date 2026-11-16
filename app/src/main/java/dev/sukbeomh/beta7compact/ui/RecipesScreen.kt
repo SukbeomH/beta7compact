@@ -23,7 +23,7 @@ import dev.sukbeomh.beta7compact.ui.components.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-@Composable internal fun EditorRecipeSave(app: App, recipe: Recipe, name: String, changeName: (String) -> Unit, status: (String) -> Unit) {
+@Composable internal fun EditorRecipeSave(app: App, recipe: Recipe, name: String, changeName: (String) -> Unit, onArchived: (Recipe) -> Unit, status: (String) -> Unit) {
     var showing by rememberSaveable { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
@@ -34,7 +34,8 @@ import kotlinx.coroutines.flow.*
         confirmButton = { TextButton(enabled = !saving, onClick = {
             val snapshot = recipe; saving = true
             scope.launch {
-                try { status("${saveNewRecipe(app, name, snapshot)} 보관 완료"); showing = false }
+                try { status("${saveNewRecipe(app, name, snapshot)} 보관 완료"); onArchived(snapshot); showing = false }
+                catch (e: CancellationException) { throw e }
                 catch (e: Exception) { error = "레시피를 보관할 수 없습니다" }
                 finally { saving = false }
             }

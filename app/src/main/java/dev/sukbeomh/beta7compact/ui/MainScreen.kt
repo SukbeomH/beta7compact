@@ -16,6 +16,7 @@ import dev.sukbeomh.beta7compact.*
 import dev.sukbeomh.beta7compact.R
 import dev.sukbeomh.beta7compact.core.*
 import dev.sukbeomh.beta7compact.library.Photo
+import dev.sukbeomh.beta7compact.recipe.Recipe
 import dev.sukbeomh.beta7compact.recipe.RecipeWorker
 import dev.sukbeomh.beta7compact.transfer.ImportWorker
 import dev.sukbeomh.beta7compact.ui.components.*
@@ -26,12 +27,42 @@ private val NavigationSaver = listSaver<NavigationState, Any>(
     save = { listOf(it.tab.ordinal, it.picking, it.detailKey ?: "") + it.editorKeys },
     restore = { NavigationState(AppTab.entries[it[0] as Int], it.drop(3).map { key -> key as String }, it[1] as Boolean, (it[2] as String).ifEmpty { null }) }
 )
+private val EditorExitSaver = listSaver<EditorExitState, String>(
+    save = { listOf(it.initialRecipe.toJson(), it.recipe.toJson(), it.pending?.tab?.name ?: "",
+        it.pending?.picking.toString(), it.pending?.detailKey ?: "") + it.pending?.editorKeys.orEmpty() },
+    restore = { EditorExitState(Recipe.fromJson(it[0]), Recipe.fromJson(it[1]),
+        if (it[2].isEmpty()) null else NavigationState(AppTab.valueOf(it[2]), it.drop(5), it[3].toBoolean(), it[4].ifEmpty { null })) }
+)
+
 @Composable fun MainScreen(activity: MainActivity, app: App) {
     val scope = rememberCoroutineScope()
     var navigation by rememberSaveable(stateSaver = NavigationSaver) {
         mutableStateOf(NavigationState(initialTab(runCatching { UsbAccess.device(app) }.isSuccess)))
     }
-    fun dispatch(action: NavigationAction) { navigation = navigate(navigation, action) }
+    var editorExitState by rememberSaveable(navigation.editorKeys, stateSaver = EditorExitSaver) { mutableStateOf(EditorExitState()) }
+    var editorName by rememberSaveable(navigation.editorKeys) { mutableStateOf("내 레시피") }
+    var archiveError by remember { mutableStateOf<String?>(null) }
+    fun handleExit(event: EditorExitEvent) {
+        val result = editorExit(editorExitState, event)
+        editorExitState = result.state
+        if (event is EditorExitEvent.Request || event == EditorExitEvent.Archive || event == EditorExitEvent.ContinueEditing) archiveError = null
+        result.destination?.let { navigation = it }
+        result.archive?.let { snapshot -> scope.launch {
+            try {
+                saveNewRecipe(app, editorName, snapshot)
+                handleExit(EditorExitEvent.Archived(snapshot))
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) {
+                handleExit(EditorExitEvent.ArchiveFailed)
+                archiveError = "레시피를 보관할 수 없습니다. 다시 시도하거나 계속 편집하세요."
+            }
+        } }
+    }
+    fun dispatch(action: NavigationAction) {
+        val destination = navigate(navigation, action)
+        if (navigation.editorKeys.isNotEmpty() && destination != navigation) handleExit(EditorExitEvent.Request(destination))
+        else navigation = destination
+    }
     var objects by remember { mutableStateOf<List<CameraObject>>(emptyList()) }
     var selected by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var busy by remember { mutableStateOf(false) }
@@ -144,7 +175,14 @@ private val NavigationSaver = listSaver<NavigationState, Any>(
                             { dispatch(NavigationAction.Edit(listOf(detailPhoto.key))) }, { dispatch(NavigationAction.Back) }, windowWidth, windowHeight)
                         else { BackHandler { dispatch(NavigationAction.Back) }; TextButton(onClick = { dispatch(NavigationAction.Back) }) { Text("사진으로 돌아가기") } }
                     } else if (editing) {
-                        if (editorPhotos.isNotEmpty()) key(navigation.editorKeys) { RecipeEditor(app, editorPhotos, windowWidth, windowHeight) { dispatch(NavigationAction.Back) } }
+                        if (editorPhotos.isNotEmpty()) key(navigation.editorKeys) {
+                            RecipeEditor(app, editorPhotos, windowWidth, windowHeight,
+                                editorExitState.recipe, { handleExit(EditorExitEvent.Change(it)) },
+                                editorName, { editorName = it.take(80) },
+                                { handleExit(EditorExitEvent.Archived(it)) },
+                                editorExitState.pending == null, { handleExit(EditorExitEvent.GestureCancelled) }
+                            ) { dispatch(NavigationAction.Back) }
+                        }
                         else { BackHandler { dispatch(NavigationAction.Back) }; TextButton(onClick = { dispatch(NavigationAction.Back) }) { Text("사진으로 돌아가기") } }
                     } else {
                         ScreenTitle(if (navigation.picking) "사진 고르기" else navigation.tab.label)
@@ -172,6 +210,22 @@ private val NavigationSaver = listSaver<NavigationState, Any>(
             }
         }
     }
+    if (editorExitState.pending != null) AlertDialog(
+        onDismissRequest = { handleExit(EditorExitEvent.ContinueEditing) },
+        title = { Text("편집 내용을 보관할까요?") },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("보관하지 않은 변경이 있습니다. 버리면 현재 편집 내용을 되돌릴 수 없습니다.")
+            OutlinedTextField(editorName, { editorName = it.take(80) }, label = { Text("레시피 이름") }, enabled = !editorExitState.archiving)
+            archiveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        } },
+        confirmButton = { TextButton(enabled = !editorExitState.archiving, onClick = { handleExit(EditorExitEvent.Archive) }) {
+            Text(if (editorExitState.archiving) "보관 중…" else "레시피로 보관")
+        } },
+        dismissButton = { Row {
+            TextButton(enabled = !editorExitState.archiving, onClick = { handleExit(EditorExitEvent.ContinueEditing) }) { Text("계속 편집") }
+            TextButton(enabled = !editorExitState.archiving, onClick = { handleExit(EditorExitEvent.Discard) }) { Text("버리기") }
+        } },
+    )
 }
 @Composable private fun cameraThumb(app: App, obj: CameraObject, raw: Boolean, importing: Boolean): Bitmap? {
     var bitmap by remember(obj.key, raw) { mutableStateOf<Bitmap?>(null) }

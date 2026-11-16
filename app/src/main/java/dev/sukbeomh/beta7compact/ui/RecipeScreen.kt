@@ -41,12 +41,13 @@ import kotlinx.coroutines.*
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, appWindowHeight: Float? = null, onBack: () -> Unit) {
+fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, appWindowHeight: Float? = null,
+    currentRecipe: Recipe, onRecipeChange: (Recipe) -> Unit, name: String, changeName: (String) -> Unit,
+    onArchived: (Recipe) -> Unit, backEnabled: Boolean, onGestureCancelled: () -> Unit, onBack: () -> Unit) {
     val scope=rememberCoroutineScope();val store=remember { RecipeStore(app) };var previewIndex by rememberSaveable { mutableIntStateOf(0) };val photo=photos[previewIndex.coerceIn(0,photos.lastIndex)]
-    var recipeJson by rememberSaveable { mutableStateOf(Recipe().toJson()) }
-    val history=remember { RecipeHistory(Recipe.fromJson(recipeJson)) }
-    var recipe by remember { mutableStateOf(history.current) }
-    fun change(next: Recipe) { history.set(next);recipe=history.current;recipeJson=recipe.toJson() }
+    val history=remember { RecipeHistory(currentRecipe) }
+    val recipe=currentRecipe
+    fun change(next: Recipe) { history.set(next);onRecipeChange(history.current) }
     val panelScroll=rememberScrollState()
     var details by rememberSaveable { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
@@ -54,9 +55,10 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
     var backProgress by remember { mutableFloatStateOf(0f) }
     val saved by app.db.recipes().observe().collectAsStateWithLifecycle(emptyList())
     val strengthTarget=remember { BringIntoViewRequester() }
-    PredictiveBackHandler { events ->
+    PredictiveBackHandler(enabled=backEnabled) { events ->
         try { events.collect { backProgress=it.progress };onBack() }
-        catch(e: CancellationException) { backProgress=0f }
+        catch(e: CancellationException) { onGestureCancelled() }
+        finally { backProgress=0f }
     }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var baking by remember { mutableStateOf(false) }
@@ -67,7 +69,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
     var before by remember { mutableStateOf<Bitmap?>(null) };var after by remember { mutableStateOf<Bitmap?>(null) }
     var compare by remember { mutableStateOf(false) };var rendering by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) };var status by remember { mutableStateOf<String?>(null) }
-    var saving by remember { mutableStateOf(false) };var name by rememberSaveable { mutableStateOf("내 레시피") }
+    var saving by remember { mutableStateOf(false) }
     val results by remember(photo.key) { app.db.recipes().results(photo.key) }.collectAsStateWithLifecycle(emptyList())
     suspend fun reload() { entries=withContext(Dispatchers.IO) { store.entries() } }
     val pick=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -186,7 +188,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                         items(saved,key={it.id}) { value ->
                             OutlinedCard(onClick={
                                 val next=runCatching { Recipe.fromJson(value.json) }.getOrNull()
-                                if(next!=null && entries.any { it.id==next.lutId }) {change(next);name=value.name}
+                                if(next!=null && entries.any { it.id==next.lutId }) {change(next);changeName(value.name)}
                                 else {error="이 레시피에 필요한 LUT가 없습니다. 사용자 LUT를 선택하세요";category="user"}
                             },modifier=Modifier.width(88.dp).heightIn(min=96.dp)) { Text(value.name,Modifier.padding(8.dp),maxLines=3) }
                         }
@@ -231,10 +233,10 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
             }
             Row(Modifier.fillMaxWidth().padding(horizontal=8.dp),verticalAlignment=Alignment.CenterVertically) {
             SymbolButton(R.drawable.symbol_compare,if(compare) "보정 사진 보기" else "원본 보기") { compare=!compare }
-            SymbolButton(R.drawable.symbol_undo,"실행 취소",history.canUndo) { recipe=history.undo();recipeJson=recipe.toJson() }
-            SymbolButton(R.drawable.symbol_redo,"다시 실행",history.canRedo) { recipe=history.redo();recipeJson=recipe.toJson() }
+            SymbolButton(R.drawable.symbol_undo,"실행 취소",history.canUndo) { onRecipeChange(history.undo()) }
+            SymbolButton(R.drawable.symbol_redo,"다시 실행",history.canRedo) { onRecipeChange(history.redo()) }
                 Spacer(Modifier.weight(1f))
-                EditorRecipeSave(app,recipe,name,{name=it.take(80)}) {status=it}
+                EditorRecipeSave(app,recipe,name,changeName,onArchived) {status=it}
             }
             if(tabletop) Toolbar()
             }

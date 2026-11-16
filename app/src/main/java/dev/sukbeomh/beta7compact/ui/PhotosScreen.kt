@@ -27,6 +27,8 @@ import dev.sukbeomh.beta7compact.ui.components.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
+private data class PhotoError(val message: String, val actionLabel: String, val retry: () -> Unit)
+
 @Composable internal fun photoThumbnail(app: App, uri: String?, size: Int = 384): Bitmap? {
     var image by remember(uri, size) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(uri, size) {
@@ -41,7 +43,7 @@ import kotlinx.coroutines.flow.*
     var focused by rememberSaveable { mutableStateOf<String?>(null) }
     var filter by rememberSaveable { mutableStateOf("전체") }
     val scope = rememberCoroutineScope()
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<PhotoError?>(null) }
     // Existing per-photo result flows preserve Room v4 and react to completed exports.
     val results by remember(photos.map { it.key }) {
         if (photos.isEmpty()) flowOf(emptyList<RecipeResult>())
@@ -53,7 +55,22 @@ import kotlinx.coroutines.flow.*
     val keys = selected.filter { key -> photos.any { it.key == key } }
     fun share() {
         val uris = photos.filter { it.key in keys }.mapNotNull { it.uri?.let(Uri::parse) }
-        try { sharePhotos(app, uris) } catch (e: Exception) { error = "사진을 공유할 앱이 없습니다" }
+        try { sharePhotos(app, uris) } catch (e: Exception) { error = PhotoError("사진을 공유할 앱이 없습니다", "사진 공유 재시도", ::share) }
+    }
+    fun resumeSave() {
+        scope.launch {
+            try { RecipeWorker.resume(app); error = null }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) { error = PhotoError("저장을 재개할 수 없습니다", "저장 재개 재시도", ::resumeSave) }
+        }
+    }
+    fun openResult(uri: String) {
+        try { openPhoto(app, uri) }
+        catch (e: Exception) { error = PhotoError("결과 사진을 열 수 없습니다", "결과 열기 재시도", { openResult(uri) }) }
+    }
+    fun shareResult(uri: String) {
+        try { sharePhotos(app, listOf(Uri.parse(uri))) }
+        catch (e: Exception) { error = PhotoError("결과 사진을 공유할 앱이 없습니다", "결과 공유 재시도", { shareResult(uri) }) }
     }
     @Composable fun Grid(modifier: Modifier, wide: Boolean, portrait: Boolean = false) {
         LazyVerticalGrid(GridCells.Fixed(3), modifier, state = gridState, horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -88,8 +105,8 @@ import kotlinx.coroutines.flow.*
                 if (saved.isEmpty()) Text("아직 없음", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 saved.forEach { result ->
                     val recipe = remember(result.recipeJson) { runCatching { Recipe.fromJson(result.recipeJson) }.getOrNull() }
-                    TextButton(onClick = { try { openPhoto(app, result.uri) } catch (e: Exception) { error = "결과 사진을 열 수 없습니다" } }) { Text("${recipe?.lutId ?: "레시피"} · ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(result.created))}") }
-                    TextButton(onClick = { try { sharePhotos(app, listOf(Uri.parse(result.uri))) } catch (e: Exception) { error = "결과 사진을 공유할 앱이 없습니다" } }) { Text("결과 공유") }
+                    TextButton(onClick = { openResult(result.uri) }) { Text("${recipe?.lutId ?: "레시피"} · ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(result.created))}") }
+                    TextButton(onClick = { shareResult(result.uri) }) { Text("결과 공유") }
                 }
                 Button(onClick = { edit(if (selectionMode) keys else listOf(p.key)) }, enabled = !selectionMode || keys.isNotEmpty()) {
                     Text(if (selectionMode) "레시피 적용 (${keys.size}장)" else "레시피 적용")
@@ -106,9 +123,9 @@ import kotlinx.coroutines.flow.*
                     TextButton(onClick = { selectionMode = !selectionMode; selected = emptyList() }) { Text(if (selectionMode) "선택 해제" else "선택") }
                     if (selectionMode) TextButton(onClick = ::share, enabled = keys.isNotEmpty()) { Text("공유") }
                 }
-                TextButton(onClick = { scope.launch { try { RecipeWorker.resume(app) } catch(e: Exception) { error="저장을 재개할 수 없습니다" } } }) { Text("저장 재개") }
+                TextButton(onClick = ::resumeSave) { Text("저장 재개") }
                 ChipStrip(listOf("전체", "미편집", "편집됨", "RAW"), filter) { filter = it }
-                error?.let { ErrorBanner(it, "사진 공유 재시도", ::share) { error = null } }
+                error?.let { failure -> ErrorBanner(failure.message, failure.actionLabel, { error = null; failure.retry() }) { error = null } }
                 if (photos.isEmpty()) EmptyState("아직 가져온 사진이 없어요", "카메라를 연결해 원본을 가져오세요.", "카메라 탭으로", camera)
                 else if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
                 else if (!wide) {

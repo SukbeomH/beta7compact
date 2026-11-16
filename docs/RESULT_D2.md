@@ -135,3 +135,71 @@ USB 카메라 가져오기, 물리 Fold8 접힘/회전/테이블탑, 예측 뒤�
 기존 원본 보존·공유/엔진 계약 테스트 및 마이그레이션 검사 결과와 이 한계를 구분합니다.
 
 푸시 대상은 `feat/d2-redesign` 하나입니다. force/--no-verify/git add -A/APK·AAB 커밋은 사용하지 않습니다.
+
+## D2 리뷰 수정 — D2-B1 / 저장 재개 오류 배너 (2026-11-16 UTC)
+
+수정 기준은 독립 리뷰 대상 `dad00be8966bd535a7318b22778f31f2b714bb9b`입니다.
+아래 결과가 위의 이전 구현·검증·APK 정보보다 최신입니다. 두 리뷰 지적과 테스트·이 결과 문서를
+`feat/d2-redesign` 위 하나의 원자 커밋에 포함합니다.
+
+### 편집기 이탈 보호
+
+- `MainScreen.dispatch`에서 편집기를 벗어나는 목적지 변경을 모두 `editorExit` 순수 상태 전이에 연결했습니다.
+  시스템 뒤로가기, 예측형 뒤로 완료, 일반/가로/테이블탑 공용 툴바 뒤로가기,
+  가져오기 완료 ‘보기’와 레시피 저장 완료 ‘보기’가 같은 처리를 거칩니다.
+  향후 탭·상세·다른 사진 편집으로 목적지가 바뀌어도 이 공통 처리에서 보호합니다.
+- 초기 레시피와 현재 `Recipe`의 전체 값 비교로 미보관 변경을 판단합니다. 변경이 없거나
+  실행 취소/초기화로 초기값과 같아지면 바로 이탈합니다. 단순히 편집 컨트롤을 만졌는지는 기준이 아닙니다.
+- 변경이 있으면 ‘계속 편집 / 버리기 / 레시피로 보관’을 제공합니다. 계속 편집, 대화상자 바깥/뒤로 취소는
+  대기 중 이탈만 취소하며 레시피와 편집기 구성을 유지합니다. 예측 제스처 취소는 이탈 요청을 만들지 않고
+  표면의 진행 변환만 0으로 복원합니다. 확인창이 열린 동안 편집기의 예측 뒤로 핸들러는 비활성화합니다.
+- ‘버리기’는 확인한 목적지로 이동합니다. ‘레시피로 보관’은 이름을 입력받고 기존 Room transaction 기반
+  `saveNewRecipe`로 현재 스냅샷을 보관한 뒤에만 이동합니다. 보관 중 중복 요청·버리기·취소는 무시하며,
+  보관 실패 시 편집 내용·대기 목적지를 유지하고 오류와 재시도/계속 편집을 제공합니다.
+- 편집 레시피·초기 기준·대기 목적지·레시피 이름을 상위 saveable 상태로 관리합니다.
+  구성 복원에서는 진행 중 보관 플래그를 해제하므로 종료된 coroutine 때문에 보관 중 상태가 영구 유지되지 않습니다.
+  기존 하단 ‘레시피로 보관’도 DB 저장 성공한 스냅샷을 기준값으로 갱신하며 추가 변경은 다시 보호합니다.
+  사진 저장 대기열 추가는 레시피 보관 성공으로 취급하지 않으므로 편집 상태 보호가 유지됩니다.
+
+### 저장 재개 오류 복구
+
+`PhotosScreen`의 오류가 메시지·동작 이름·실제 재시도 작업을 함께 보관하도록 변경했습니다.
+‘저장 재개’ 실패 배너는 ‘저장 재개 재시도’로 `RecipeWorker.resume`을 다시 호출합니다.
+선택 원본 공유, 결과 열기, 결과 공유 실패도 각각 해당 작업과 결과 URI로 다시 연결합니다.
+저장 재개 성공은 오류를 지우며 coroutine 취소는 오류로 바꾸지 않고 전파합니다.
+
+### 이번 수정의 실행 검증
+
+```sh
+ANDROID_HOME=/home/agent/camera-recipe-app/.android-sdk \
+ANDROID_SDK_ROOT=/home/agent/camera-recipe-app/.android-sdk \
+./gradlew assembleDebug test lint assembleDebugAndroidTest --continue --no-daemon
+python3 tools/check_m1_migration.py
+python3 tools/check_m2_migration.py
+python3 tools/check_d2_contract.py
+git diff --check dad00be8
+```
+
+| 검사 | 실제 결과 |
+| --- | --- |
+| Gradle 전체 게이트 | 종료 0, BUILD SUCCESSFUL, 2분 17초, 115 tasks(35 실행, 80 up-to-date) |
+| Debug / Release JVM | 각각 162개, 실패·오류·건너뜀 0. 기존 151개 유지 + `D2EditorExitTest` 11개 |
+| 신규 순수 전이 테스트 | 변경 없음/있음, 계속 편집·확인 취소, 예측 제스처 취소, 버리기, 보관 전/성공/실패·재시도, 보관 중 중복 동작 차단, 두 완료 ‘보기’ 경로, 기타 목적지 변경, undo/redo, 보관 후 추가 변경·늦은 저장 결과 보호 |
+| lint | Fatal/오류 0, 경고 17 |
+| migration M1 / M2 | 테스트가 생성한 SQL로 1→2→3·2→3 및 1/2/3→4 통과. 원본 행·URI·스냅샷·스키마/인덱스/FK/integrity 보존 |
+| 계측 APK | assembleDebugAndroidTest 통과. 기기 실행은 하지 않음 |
+| D2 범위·공백 | 엔진/USB/BLE/import/DB/JSON/공유/LUT/의존성 변경 없음, 6/0.4.0 유지, APK/AAB 미추적, diff --check 통과 |
+| 로컬 APK | `dist/beta7compact-0.4.0-debug.apk`, Gradle 출력과 바이트 동일, aapt 6/0.4.0, 고지 포함 자산 60개 바이트 일치 |
+
+APK SHA256: `7e81c5bb4dcd1f3b38dca1dc7a340c785960d6ee6b72c98f619c2b92091cbcd0`.
+`app/src` 전체 파일과 app Gradle의 경로/바이트 집계 SHA256:
+`5f70492f0d15efa0cf452049307debf5ecf734516a2a47de0db19f5bac7e95aa`.
+
+비공개 증거는 `/home/agent/beta7compact-private/probe-logs/d2-fix-*`에 보관했습니다.
+`d2-fix-gradle.log`, `d2-fix-test-summary.json`, `d2-fix-{m1,m2}-migration.log`,
+`d2-fix-source.json`, `d2-fix-apk-lint.json`에 실제 실행 결과가 있습니다.
+
+`adb devices -l`에서 연결 기기 0대를 확인했습니다. 실제 시스템/예측 제스처·다이얼로그·테이블탑·회전,
+Room 저장 실패 UI, 저장 재개 실패 배너의 터치 동작은 실기 미검증입니다.
+순수 전이 테스트와 정적 호출 연결, 계측 APK 빌드 결과를 실기 동작 인증과 구분합니다.
+APK는 Git 제외된 `dist/` 산출물로만 남기며 force 없이 해당 브랜치 하나만 푸시합니다.
