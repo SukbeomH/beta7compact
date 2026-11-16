@@ -92,10 +92,11 @@ import kotlinx.coroutines.flow.*
     }
     val current = saved.firstOrNull { it.id == selected }
     fun sample(value: SavedRecipe) = results.filter { it.recipeJson == value.json }.maxByOrNull { it.created }?.uri
-    @Composable fun Detail(value: SavedRecipe, modifier: Modifier) {
+    /** [scrolls] must be false inside the compact list, which already scrolls: a nested vertical scroll is measured with unbounded height and throws. */
+    @Composable fun Detail(value: SavedRecipe, modifier: Modifier, scrolls: Boolean) {
         val recipe = remember(value.json) { runCatching { Recipe.fromJson(value.json) }.getOrNull() }
         val entry = entries.firstOrNull { it.id == recipe?.lutId }
-        Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(if (scrolls) modifier.verticalScroll(rememberScrollState()) else modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(value.name, style = MaterialTheme.typography.titleLarge)
             val image = photoThumbnail(app, sample(value), 1200)
             if (image != null) Image(image.asImageBitmap(), "최근 적용 사진", Modifier.fillMaxWidth().aspectRatio(1.5f), contentScale = ContentScale.Fit)
@@ -159,14 +160,14 @@ import kotlinx.coroutines.flow.*
                             }
                         }
                     }
-                    if (!wide && current?.id == value.id) Detail(value, Modifier.fillMaxWidth().padding(8.dp))
+                    if (!wide && current?.id == value.id) Detail(value, Modifier.fillMaxWidth().padding(8.dp), scrolls = false)
                 }
                 error?.let { ErrorBanner(it, "목록 다시 읽기", { task { entries = withContext(Dispatchers.IO) { RecipeStore(app).entries() } } }) { error = null } }
                 message?.let { Text(it) }
             }
         }
         if (wide) Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-            ListPane(Modifier.weight(1f)); current?.let { Detail(it, Modifier.weight(1f)) }
+            ListPane(Modifier.weight(1f)); current?.let { Detail(it, Modifier.weight(1f), scrolls = true) }
         } else ListPane(Modifier.fillMaxSize())
     }
     if (importing) RecipeImportDialog(app, close = { importing = false })
