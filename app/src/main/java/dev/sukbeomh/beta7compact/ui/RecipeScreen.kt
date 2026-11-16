@@ -1,10 +1,5 @@
 package dev.sukbeomh.beta7compact.ui
 
-import android.net.Uri
-import android.util.Size
-import androidx.compose.foundation.lazy.grid.*
-import androidx.work.WorkManager
-
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -43,54 +38,6 @@ import dev.sukbeomh.beta7compact.App
 import dev.sukbeomh.beta7compact.library.Photo
 import dev.sukbeomh.beta7compact.recipe.*
 import kotlinx.coroutines.*
-
-@Composable
-fun RecipeLibrary(app: App, photos: List<Photo>) {
-    val scope=rememberCoroutineScope()
-    var selected by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var importing by remember { mutableStateOf(false) }
-    if(importing) RecipeImportDialog(app,close={importing=false})
-    var selectionMode by remember { mutableStateOf(false) }
-    var editing by remember { mutableStateOf<List<Photo>>(emptyList()) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val work by remember { WorkManager.getInstance(app).getWorkInfosForUniqueWorkFlow(RecipeWorker.NAME) }.collectAsStateWithLifecycle(emptyList())
-    val active=work.firstOrNull { it.state==androidx.work.WorkInfo.State.RUNNING } ?: work.firstOrNull { !it.state.isFinished } ?: work.firstOrNull()
-    if(editing.isNotEmpty()) {
-        RecipeEditor(app,editing,onBack={ editing=emptyList() });return
-    }
-    Column {
-        TextButton(onClick={importing=true}) { Text("레시피 코드 붙여넣기") }
-        Text("가져온 원본 ${photos.size}개 · 사진을 눌러 레시피 편집")
-        Row {
-            TextButton(onClick={selectionMode=!selectionMode;selected=emptySet()}) { Text(if(selectionMode) "선택 해제" else "여러 장 선택") }
-            if(selectionMode) TextButton(onClick={editing=photos.filter { it.key in selected }},enabled=selected.isNotEmpty()) { Text("${selected.size}장 같은 레시피") }
-            TextButton(onClick={scope.launch { try { RecipeWorker.resume(app) } catch(e: Exception) { error="작업을 재개할 수 없습니다" } }}) { Text("작업 재개") }
-        }
-        active?.let { w ->
-            val data=if(w.state.isFinished) w.outputData else w.progress
-            Text("레시피 저장 ${data.getInt("done",0)} / ${data.getInt("total",0)} · ${w.state.name}")
-            data.getString("error")?.let { Text(it,color=MaterialTheme.colorScheme.error) }
-            if(!w.state.isFinished) TextButton(onClick={WorkManager.getInstance(app).cancelUniqueWork(RecipeWorker.NAME)}) { Text("저장 중단") }
-        }
-        error?.let { Text(it,color=MaterialTheme.colorScheme.error) }
-        LazyVerticalGrid(columns=GridCells.Adaptive(140.dp),modifier=Modifier.weight(1f),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            items(photos,key={it.key}) { photo ->
-                var thumbnail by remember(photo.uri) { mutableStateOf<Bitmap?>(null) }
-                LaunchedEffect(photo.uri) { thumbnail=withContext(Dispatchers.IO) {
-                    runCatching { app.contentResolver.loadThumbnail(Uri.parse(photo.uri),Size(256,256),null) }.getOrNull()
-                } }
-                Card(Modifier.clickable {
-                    if(selectionMode) selected=if(photo.key in selected) selected-photo.key else selected+photo.key
-                    else editing=listOf(photo)
-                }) {
-                    thumbnail?.let { Image(it.asImageBitmap(),"원본 미리보기",Modifier.fillMaxWidth().height(110.dp)) }
-                    Text((if(photo.key in selected) "✓ " else "")+photo.name,maxLines=1,modifier=Modifier.padding(8.dp))
-                    if(photo.name.endsWith(".arw",true)) Text("RAW · 내장 JPEG만 편집",style=MaterialTheme.typography.labelSmall)
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable

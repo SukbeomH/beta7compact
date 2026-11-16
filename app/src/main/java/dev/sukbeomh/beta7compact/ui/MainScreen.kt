@@ -1,101 +1,94 @@
 package dev.sukbeomh.beta7compact.ui
 
-import android.annotation.SuppressLint
-import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
-import android.util.Size
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import android.hardware.usb.UsbManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.saveable.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.work.WorkManager
 import dev.sukbeomh.beta7compact.*
-import dev.sukbeomh.beta7compact.ble.*
+import dev.sukbeomh.beta7compact.R
 import dev.sukbeomh.beta7compact.core.*
 import dev.sukbeomh.beta7compact.library.Photo
+import dev.sukbeomh.beta7compact.recipe.RecipeWorker
 import dev.sukbeomh.beta7compact.transfer.ImportWorker
+import dev.sukbeomh.beta7compact.ui.components.*
 import dev.sukbeomh.beta7compact.usb.UsbAccess
 import kotlinx.coroutines.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-@SuppressLint("MissingPermission") // Each BLE user action requests grants; failures are shown as one-line errors.
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun MainScreen(activity: MainActivity, app: App) {
+private val NavigationSaver = listSaver<NavigationState, Any>(
+    save = { listOf(it.tab.ordinal, it.picking, it.detailKey ?: "") + it.editorKeys },
+    restore = { NavigationState(AppTab.entries[it[0] as Int], it.drop(3).map { key -> key as String }, it[1] as Boolean, (it[2] as String).ifEmpty { null }) }
+)
+@Composable fun MainScreen(activity: MainActivity, app: App) {
     val scope = rememberCoroutineScope()
-    var page by rememberSaveable { mutableIntStateOf(0) }
+    var navigation by rememberSaveable(stateSaver = NavigationSaver) {
+        mutableStateOf(NavigationState(initialTab(runCatching { UsbAccess.device(app) }.isSuccess)))
+    }
+    fun dispatch(action: NavigationAction) { navigation = navigate(navigation, action) }
     var objects by remember { mutableStateOf<List<CameraObject>>(emptyList()) }
-    var selected by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var selected by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var usbText by remember { mutableStateOf("Sony 카메라를 USB로 연결하세요") }
-    var found by remember { mutableStateOf<List<BluetoothDevice>>(emptyList()) }
+    var detail by remember { mutableStateOf("Sony 카메라를 USB로 연결하세요") }
     var raw by remember { mutableStateOf(app.settings.getBoolean("raw", true)) }
-    var bleReport by remember { mutableStateOf(ScanReport()) }
-    var bleSearched by remember { mutableStateOf(false) }
-    var bleBusy by remember { mutableStateOf(false) }
-    var bleMessage by remember { mutableStateOf<String?>(null) }
-    var scanJob by remember { mutableStateOf<Job?>(null) }
     val usbDiagnostic by app.usbDiagnostic.collectAsStateWithLifecycle()
-    DisposableEffect(app) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
-            if (key == "raw") raw = prefs.getBoolean("raw", true)
-        }
-        app.settings.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { app.settings.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
-    var interval by remember { mutableIntStateOf(app.settings.getInt("interval", 10)) }
-    val records by app.db.photos().observe().collectAsStateWithLifecycle(initialValue = emptyList())
-    val location by app.locationState.collectAsStateWithLifecycle()
-    val linkState by app.usbState.collectAsStateWithLifecycle()
+    val link by app.usbState.collectAsStateWithLifecycle()
     val refresh by activity.refresh.collectAsStateWithLifecycle()
-    LaunchedEffect(refresh) {
-        found = runCatching { BleScanner.bonded(app, app.settings.getString("camera", null)) }.getOrDefault(emptyList())
-    }
-    val work by remember { WorkManager.getInstance(app).getWorkInfosForUniqueWorkFlow(ImportWorker.NAME) }
-        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val records by app.db.photos().observe().collectAsStateWithLifecycle(emptyList())
+    val work by remember { WorkManager.getInstance(app).getWorkInfosForUniqueWorkFlow(ImportWorker.NAME) }.collectAsStateWithLifecycle(emptyList())
     val working = work.any { !it.state.isFinished }
-    val workInfo = work.firstOrNull()
     val completed = records.filter { it.imported != null }.flatMap { it.cameraObject().compatibleKeys }.toSet()
+    val device = remember(refresh) { runCatching { UsbAccess.device(app) }.getOrNull() }
+    val permission = device?.let { app.getSystemService(UsbManager::class.java).hasPermission(it) } == true
+    val mtp = device?.let { camera -> (0 until camera.interfaceCount).any { camera.getInterface(it).interfaceClass == 6 } } == true
+    val connected = permission && mtp && link == LinkState.SESSION
+    val status = when {
+        device == null -> "미연결"
+        !mtp -> "MTP 필요"
+        !permission -> "권한 필요"
+        busy -> "연결 중"
+        connected -> "연결됨"
+        else -> "연결 확인"
+    }
     fun scanUsb() {
         if (busy || working) return
         scope.launch {
             busy = true; error = null
             try {
                 val camera = UsbAccess.device(app)
-                if (!(0 until camera.interfaceCount).any { camera.getInterface(it).interfaceClass == 6 }) {
-                    error("카메라 설정 → USB 연결 → MTP")
-                }
-                if (!app.getSystemService(android.hardware.usb.UsbManager::class.java).hasPermission(camera)) {
-                    usbText = "USB 권한을 허용한 뒤 목록을 새로고침하세요"
+                check((0 until camera.interfaceCount).any { camera.getInterface(it).interfaceClass == 6 }) { "카메라 설정 → USB 연결 → MTP" }
+                if (!app.getSystemService(UsbManager::class.java).hasPermission(camera)) {
+                    detail = "USB 권한을 허용한 뒤 다시 스캔하세요"
                     objects = emptyList(); app.usb(LinkEvent.FOUND); return@launch
                 }
                 app.usb(LinkEvent.LOST); app.usb(LinkEvent.FOUND); app.usb(LinkEvent.OPEN)
                 val list = withContext(Dispatchers.IO) { app.useUsb { it.list() } }
-                objects = list; selected = selected.intersect(list.map { it.key }.toSet())
-                app.usb(LinkEvent.READY); usbText = "사진 ${list.size}개 · 새 사진 ${list.count { !it.isKnown(completed) }}개"
+                objects = list; selected = selected.intersect(list.map { it.key }.toSet()).toList()
+                app.usb(LinkEvent.READY); detail = "사진 ${list.size}장 · 새 사진 ${list.count { !it.isKnown(completed) }}장"
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 objects = emptyList(); app.usb(LinkEvent.ERROR)
-                usbText = if (e.message?.any { it in '가'..'힣' } == true) e.message!! else "USB 연결·MTP 설정을 확인하세요"
+                detail = if (e.message?.any { it in '가'..'힣' } == true) e.message!! else "USB 연결·MTP 설정을 확인하세요"
+                if (device != null) error = detail
             } finally { busy = false }
+        }
+    }
+    fun resolve() {
+        try { if (!permission && device != null) activity.usbPermission() else scanUsb() }
+        catch (e: Exception) { error = "Sony 카메라를 USB로 연결하세요" }
+    }
+    fun resumeImport() {
+        if (device == null || !mtp) { error = "같은 카드를 넣은 카메라를 MTP 모드로 연결하세요"; return }
+        if (!permission) { resolve(); return }
+        activity.requestNotifications { granted ->
+            if (granted) ImportWorker.start(app) else error = "알림 권한을 앱 설정에서 허용하세요"
         }
     }
     fun receive(keys: Set<String>?) {
@@ -105,179 +98,82 @@ fun MainScreen(activity: MainActivity, app: App) {
                 try {
                     val plan = ImportPlan.create(objects, completed, keys)
                     app.db.photos().enqueue(plan.map { Photo.from(it) })
-                    ImportWorker.start(app)
-                    selected = emptySet()
+                    ImportWorker.start(app); selected = emptyList()
+                    dispatch(NavigationAction.Back)
                 } catch (e: Exception) { error = "대기열 저장에 실패했습니다. 저장 공간을 확인하세요" }
             }
         }
     }
+    DisposableEffect(app) {
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key -> if (key == "raw") raw = prefs.getBoolean("raw", true) }
+        app.settings.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { app.settings.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
     LaunchedEffect(refresh) { if (!working) scanUsb() }
-    MaterialTheme(colorScheme = lightColorScheme(primary = androidx.compose.ui.graphics.Color(0xff315e51))) {
-        Scaffold(bottomBar = {
-            NavigationBar {
-                listOf("홈", "가져오기", "라이브러리", "설정").forEachIndexed { i, label ->
-                    NavigationBarItem(selected = page == i, onClick = { page = i }, icon = { Text(listOf("⌂", "↓", "▦", "⚙")[i]) }, label = { Text(label) })
-                }
+    val saveable = rememberSaveableStateHolder()
+    val editorPhotos = navigation.editorKeys.mapNotNull { key -> records.firstOrNull { it.key == key && it.imported != null } }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val windowWidth = maxWidth.value
+        val windowHeight = maxHeight.value
+        val wide = windowClass(windowWidth) != WindowClass.COMPACT
+        val editing = navigation.editorKeys.isNotEmpty()
+        val detailPhoto = records.firstOrNull { it.key == navigation.detailKey }
+        val fullScreen = editing || navigation.detailKey != null
+        @Composable fun Navigation(rail: Boolean) {
+            val icons = listOf(R.drawable.symbol_photo_camera, R.drawable.symbol_photo_library, R.drawable.symbol_palette, R.drawable.symbol_settings)
+            if (rail) NavigationRail {
+                AppTab.entries.forEachIndexed { i, tab -> NavigationRailItem(navigation.tab == tab,
+                    { dispatch(NavigationAction.Tab(tab)) }, icon = { Symbol(icons[i]) }, label = { Text(tab.label) }) }
+            } else NavigationBar {
+                AppTab.entries.forEachIndexed { i, tab -> NavigationBarItem(navigation.tab == tab,
+                    { dispatch(NavigationAction.Tab(tab)) }, icon = { Symbol(icons[i]) }, label = { Text(tab.label) }) }
             }
-        }) { padding ->
-            Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
-                Text("beta7compact", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(vertical = 12.dp))
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error); TextButton(onClick = { error = null }) { Text("닫기") } }
-                if (page == 0 || page == 3) Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                        Text("USB · ${when(linkState) { LinkState.SESSION -> "연결됨"; LinkState.CONNECTING -> "연결 중"; else -> "연결 확인" }}")
-                        Text(usbText)
-                        usbDiagnostic?.let { Text(it) }
-                        TextButton(onClick = { try { activity.usbPermission() } catch (e: Exception) { error = "Sony 카메라를 USB로 연결하세요" } }, enabled = !busy && !working) { Text("USB 연결 / 권한 허용") }
-                    } }
-                    Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                        val chosen = app.settings.getString("camera", null)
-                        val bonded = runCatching {
-                            chosen != null && app.getSystemService(BluetoothManager::class.java).adapter?.getRemoteDevice(chosen)?.bondState == BluetoothDevice.BOND_BONDED
-                        }.getOrDefault(false)
-                        Text("BLE · ${if (bonded) "선택한 카메라 페어링됨" else "카메라 페어링 필요"}")
-                        Text("카메라 Bluetooth 켬 → 페어링 → 위치정보 연동 켬")
-                        TextButton(onClick = {
-                            activity.requestBle { granted ->
-                                if (!granted) error = "Bluetooth·정확한 위치·알림 권한을 허용하세요"
-                                else {
-                                    bleBusy = true; bleSearched = true; bleMessage = null
-                                    scanJob = scope.launch {
-                                        try {
-                                            val result = BleScanner.scan(app, app.settings.getString("camera", null)) {
-                                                bleReport = it; found = it.devices
-                                            }
-                                            if (result.failed) bleMessage = "BLE 검색 실패. Bluetooth·위치 기능을 확인하고 다시 검색하세요"
-                                            if (result.devices.isEmpty()) bleMessage = BleScanner.EMPTY_GUIDANCE
-                                        } catch (e: CancellationException) { throw e }
-                                        catch (e: Exception) {
-                                            DiagnosticLog.record(DiagnosticEvent.BLE_FAILED)
-                                            bleMessage = "BLE 검색 실패. Bluetooth·위치 기능을 확인하고 다시 검색하세요"
-                                        } finally { bleBusy = false }
-                                    }
-                                }
-                            }
-                        }, enabled = !bleBusy && !location.running) {
-                            Text(if (bleBusy) "${if (bleReport.unfiltered) "무필터" else "필터"} 검색 중 (15초)…"
-                                else if (bleSearched) "다시 검색" else "Sony 카메라 검색")
-                        }
-                        if (bleSearched) Text(bleReport.diagnostic)
-                        bleMessage?.let { Text(it) }
-                        found.forEachIndexed { index, device ->
-                            TextButton(onClick = {
-                                try {
-                                    scanJob?.cancel()
-                                    app.settings.edit().putString("camera", device.address).apply()
-                                    DiagnosticLog.record(DiagnosticEvent.BLE_SELECTED)
-                                    if (device.bondState == BluetoothDevice.BOND_BONDED) {
-                                        bleMessage = "페어링된 카메라를 선택했습니다. 위치정보 연동을 켜세요"
-                                    } else {
-                                        check(device.createBond())
-                                        DiagnosticLog.record(DiagnosticEvent.BLE_BOND_STARTED)
-                                        bleMessage = "카메라와 휴대폰의 페어링 확인을 완료하세요"
-                                    }
-                                } catch (e: Exception) {
-                                    DiagnosticLog.record(DiagnosticEvent.BLE_BOND_FAILED)
-                                    error = "페어링을 시작할 수 없습니다"
-                                }
-                            }, enabled = !location.running) {
-                                Text("${device.name ?: "Sony 카메라"} · ${if (device.bondState == BluetoothDevice.BOND_BONDED) "페어링됨 · " else ""}${index + 1} 선택")
-                            }
-                        }
-                    } }
-                    Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("위치 동기화", Modifier.weight(1f))
-                            Switch(checked = location.running, onCheckedChange = { on ->
-                                if (!on) app.stopService(Intent(app, LocationService::class.java))
-                                else activity.requestBle { granted ->
-                                    if (!granted) error = "정확한 위치·Bluetooth·알림 권한을 허용하세요"
-                                    else try {
-                                        scanJob?.cancel()
-                                        androidx.core.content.ContextCompat.startForegroundService(activity, Intent(activity, LocationService::class.java))
-                                    }
-                                    catch (e: Exception) { error = "앱을 연 상태에서 위치 동기화를 켜세요" }
-                                }
-                            })
-                        }
-                        Text(location.message)
-                        Text("전송 간격 ${interval}초 · 마지막 전송 ${location.lastSent?.let { time(it) } ?: "없음"}")
-                        Text("GPS 좌표는 화면·로그·DB에 기록하지 않습니다")
-                    } }
-                    if (page == 3) {
-                        AutoRecipeSetting(app)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("raw PTP로 가져오기", Modifier.weight(1f))
-                            Switch(raw, onCheckedChange = { raw = it; app.settings.edit().putBoolean("raw", it).apply(); objects = emptyList(); scanUsb() }, enabled = !working && !busy)
-                        }
-                        Text("A7C 기본 raw PTP · MTP 읽기 실패 시 같은 동작에서 raw PTP 1회 대체 · 성공 경로 기억")
-                        TextButton(onClick = {
-                            try {
-                                activity.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, DiagnosticLog.shareText())
-                                }, "진단 로그 공유"))
-                            } catch (e: Exception) { error = "진단 로그를 공유할 앱이 없습니다" }
-                        }) { Text("진단 로그 공유") }
-                        Text("이번 앱 실행의 고정 문구 이벤트만 공유합니다")
-                        Text("전송 간격 ${interval}초 (5~60초)")
-                        Slider(value = interval.toFloat(), onValueChange = { interval = it.toInt(); app.settings.edit().putInt("interval", interval).apply() }, valueRange = 5f..60f, steps = 10)
-                        Text("원본: DCIM/beta7compact/ · JPEG / ARW / HIF")
-                        Text("중단 후 같은 카드를 연결하고 대기열 재개를 누르세요. 수신 중이던 파일은 처음부터 다시 받습니다.")
-                    }
-                } else if (page == 1) {
-                    Text(usbText)
-                    usbDiagnostic?.let { Text(it) }
-                    val lastError = workInfo?.outputData?.getString("error") ?: workInfo?.progress?.getString("error")
-                    lastError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                    if (working) {
-                        Text("진행 ${workInfo?.progress?.getInt("done", 0)} / ${workInfo?.progress?.getInt("total", 0)}")
-                        TextButton(onClick = { WorkManager.getInstance(app).cancelUniqueWork(ImportWorker.NAME) }) { Text("중단") }
-                    }
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        TextButton(onClick = { scanUsb() }, enabled = !busy && !working) { Text("새로고침") }
-                        TextButton(onClick = { receive(null) }, enabled = objects.isNotEmpty() && !working && !busy) { Text("새 사진 모두 받기") }
-                        TextButton(onClick = { receive(selected) }, enabled = selected.isNotEmpty() && !working && !busy) { Text("선택 ${selected.size}개 받기") }
-                        if (records.any { it.imported == null }) TextButton(onClick = { ImportWorker.start(app) }, enabled = !working) { Text("대기열 재개") }
-                    }
-                    if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                    val grouped = objects.groupBy { day(it.captured) }.toSortedMap(reverseOrder())
-                    LazyVerticalGrid(columns = GridCells.Adaptive(140.dp), modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        grouped.forEach { (date, photos) ->
-                            item(span = { GridItemSpan(maxLineSpan) }) { Text(date, style = MaterialTheme.typography.titleMedium) }
-                            items(photos, key = { "${it.storage}:${it.handle}" }) { obj ->
-                                PhotoTile(obj.name, obj.isKnown(completed), obj.key in selected,
-                                    verification = obj.needsVerification(completed),
-                                    pair = photos.filter { it.pair == obj.pair }.map { it.mime }.toSet().containsAll(setOf("image/jpeg", "image/x-sony-arw")),
-                                    thumb = { cameraThumb(app, obj, raw, working) }, onClick = {
-                                        if (!obj.isKnown(completed) && !working) selected = if (obj.key in selected) selected - obj.key else selected + obj.key
-                                    })
+        }
+        Scaffold(contentWindowInsets = WindowInsets.safeDrawing, bottomBar = { if (!wide && !fullScreen) Navigation(false) }) { padding ->
+            Row(Modifier.fillMaxSize().padding(padding)) {
+                if (wide && !fullScreen) Navigation(true)
+                Column(Modifier.weight(1f).fillMaxHeight().padding(horizontal = if (fullScreen) 0.dp else if (wide) 24.dp else 16.dp)) {
+                    ObservedWorkBanner(app, ImportWorker.NAME, "가져오기", { resumeImport() }) { dispatch(NavigationAction.ViewImported) }
+                    ObservedWorkBanner(app, RecipeWorker.NAME, "레시피 저장", { RecipeWorker.resume(app) }) { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) }
+                    error?.let { message -> ErrorBanner(message, if(message.contains("알림") || message.contains("공간")) "앱 설정 열기" else "다시 연결", {
+                        if(message.contains("알림") || message.contains("공간")) activity.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,android.net.Uri.parse("package:${app.packageName}")))
+                        else resolve()
+                    }) { error = null } }
+                    if (navigation.detailKey != null) {
+                        if (detailPhoto != null) PhotoDetailScreen(app, detailPhoto,
+                            { dispatch(NavigationAction.Edit(listOf(detailPhoto.key))) }, { dispatch(NavigationAction.Back) }, windowWidth, windowHeight)
+                        else { BackHandler { dispatch(NavigationAction.Back) }; TextButton(onClick = { dispatch(NavigationAction.Back) }) { Text("사진으로 돌아가기") } }
+                    } else if (editing) {
+                        if (editorPhotos.isNotEmpty()) key(navigation.editorKeys) { RecipeEditor(app, editorPhotos, windowWidth, windowHeight) { dispatch(NavigationAction.Back) } }
+                        else { BackHandler { dispatch(NavigationAction.Back) }; TextButton(onClick = { dispatch(NavigationAction.Back) }) { Text("사진으로 돌아가기") } }
+                    } else {
+                        ScreenTitle(if (navigation.picking) "사진 고르기" else navigation.tab.label)
+                        if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+                        saveable.SaveableStateProvider(navigation.tab.name) {
+                            when (navigation.tab) {
+                                AppTab.CAMERA -> if (navigation.picking) CameraPicker(objects, completed, selected.toSet(), working,
+                                    { selected = it.toList() }, { cameraThumb(app, it, raw, working) }, { receive(selected.toSet()) }, { dispatch(NavigationAction.Back) })
+                                else CameraScreen(status, connected, usbDiagnostic ?: detail, busy, working,
+                                    objects.count { !it.isKnown(completed) }, records.count { it.imported == null }, ::resolve, ::scanUsb,
+                                    { receive(null) }, {
+                                        selected = objects.filter { !it.isKnown(completed) }.map { it.key }
+                                        dispatch(NavigationAction.Pick)
+                                    }, { resumeImport() }, { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) })
+                                AppTab.PHOTOS -> PhotosScreen(app, records.filter { it.imported != null },
+                                    { dispatch(NavigationAction.Edit(it)) }, { dispatch(NavigationAction.View(it)) }, { dispatch(NavigationAction.Tab(AppTab.CAMERA)) }, windowWidth, windowHeight)
+                                AppTab.RECIPES -> RecipesScreen(app) { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) }
+                                AppTab.SETTINGS -> SettingsScreen(activity, app, raw, !working && !busy, { value ->
+                                    raw = value; app.settings.edit().putBoolean("raw", value).apply(); objects = emptyList(); scanUsb()
+                                }, { dispatch(NavigationAction.Tab(AppTab.RECIPES)) })
                             }
                         }
                     }
-                } else {
-                    RecipeLibrary(app, records.filter { it.imported != null })
                 }
             }
         }
     }
 }
-@Composable
-private fun PhotoTile(name: String, imported: Boolean, selected: Boolean, pair: Boolean, verification: Boolean = false, thumb: @Composable () -> Bitmap?, onClick: () -> Unit) {
-    Card(Modifier.fillMaxWidth().clickable(onClick = onClick), colors = CardDefaults.cardColors(
-        containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)) {
-        val bitmap = thumb()
-        if (bitmap != null) Image(bitmap.asImageBitmap(), name, Modifier.fillMaxWidth().height(110.dp), contentScale = ContentScale.Crop)
-        else Box(Modifier.fillMaxWidth().height(110.dp), contentAlignment = Alignment.Center) { Text(name.substringAfterLast('.').uppercase()) }
-        Column(Modifier.padding(8.dp)) {
-            Text(name, maxLines = 1)
-            Text(if (imported) "가져옴" else if (selected) "선택됨" else if (verification) "확인 필요" else "원본", style = MaterialTheme.typography.labelSmall)
-            if (pair) Text("RAW + JPEG 쌍", style = MaterialTheme.typography.labelSmall)
-        }
-    }
-}
-@Composable
-private fun cameraThumb(app: App, obj: CameraObject, raw: Boolean, importing: Boolean): Bitmap? {
+@Composable private fun cameraThumb(app: App, obj: CameraObject, raw: Boolean, importing: Boolean): Bitmap? {
     var bitmap by remember(obj.key, raw) { mutableStateOf<Bitmap?>(null) }
     LaunchedEffect(obj.key, raw, importing) {
         if (!importing) bitmap = withContext(Dispatchers.IO) {
@@ -286,13 +182,3 @@ private fun cameraThumb(app: App, obj: CameraObject, raw: Boolean, importing: Bo
     }
     return bitmap
 }
-@Composable
-private fun libraryThumb(app: App, uri: String): Bitmap? {
-    var bitmap by remember(uri) { mutableStateOf<Bitmap?>(null) }
-    LaunchedEffect(uri) {
-        bitmap = withContext(Dispatchers.IO) { runCatching { app.contentResolver.loadThumbnail(Uri.parse(uri), Size(256, 256), null) }.getOrNull() }
-    }
-    return bitmap
-}
-private fun day(value: Long) = if (value <= 0) "촬영일 미상" else SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).format(Date(value))
-private fun time(value: Long) = SimpleDateFormat("HH:mm:ss", Locale.KOREA).format(Date(value))
