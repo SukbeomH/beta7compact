@@ -141,11 +141,13 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
             else -> retry++
         }
     }
-    @Composable fun Toolbar() {
+    /** [aboveSidePanel] stretches the save button over the 352dp side panel (16dp end margin) of the landscape layout. */
+    @Composable fun Toolbar(aboveSidePanel: Boolean=false) {
         Row(Modifier.fillMaxWidth().heightIn(min=56.dp),verticalAlignment=Alignment.CenterVertically) {
             SymbolButton(R.drawable.pixel_back,"사진으로 돌아가기",action=onBack)
             Text(if(photos.size>1) "${photos.size}장에 적용" else "편집",Modifier.weight(1f),style=MaterialTheme.typography.titleSmall)
             Button(onClick=::save,enabled=!saving && original!=null && after!=null && !rendering,
+                modifier=if(aboveSidePanel) Modifier.padding(end=16.dp).width(352.dp) else Modifier,
                 contentPadding=PaddingValues(horizontal=12.dp)) { Text(if(photos.size>1) "${photos.size}장 저장" else "저장") }
         }
     }
@@ -258,7 +260,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                     Panel(Modifier.weight(1f).padding(horizontal=16.dp).padding(bottom=12.dp),true)
                 }
                 PaneLayout.SIDE_BY_SIDE -> Column {
-                    Toolbar()
+                    Toolbar(aboveSidePanel=true)
                     Row(Modifier.weight(1f).padding(end=16.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
                         Box(Modifier.weight(1f).fillMaxHeight(),contentAlignment=Alignment.Center) {Preview(box)}
                         Panel(Modifier.width(352.dp).fillMaxHeight().padding(vertical=16.dp),false)
