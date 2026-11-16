@@ -15,13 +15,13 @@ android {
         minSdk = 29
         targetSdk = 35
         testInstrumentationRunner = "android.test.InstrumentationTestRunner"
-        versionCode = 5
-        versionName = "0.3.0"
+        versionCode = 6
+        versionName = "0.4.0"
     }
     signingConfigs.getByName("debug") { storeFile = rootProject.file(".android-user/debug.keystore") }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     sourceSets.getByName("main").assets.srcDir("../assets")
     lint { abortOnError = true }
 }

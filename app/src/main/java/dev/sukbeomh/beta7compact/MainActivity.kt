@@ -9,6 +9,9 @@ import android.hardware.usb.UsbManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
+import dev.sukbeomh.beta7compact.ui.theme.BetaTheme
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -40,18 +43,20 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         val filter = IntentFilter("$packageName.USB_PERMISSION").apply {
             addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED); addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
             addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         }
         ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
         receiveRecipe(intent)
-        setContent {
+        setContent { BetaTheme {
             MainScreen(this, app)
             sharedRecipe?.let { code -> androidx.compose.runtime.key(code) {
                 RecipeImportDialog(app,code,close={sharedRecipe=null})
             } }
-        }
+        } }
     }
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); receiveRecipe(intent); refresh.value++ }
     private fun receiveRecipe(intent: Intent?) {
