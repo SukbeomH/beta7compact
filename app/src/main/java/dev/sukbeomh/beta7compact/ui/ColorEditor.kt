@@ -6,6 +6,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.drawBehind
+import dev.sukbeomh.beta7compact.R
+import dev.sukbeomh.beta7compact.ui.components.SymbolButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -18,7 +23,7 @@ import dev.sukbeomh.beta7compact.recipe.*
 import kotlin.math.*
 
 @Composable
-internal fun Control(label: String,value: Float,range: ClosedFloatingPointRange<Float>,reset: Float=0f,change: (Float)->Unit) {
+internal fun Control(label: String,value: Float,range: ClosedFloatingPointRange<Float>,reset: Float=0f,valueLabel: String="%.2f".format(value),change: (Float)->Unit) {
     val latestChange by rememberUpdatedState(change)
     val resetGesture=Modifier.pointerInput(reset) {
         // Observe the initial pass without consuming events, so Slider keeps its drag/tap handling.
@@ -40,8 +45,16 @@ internal fun Control(label: String,value: Float,range: ClosedFloatingPointRange<
             }
         }
     }
-    Text("$label · ${"%.2f".format(value)}",Modifier.fillMaxWidth().then(resetGesture))
-    Slider(value,onValueChange=change,valueRange=range,modifier=resetGesture)
+    Row(Modifier.fillMaxWidth().then(resetGesture),verticalAlignment=Alignment.CenterVertically) {
+        Text(label,Modifier.weight(1f),style=MaterialTheme.typography.bodyMedium)
+        Text(valueLabel,style=MaterialTheme.typography.labelLarge)
+        SymbolButton(R.drawable.symbol_restart_alt,"$label 초기화") { change(reset) }
+    }
+    val tick=MaterialTheme.colorScheme.onSurfaceVariant
+    Slider(value,onValueChange=change,valueRange=range,modifier=resetGesture.heightIn(min=48.dp).drawBehind {
+        val x=8.dp.toPx()+(size.width-16.dp.toPx())*((reset-range.start)/(range.endInclusive-range.start))
+        drawLine(tick,Offset(x,size.height/2-7.dp.toPx()),Offset(x,size.height/2+7.dp.toPx()),1.dp.toPx())
+    })
 }
 
 @Composable
@@ -50,7 +63,6 @@ internal fun ColorControls(tab: Int,recipe: Recipe,change: (Recipe)->Unit) {
     fun edit(next: ColorEdits) = change(recipe.copy(version=2,edits=next))
     when(tab) {
         0 -> {
-            Control("LUT 강도",recipe.strength,0f..1f,1f) { change(recipe.copy(strength=it)) }
             Row { Text("S-Log3/S-Gamut3.Cine JPEG",Modifier.weight(1f));Switch(recipe.inputTransform!=InputTransform.NONE,{change(recipe.copy(inputTransform=if(it) InputTransform.SLOG3_SGAMUT3_CINE else InputTransform.NONE))}) }
             Control("WB 온도",recipe.wb.temperature,-1f..1f) { change(recipe.copy(wb=recipe.wb.copy(temperature=it))) }
             Control("WB 틴트",recipe.wb.tint,-1f..1f) { change(recipe.copy(wb=recipe.wb.copy(tint=it))) }
@@ -63,7 +75,7 @@ internal fun ColorControls(tab: Int,recipe: Recipe,change: (Recipe)->Unit) {
         }
         1 -> CurveEditor(e.curves) { edit(e.copy(curves=it)) }
         2 -> {
-            var band by remember { mutableIntStateOf(0) }
+            var band by rememberSaveable { mutableIntStateOf(0) }
             val names=listOf("빨강","주황","노랑","초록","청록","파랑","보라","자홍")
             for(row in 0..1) Row { for(i in row*4 until row*4+4) FilterChip(band==i,{band=i},label={Text(names[i])}) }
             val h=e.hsl[band]
@@ -73,24 +85,37 @@ internal fun ColorControls(tab: Int,recipe: Recipe,change: (Recipe)->Unit) {
             Control("휘도",h.luminance,-100f..100f) { update(h.copy(luminance=it)) }
         }
         3 -> {
+            FoldableGroup("그레인") {
             Control("그레인 크기 px",recipe.grain.size,1f..32f,1f) { change(recipe.copy(grain=recipe.grain.copy(size=it))) }
             Control("그레인 강도",recipe.grain.amount,0f..1f) { change(recipe.copy(grain=recipe.grain.copy(amount=it))) }
             TextButton(onClick={change(recipe.copy(grain=recipe.grain.copy(seed=recipe.grain.seed+1)))}) { Text("그레인 시드 ${recipe.grain.seed} · 변경") }
-            Control("비네트",recipe.vignette,0f..1f) { change(recipe.copy(vignette=it)) }
+            }
+            FoldableGroup("비네트") {
+                Control("비네트",recipe.vignette,0f..1f) { change(recipe.copy(vignette=it)) }
+            }
+            FoldableGroup("스플릿 톤") {
             val t=e.split
             Control("섀도 색조",t.shadowHue,0f..360f) { edit(e.copy(split=t.copy(shadowHue=it))) }
             Control("섀도 채도",t.shadowSaturation,0f..100f) { edit(e.copy(split=t.copy(shadowSaturation=it))) }
             Control("하이라이트 색조",t.highlightHue,0f..360f) { edit(e.copy(split=t.copy(highlightHue=it))) }
             Control("하이라이트 채도",t.highlightSaturation,0f..100f) { edit(e.copy(split=t.copy(highlightSaturation=it))) }
             Control("스플릿 톤 균형",t.balance,-100f..100f) { edit(e.copy(split=t.copy(balance=it))) }
+            }
         }
     }
     Text("슬라이더 또는 이름을 두 번 누르면 초기화")
 }
 
 @Composable
+private fun FoldableGroup(title: String, content: @Composable () -> Unit) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    TextButton(onClick={open=!open},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {Text("$title · ${if(open) "접기" else "펼치기"}")}
+    if(open) content()
+}
+
+@Composable
 private fun CurveEditor(curves: Curves,change: (Curves)->Unit) {
-    var channel by remember { mutableIntStateOf(0) };var selected by remember(channel) { mutableIntStateOf(0) }
+    var channel by rememberSaveable { mutableIntStateOf(0) };var selected by remember(channel) { mutableIntStateOf(0) }
     val curve=curves.list()[channel]
     val latest by rememberUpdatedState(curve);val onChange by rememberUpdatedState(change)
     val latestCurves by rememberUpdatedState(curves)
