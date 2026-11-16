@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="412" height="915" viewBox="0 0 412 915" font-family="Noto Sans KR, Roboto, sans-serif">
+<title>05 세부 조정 (접힘)</title>
+<rect width="100%" height="100%" fill="#121212"/>
+<text x="16" y="17" font-size="12" fill="#A8A8A8" text-anchor="start">9:41</text>
+<text x="396" y="17" font-size="12" fill="#A8A8A8" text-anchor="end">▮▮ 87%</text>
+<rect x="0" y="24" width="412" height="64" rx="0" fill="#121212"/>
+<text x="64" y="64" font-size="22" fill="#E8E8E8" text-anchor="start">세부 조정</text>
+<circle cx="28" cy="56" r="20" fill="#2A2A2A"/>
+<text x="28" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">←</text>
+<rect x="324" y="36" width="72" height="40" rx="20.0" fill="#8FD0B8"/>
+<text x="360.0" y="61.0" font-size="14" fill="#00382B" text-anchor="middle" font-weight="600">완료</text>
+<circle cx="296" cy="56" r="20" fill="#2A2A2A"/>
+<text x="296" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">↷</text>
+<circle cx="248" cy="56" r="20" fill="#2A2A2A"/>
+<text x="248" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">↶</text>
+<rect x="0" y="92" width="412" height="300" rx="0" fill="#4A4A4A"/>
+<line x1="0" y1="92" x2="412" y2="392" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="412" y1="92" x2="0" y2="392" stroke="#5A5A5A" stroke-width="1"/>
+<text x="206.0" y="247.0" font-size="12" fill="#E8E8E8" text-anchor="middle">미리보기 (축소)</text>
+<rect x="0" y="400" width="412" height="515" rx="28" fill="#1E1E1E"/>
+<rect x="190.0" y="410" width="32" height="4" rx="2" fill="#3D3D3D"/>
+<rect x="16.0" y="428" width="95.0" height="40" rx="20" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="63.5" y="453" font-size="13" fill="#E8E8E8" text-anchor="middle">기본</text>
+<rect x="111.0" y="428" width="95.0" height="40" rx="0" fill="#2A2A2A" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="158.5" y="453" font-size="13" fill="#E8E8E8" text-anchor="middle" font-weight="600">톤커브</text>
+<rect x="206.0" y="428" width="95.0" height="40" rx="0" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="253.5" y="453" font-size="13" fill="#E8E8E8" text-anchor="middle">HSL</text>
+<rect x="301.0" y="428" width="95.0" height="40" rx="20" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="348.5" y="453" font-size="13" fill="#E8E8E8" text-anchor="middle">효과</text>
+<rect x="16" y="484" width="67" height="32" rx="8" fill="#2A2A2A" stroke="#8FD0B8" stroke-width="1.5"/>
+<text x="49.5" y="505" font-size="13" fill="#E8E8E8" text-anchor="middle">✓ RGB</text>
+<rect x="91" y="484" width="41" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="111.5" y="505" font-size="13" fill="#E8E8E8" text-anchor="middle">R</text>
+<rect x="140" y="484" width="41" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="160.5" y="505" font-size="13" fill="#E8E8E8" text-anchor="middle">G</text>
+<rect x="189" y="484" width="41" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="209.5" y="505" font-size="13" fill="#E8E8E8" text-anchor="middle">B</text>
+<rect x="16" y="528" width="380" height="300" rx="8" fill="#121212" stroke="#3D3D3D" stroke-width="1.5"/>
+<line x1="111.0" y1="528" x2="111.0" y2="828" stroke="#2E2E2E" stroke-width="1"/>
+<line x1="16" y1="603.0" x2="396" y2="603.0" stroke="#2E2E2E" stroke-width="1"/>
+<line x1="206.0" y1="528" x2="206.0" y2="828" stroke="#2E2E2E" stroke-width="1"/>
+<line x1="16" y1="678.0" x2="396" y2="678.0" stroke="#2E2E2E" stroke-width="1"/>
+<line x1="301.0" y1="528" x2="301.0" y2="828" stroke="#2E2E2E" stroke-width="1"/>
+<line x1="16" y1="753.0" x2="396" y2="753.0" stroke="#2E2E2E" stroke-width="1"/>
+<path d="M16 828 C 120 780, 260 600, 396 528" stroke="#8FD0B8" stroke-width="2.5" fill="none"/>
+<circle cx="120" cy="760" r="8" fill="#121212" stroke="#8FD0B8" stroke-width="2"/>
+<circle cx="260" cy="620" r="8" fill="#121212" stroke="#8FD0B8" stroke-width="2"/>
+<text x="16" y="853" font-size="12" fill="#A8A8A8" text-anchor="start">빈 곳 탭: 점 추가 · 드래그: 이동 · 3/16점</text>
+<rect x="266" y="865" width="130" height="40" rx="20.0" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="331.0" y="890.0" font-size="14" fill="#8FD0B8" text-anchor="middle" font-weight="600">채널 초기화</text>
+<rect x="16" y="865" width="110" height="40" rx="20.0" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="71.0" y="890.0" font-size="14" fill="#8FD0B8" text-anchor="middle" font-weight="600">점 삭제</text>
+<text x="206.0" y="14" font-size="1" fill="#E8E8E8" text-anchor="start"></text>
+</svg>

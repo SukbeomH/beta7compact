@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="884" height="1104" viewBox="0 0 884 1104" font-family="Noto Sans KR, Roboto, sans-serif">
+<title>06 레시피 list-detail (펼침)</title>
+<rect width="100%" height="100%" fill="#121212"/>
+<text x="16" y="17" font-size="12" fill="#A8A8A8" text-anchor="start">9:41</text>
+<text x="868" y="17" font-size="12" fill="#A8A8A8" text-anchor="end">▮▮ 87%</text>
+<rect x="0" y="0" width="88" height="1104" rx="0" fill="#1E1E1E"/>
+<text x="44" y="120" font-size="16" fill="#E8E8E8" text-anchor="middle">◉</text>
+<text x="44" y="150" font-size="12" fill="#A8A8A8" text-anchor="middle">카메라</text>
+<text x="44" y="200" font-size="16" fill="#E8E8E8" text-anchor="middle">▦</text>
+<text x="44" y="230" font-size="12" fill="#A8A8A8" text-anchor="middle">사진</text>
+<rect x="12" y="258" width="64" height="32" rx="16" fill="#2A2A2A"/>
+<text x="44" y="280" font-size="16" fill="#E8E8E8" text-anchor="middle">◐</text>
+<text x="44" y="310" font-size="12" fill="#E8E8E8" text-anchor="middle" font-weight="600">레시피</text>
+<text x="44" y="360" font-size="16" fill="#E8E8E8" text-anchor="middle">⚙</text>
+<text x="44" y="390" font-size="12" fill="#A8A8A8" text-anchor="middle">설정</text>
+<rect x="88" y="24" width="380" height="64" rx="0" fill="#121212"/>
+<text x="104" y="64" font-size="22" fill="#E8E8E8" text-anchor="start">레시피</text>
+<rect x="368" y="36" width="84" height="40" rx="20.0" fill="#8FD0B8"/>
+<text x="410.0" y="61.0" font-size="14" fill="#00382B" text-anchor="middle" font-weight="600">코드로</text>
+<rect x="104" y="96" width="348" height="96" rx="12" fill="#2A2A2A" stroke="#8FD0B8" stroke-width="1.5"/>
+<rect x="116" y="108" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="116" y1="108" x2="188" y2="180" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="188" y1="108" x2="116" y2="180" stroke="#5A5A5A" stroke-width="1"/>
+<text x="204" y="128" font-size="11" fill="#8FD0B8" text-anchor="start" font-weight="600">기본 레시피</text>
+<text x="204" y="152" font-size="16" fill="#E8E8E8" text-anchor="start" font-weight="600">따뜻한 오후</text>
+<text x="204" y="174" font-size="11" fill="#A8A8A8" text-anchor="start">Gold 80% · 가져오기 후 자동 적용</text>
+<rect x="104" y="212" width="348" height="80" rx="12" fill="#1E1E1E"/>
+<rect x="112" y="220" width="64" height="64" rx="0" fill="#4A4A4A"/>
+<line x1="112" y1="220" x2="176" y2="284" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="176" y1="220" x2="112" y2="284" stroke="#5A5A5A" stroke-width="1"/>
+<text x="192" y="246" font-size="15" fill="#E8E8E8" text-anchor="start" font-weight="600">따뜻한 오후</text>
+<text x="192" y="270" font-size="12" fill="#A8A8A8" text-anchor="start">Gold · 80%</text>
+<text x="432" y="258" font-size="18" fill="#8FD0B8" text-anchor="middle">★</text>
+<rect x="104" y="304" width="348" height="80" rx="12" fill="#1E1E1E"/>
+<rect x="112" y="312" width="64" height="64" rx="0" fill="#4A4A4A"/>
+<line x1="112" y1="312" x2="176" y2="376" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="176" y1="312" x2="112" y2="376" stroke="#5A5A5A" stroke-width="1"/>
+<text x="192" y="338" font-size="15" fill="#E8E8E8" text-anchor="start" font-weight="600">겨울 바다</text>
+<text x="192" y="362" font-size="12" fill="#A8A8A8" text-anchor="start">Provia · 100%</text>
+<text x="432" y="350" font-size="18" fill="#8FD0B8" text-anchor="middle">★</text>
+<rect x="104" y="396" width="348" height="80" rx="12" fill="#1E1E1E"/>
+<rect x="112" y="404" width="64" height="64" rx="0" fill="#4A4A4A"/>
+<line x1="112" y1="404" x2="176" y2="468" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="176" y1="404" x2="112" y2="468" stroke="#5A5A5A" stroke-width="1"/>
+<text x="192" y="430" font-size="15" fill="#E8E8E8" text-anchor="start" font-weight="600">흑백 거리</text>
+<text x="192" y="454" font-size="12" fill="#A8A8A8" text-anchor="start">Tri-X · 90%</text>
+<text x="432" y="442" font-size="18" fill="#A8A8A8" text-anchor="middle">☆</text>
+<rect x="104" y="488" width="348" height="80" rx="12" fill="#1E1E1E"/>
+<rect x="112" y="496" width="64" height="64" rx="0" fill="#4A4A4A"/>
+<line x1="112" y1="496" x2="176" y2="560" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="176" y1="496" x2="112" y2="560" stroke="#5A5A5A" stroke-width="1"/>
+<text x="192" y="522" font-size="15" fill="#E8E8E8" text-anchor="start" font-weight="600">밤 네온</text>
+<text x="192" y="546" font-size="12" fill="#A8A8A8" text-anchor="start">CineStill · 70%</text>
+<text x="432" y="534" font-size="18" fill="#A8A8A8" text-anchor="middle">☆</text>
+<rect x="104" y="580" width="348" height="80" rx="12" fill="#1E1E1E"/>
+<rect x="112" y="588" width="64" height="64" rx="0" fill="#4A4A4A"/>
+<line x1="112" y1="588" x2="176" y2="652" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="176" y1="588" x2="112" y2="652" stroke="#5A5A5A" stroke-width="1"/>
+<text x="192" y="614" font-size="15" fill="#E8E8E8" text-anchor="start" font-weight="600">필름 매트</text>
+<text x="192" y="638" font-size="12" fill="#F2C46B" text-anchor="start">사용자 LUT 필요</text>
+<text x="432" y="626" font-size="18" fill="#A8A8A8" text-anchor="middle">☆</text>
+<line x1="476" y1="0" x2="476" y2="1104" stroke="#3D3D3D" stroke-width="1.5"/>
+<rect x="484" y="24" width="400" height="64" rx="0" fill="#121212"/>
+<text x="500" y="64" font-size="22" fill="#E8E8E8" text-anchor="start">따뜻한 오후</text>
+<circle cx="848" cy="56" r="20" fill="#2A2A2A"/>
+<text x="848" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">⋮</text>
+<circle cx="800" cy="56" r="20" fill="#2A2A2A"/>
+<text x="800" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">★</text>
+<rect x="484" y="104" width="376" height="225.6" rx="0" fill="#4A4A4A"/>
+<line x1="484" y1="104" x2="860" y2="329.6" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="860" y1="104" x2="484" y2="329.6" stroke="#5A5A5A" stroke-width="1"/>
+<text x="672.0" y="221.8" font-size="12" fill="#E8E8E8" text-anchor="middle">최근 적용 사진</text>
+<text x="484" y="361.6" font-size="14" fill="#E8E8E8" text-anchor="start" font-weight="600">LUT Gold · 강도 80%</text>
+<text x="484" y="391.6" font-size="13" fill="#A8A8A8" text-anchor="start">· 노출 +0.3</text>
+<text x="484" y="415.6" font-size="13" fill="#A8A8A8" text-anchor="start">· WB 온도 -0.10</text>
+<text x="484" y="439.6" font-size="13" fill="#A8A8A8" text-anchor="start">· 대비 +10</text>
+<text x="484" y="463.6" font-size="13" fill="#A8A8A8" text-anchor="start">· 톤커브 RGB 3점</text>
+<text x="484" y="487.6" font-size="13" fill="#A8A8A8" text-anchor="start">· 그레인 0.2</text>
+<rect x="484" y="531.6" width="376" height="48" rx="24.0" fill="#8FD0B8"/>
+<text x="672.0" y="560.6" font-size="14" fill="#00382B" text-anchor="middle" font-weight="600">사진에 적용</text>
+<rect x="484" y="591.6" width="184.0" height="48" rx="24.0" fill="#2A2A2A"/>
+<text x="576.0" y="620.6" font-size="14" fill="#E8E8E8" text-anchor="middle" font-weight="600">공유 / QR</text>
+<rect x="676.0" y="591.6" width="184.0" height="48" rx="24.0" fill="#2A2A2A"/>
+<text x="768.0" y="620.6" font-size="14" fill="#E8E8E8" text-anchor="middle" font-weight="600">기본으로 지정</text>
+<rect x="484" y="651.6" width="119.33333333333333" height="48" rx="24.0" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="543.6666666666666" y="680.6" font-size="14" fill="#8FD0B8" text-anchor="middle" font-weight="600">이름 변경</text>
+<rect x="609.3333333333334" y="651.6" width="119.33333333333333" height="48" rx="24.0" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="669.0" y="680.6" font-size="14" fill="#8FD0B8" text-anchor="middle" font-weight="600">복제</text>
+<rect x="734.6666666666666" y="651.6" width="119.33333333333333" height="48" rx="24.0" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="794.3333333333333" y="680.6" font-size="14" fill="#8FD0B8" text-anchor="middle" font-weight="600">삭제</text>
+<text x="442.0" y="1092" font-size="11" fill="#6F6F6F" text-anchor="middle">기본 레시피 고정 카드 · 즐겨찾기 · LUT 누락 경고</text>
+<text x="442.0" y="14" font-size="1" fill="#E8E8E8" text-anchor="start"></text>
+</svg>

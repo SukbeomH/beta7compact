@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="412" height="915" viewBox="0 0 412 915" font-family="Noto Sans KR, Roboto, sans-serif">
+<title>02 카메라 사진 선택</title>
+<rect width="100%" height="100%" fill="#121212"/>
+<text x="16" y="17" font-size="12" fill="#A8A8A8" text-anchor="start">9:41</text>
+<text x="396" y="17" font-size="12" fill="#A8A8A8" text-anchor="end">▮▮ 87%</text>
+<rect x="0" y="24" width="412" height="64" rx="0" fill="#121212"/>
+<text x="64" y="64" font-size="22" fill="#E8E8E8" text-anchor="start">사진 고르기</text>
+<circle cx="28" cy="56" r="20" fill="#2A2A2A"/>
+<text x="28" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">←</text>
+<circle cx="376" cy="56" r="20" fill="#2A2A2A"/>
+<text x="376" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">전체</text>
+<rect x="16" y="96" width="93" height="32" rx="8" fill="#2A2A2A" stroke="#8FD0B8" stroke-width="1.5"/>
+<text x="62.5" y="117" font-size="13" fill="#E8E8E8" text-anchor="middle">✓ 새 사진만</text>
+<rect x="117" y="96" width="54" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="144.0" y="117" font-size="13" fill="#E8E8E8" text-anchor="middle">전체</text>
+<rect x="179" y="96" width="67" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="212.5" y="117" font-size="13" fill="#E8E8E8" text-anchor="middle">RAW</text>
+<rect x="254" y="96" width="80" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="294.0" y="117" font-size="13" fill="#E8E8E8" text-anchor="middle">JPEG</text>
+<text x="16" y="152" font-size="13" fill="#A8A8A8" text-anchor="start" font-weight="600">오늘 · 11월 16일</text>
+<rect x="16.0" y="164.0" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="16.0" y1="164.0" x2="141.33333333333331" y2="289.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="141.33333333333331" y1="164.0" x2="16.0" y2="289.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="125.33333333333331" cy="180.0" r="11" fill="#8FD0B8"/>
+<text x="125.33333333333331" y="184.0" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="143.33333333333331" y="164.0" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="143.33333333333331" y1="164.0" x2="268.66666666666663" y2="289.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="268.66666666666663" y1="164.0" x2="143.33333333333331" y2="289.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="147.33333333333331" y="269.3333333333333" width="34" height="16" rx="4" fill="#121212"/>
+<text x="164.33333333333331" y="281.3333333333333" font-size="10" fill="#F2C46B" text-anchor="middle">RAW</text>
+<circle cx="252.66666666666663" cy="180.0" r="11" fill="#8FD0B8"/>
+<text x="252.66666666666663" y="184.0" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="270.66666666666663" y="164.0" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="270.66666666666663" y1="164.0" x2="395.99999999999994" y2="289.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="395.99999999999994" y1="164.0" x2="270.66666666666663" y2="289.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="379.99999999999994" cy="180.0" r="11" fill="#8FD0B8"/>
+<text x="379.99999999999994" y="184.0" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="16.0" y="291.3333333333333" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="16.0" y1="291.3333333333333" x2="141.33333333333331" y2="416.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="141.33333333333331" y1="291.3333333333333" x2="16.0" y2="416.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="133.33333333333331" cy="408.66666666666663" r="4" fill="#8FD0B8"/>
+<circle cx="125.33333333333331" cy="307.3333333333333" r="11" fill="#8FD0B8"/>
+<text x="125.33333333333331" y="311.3333333333333" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="143.33333333333331" y="291.3333333333333" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="143.33333333333331" y1="291.3333333333333" x2="268.66666666666663" y2="416.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="268.66666666666663" y1="291.3333333333333" x2="143.33333333333331" y2="416.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="252.66666666666663" cy="307.3333333333333" r="11" fill="#8FD0B8"/>
+<text x="252.66666666666663" y="311.3333333333333" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="270.66666666666663" y="291.3333333333333" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="270.66666666666663" y1="291.3333333333333" x2="395.99999999999994" y2="416.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="395.99999999999994" y1="291.3333333333333" x2="270.66666666666663" y2="416.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="379.99999999999994" cy="307.3333333333333" r="11" fill="#8FD0B8"/>
+<text x="379.99999999999994" y="311.3333333333333" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="16.0" y="418.66666666666663" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="16.0" y1="418.66666666666663" x2="141.33333333333331" y2="544.0" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="141.33333333333331" y1="418.66666666666663" x2="16.0" y2="544.0" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="20.0" y="524.0" width="34" height="16" rx="4" fill="#121212"/>
+<text x="37.0" y="536.0" font-size="10" fill="#F2C46B" text-anchor="middle">RAW</text>
+<circle cx="125.33333333333331" cy="434.66666666666663" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="143.33333333333331" y="418.66666666666663" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="143.33333333333331" y1="418.66666666666663" x2="268.66666666666663" y2="544.0" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="268.66666666666663" y1="418.66666666666663" x2="143.33333333333331" y2="544.0" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="260.66666666666663" cy="536.0" r="4" fill="#8FD0B8"/>
+<circle cx="252.66666666666663" cy="434.66666666666663" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="270.66666666666663" y="418.66666666666663" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="270.66666666666663" y1="418.66666666666663" x2="395.99999999999994" y2="544.0" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="395.99999999999994" y1="418.66666666666663" x2="270.66666666666663" y2="544.0" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="379.99999999999994" cy="434.66666666666663" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<text x="16" y="574.0" font-size="13" fill="#A8A8A8" text-anchor="start" font-weight="600">어제 · 이미 가져옴</text>
+<rect x="16.0" y="586.0" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="16.0" y1="586.0" x2="141.33333333333331" y2="711.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="141.33333333333331" y1="586.0" x2="16.0" y2="711.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="143.33333333333331" y="586.0" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="143.33333333333331" y1="586.0" x2="268.66666666666663" y2="711.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="268.66666666666663" y1="586.0" x2="143.33333333333331" y2="711.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="270.66666666666663" y="586.0" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="270.66666666666663" y1="586.0" x2="395.99999999999994" y2="711.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="395.99999999999994" y1="586.0" x2="270.66666666666663" y2="711.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="16.0" y="713.3333333333334" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="16.0" y1="713.3333333333334" x2="141.33333333333331" y2="838.6666666666667" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="141.33333333333331" y1="713.3333333333334" x2="16.0" y2="838.6666666666667" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="143.33333333333331" y="713.3333333333334" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="143.33333333333331" y1="713.3333333333334" x2="268.66666666666663" y2="838.6666666666667" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="268.66666666666663" y1="713.3333333333334" x2="143.33333333333331" y2="838.6666666666667" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="270.66666666666663" y="713.3333333333334" width="125.33333333333333" height="125.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="270.66666666666663" y1="713.3333333333334" x2="395.99999999999994" y2="838.6666666666667" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="395.99999999999994" y1="713.3333333333334" x2="270.66666666666663" y2="838.6666666666667" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="0" y="755" width="412" height="80" rx="0" fill="#1E1E1E"/>
+<text x="16" y="785" font-size="13" fill="#A8A8A8" text-anchor="start">12장 선택 · 412 MB</text>
+<rect x="216" y="771" width="180" height="48" rx="24.0" fill="#8FD0B8"/>
+<text x="306.0" y="800.0" font-size="14" fill="#00382B" text-anchor="middle" font-weight="600">12장 가져오기</text>
+<rect x="0" y="835" width="412" height="80" rx="0" fill="#1E1E1E"/>
+<rect x="19.5" y="847" width="64" height="32" rx="16" fill="#2A2A2A"/>
+<text x="51.5" y="869" font-size="16" fill="#E8E8E8" text-anchor="middle">◉</text>
+<text x="51.5" y="899" font-size="12" fill="#E8E8E8" text-anchor="middle" font-weight="600">카메라</text>
+<text x="154.5" y="869" font-size="16" fill="#E8E8E8" text-anchor="middle">▦</text>
+<text x="154.5" y="899" font-size="12" fill="#A8A8A8" text-anchor="middle">사진</text>
+<text x="257.5" y="869" font-size="16" fill="#E8E8E8" text-anchor="middle">◐</text>
+<text x="257.5" y="899" font-size="12" fill="#A8A8A8" text-anchor="middle">레시피</text>
+<text x="360.5" y="869" font-size="16" fill="#E8E8E8" text-anchor="middle">⚙</text>
+<text x="360.5" y="899" font-size="12" fill="#A8A8A8" text-anchor="middle">설정</text>
+<text x="206.0" y="14" font-size="1" fill="#E8E8E8" text-anchor="start"></text>
+</svg>

@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="884" height="1104" viewBox="0 0 884 1104" font-family="Noto Sans KR, Roboto, sans-serif">
+<title>03 사진 list-detail (펼침)</title>
+<rect width="100%" height="100%" fill="#121212"/>
+<text x="16" y="17" font-size="12" fill="#A8A8A8" text-anchor="start">9:41</text>
+<text x="868" y="17" font-size="12" fill="#A8A8A8" text-anchor="end">▮▮ 87%</text>
+<rect x="0" y="0" width="88" height="1104" rx="0" fill="#1E1E1E"/>
+<text x="44" y="120" font-size="16" fill="#E8E8E8" text-anchor="middle">◉</text>
+<text x="44" y="150" font-size="12" fill="#A8A8A8" text-anchor="middle">카메라</text>
+<rect x="12" y="178" width="64" height="32" rx="16" fill="#2A2A2A"/>
+<text x="44" y="200" font-size="16" fill="#E8E8E8" text-anchor="middle">▦</text>
+<text x="44" y="230" font-size="12" fill="#E8E8E8" text-anchor="middle" font-weight="600">사진</text>
+<text x="44" y="280" font-size="16" fill="#E8E8E8" text-anchor="middle">◐</text>
+<text x="44" y="310" font-size="12" fill="#A8A8A8" text-anchor="middle">레시피</text>
+<text x="44" y="360" font-size="16" fill="#E8E8E8" text-anchor="middle">⚙</text>
+<text x="44" y="390" font-size="12" fill="#A8A8A8" text-anchor="middle">설정</text>
+<rect x="88" y="24" width="400" height="64" rx="0" fill="#121212"/>
+<text x="104" y="64" font-size="22" fill="#E8E8E8" text-anchor="start">사진 · 3장 선택</text>
+<circle cx="452" cy="56" r="20" fill="#2A2A2A"/>
+<text x="452" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">⇪</text>
+<circle cx="404" cy="56" r="20" fill="#2A2A2A"/>
+<text x="404" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">✕</text>
+<rect x="104" y="96" width="54" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="131.0" y="117" font-size="13" fill="#E8E8E8" text-anchor="middle">전체</text>
+<rect x="166" y="96" width="67" height="32" rx="8" fill="#2A2A2A" stroke="#8FD0B8" stroke-width="1.5"/>
+<text x="199.5" y="117" font-size="13" fill="#E8E8E8" text-anchor="middle">✓ 미편집</text>
+<rect x="241" y="96" width="67" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="274.5" y="117" font-size="13" fill="#E8E8E8" text-anchor="middle">편집됨</text>
+<rect x="316" y="96" width="67" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="349.5" y="117" font-size="13" fill="#E8E8E8" text-anchor="middle">RAW</text>
+<rect x="104.0" y="140.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="104.0" y1="140.0" x2="225.33333333333331" y2="261.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="225.33333333333331" y1="140.0" x2="104.0" y2="261.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="209.33333333333331" cy="156.0" r="11" fill="#8FD0B8"/>
+<text x="209.33333333333331" y="160.0" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="227.33333333333331" y="140.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="227.33333333333331" y1="140.0" x2="348.66666666666663" y2="261.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="348.66666666666663" y1="140.0" x2="227.33333333333331" y2="261.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="231.33333333333331" y="241.33333333333331" width="34" height="16" rx="4" fill="#121212"/>
+<text x="248.33333333333331" y="253.33333333333331" font-size="10" fill="#F2C46B" text-anchor="middle">RAW</text>
+<circle cx="332.66666666666663" cy="156.0" r="11" fill="#8FD0B8"/>
+<text x="332.66666666666663" y="160.0" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="350.66666666666663" y="140.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="350.66666666666663" y1="140.0" x2="471.99999999999994" y2="261.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="471.99999999999994" y1="140.0" x2="350.66666666666663" y2="261.3333333333333" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="455.99999999999994" cy="156.0" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="104.0" y="263.3333333333333" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="104.0" y1="263.3333333333333" x2="225.33333333333331" y2="384.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="225.33333333333331" y1="263.3333333333333" x2="104.0" y2="384.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="217.33333333333331" cy="376.66666666666663" r="4" fill="#8FD0B8"/>
+<circle cx="209.33333333333331" cy="279.3333333333333" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="227.33333333333331" y="263.3333333333333" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="227.33333333333331" y1="263.3333333333333" x2="348.66666666666663" y2="384.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="348.66666666666663" y1="263.3333333333333" x2="227.33333333333331" y2="384.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="332.66666666666663" cy="279.3333333333333" r="11" fill="#8FD0B8"/>
+<text x="332.66666666666663" y="283.3333333333333" font-size="12" fill="#00382B" text-anchor="middle">✓</text>
+<rect x="350.66666666666663" y="263.3333333333333" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="350.66666666666663" y1="263.3333333333333" x2="471.99999999999994" y2="384.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="471.99999999999994" y1="263.3333333333333" x2="350.66666666666663" y2="384.66666666666663" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="455.99999999999994" cy="279.3333333333333" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="104.0" y="386.66666666666663" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="104.0" y1="386.66666666666663" x2="225.33333333333331" y2="507.99999999999994" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="225.33333333333331" y1="386.66666666666663" x2="104.0" y2="507.99999999999994" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="108.0" y="487.99999999999994" width="34" height="16" rx="4" fill="#121212"/>
+<text x="125.0" y="499.99999999999994" font-size="10" fill="#F2C46B" text-anchor="middle">RAW</text>
+<circle cx="209.33333333333331" cy="402.66666666666663" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="227.33333333333331" y="386.66666666666663" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="227.33333333333331" y1="386.66666666666663" x2="348.66666666666663" y2="507.99999999999994" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="348.66666666666663" y1="386.66666666666663" x2="227.33333333333331" y2="507.99999999999994" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="340.66666666666663" cy="499.99999999999994" r="4" fill="#8FD0B8"/>
+<circle cx="332.66666666666663" cy="402.66666666666663" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="350.66666666666663" y="386.66666666666663" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="350.66666666666663" y1="386.66666666666663" x2="471.99999999999994" y2="507.99999999999994" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="471.99999999999994" y1="386.66666666666663" x2="350.66666666666663" y2="507.99999999999994" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="455.99999999999994" cy="402.66666666666663" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="104.0" y="510.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="104.0" y1="510.0" x2="225.33333333333331" y2="631.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="225.33333333333331" y1="510.0" x2="104.0" y2="631.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="209.33333333333331" cy="526.0" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="227.33333333333331" y="510.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="227.33333333333331" y1="510.0" x2="348.66666666666663" y2="631.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="348.66666666666663" y1="510.0" x2="227.33333333333331" y2="631.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="332.66666666666663" cy="526.0" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="350.66666666666663" y="510.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="350.66666666666663" y1="510.0" x2="471.99999999999994" y2="631.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="471.99999999999994" y1="510.0" x2="350.66666666666663" y2="631.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="354.66666666666663" y="611.3333333333334" width="34" height="16" rx="4" fill="#121212"/>
+<text x="371.66666666666663" y="623.3333333333334" font-size="10" fill="#F2C46B" text-anchor="middle">RAW</text>
+<circle cx="463.99999999999994" cy="623.3333333333334" r="4" fill="#8FD0B8"/>
+<circle cx="455.99999999999994" cy="526.0" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="104.0" y="633.3333333333333" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="104.0" y1="633.3333333333333" x2="225.33333333333331" y2="754.6666666666666" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="225.33333333333331" y1="633.3333333333333" x2="104.0" y2="754.6666666666666" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="209.33333333333331" cy="649.3333333333333" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="227.33333333333331" y="633.3333333333333" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="227.33333333333331" y1="633.3333333333333" x2="348.66666666666663" y2="754.6666666666666" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="348.66666666666663" y1="633.3333333333333" x2="227.33333333333331" y2="754.6666666666666" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="332.66666666666663" cy="649.3333333333333" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="350.66666666666663" y="633.3333333333333" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="350.66666666666663" y1="633.3333333333333" x2="471.99999999999994" y2="754.6666666666666" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="471.99999999999994" y1="633.3333333333333" x2="350.66666666666663" y2="754.6666666666666" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="455.99999999999994" cy="649.3333333333333" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="104.0" y="756.6666666666666" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="104.0" y1="756.6666666666666" x2="225.33333333333331" y2="878.0" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="225.33333333333331" y1="756.6666666666666" x2="104.0" y2="878.0" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="217.33333333333331" cy="870.0" r="4" fill="#8FD0B8"/>
+<circle cx="209.33333333333331" cy="772.6666666666666" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="227.33333333333331" y="756.6666666666666" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="227.33333333333331" y1="756.6666666666666" x2="348.66666666666663" y2="878.0" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="348.66666666666663" y1="756.6666666666666" x2="227.33333333333331" y2="878.0" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="231.33333333333331" y="858.0" width="34" height="16" rx="4" fill="#121212"/>
+<text x="248.33333333333331" y="870.0" font-size="10" fill="#F2C46B" text-anchor="middle">RAW</text>
+<circle cx="332.66666666666663" cy="772.6666666666666" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="350.66666666666663" y="756.6666666666666" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="350.66666666666663" y1="756.6666666666666" x2="471.99999999999994" y2="878.0" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="471.99999999999994" y1="756.6666666666666" x2="350.66666666666663" y2="878.0" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="455.99999999999994" cy="772.6666666666666" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="104.0" y="880.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="104.0" y1="880.0" x2="225.33333333333331" y2="1001.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="225.33333333333331" y1="880.0" x2="104.0" y2="1001.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="209.33333333333331" cy="896.0" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="227.33333333333331" y="880.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="227.33333333333331" y1="880.0" x2="348.66666666666663" y2="1001.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="348.66666666666663" y1="880.0" x2="227.33333333333331" y2="1001.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="340.66666666666663" cy="993.3333333333334" r="4" fill="#8FD0B8"/>
+<circle cx="332.66666666666663" cy="896.0" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<rect x="350.66666666666663" y="880.0" width="121.33333333333333" height="121.33333333333333" rx="0" fill="#4A4A4A"/>
+<line x1="350.66666666666663" y1="880.0" x2="471.99999999999994" y2="1001.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="471.99999999999994" y1="880.0" x2="350.66666666666663" y2="1001.3333333333334" stroke="#5A5A5A" stroke-width="1"/>
+<circle cx="455.99999999999994" cy="896.0" r="11" fill="none" stroke="#E8E8E8" stroke-width="2"/>
+<line x1="492" y1="0" x2="492" y2="1104" stroke="#3D3D3D" stroke-width="1.5"/>
+<rect x="512" y="104" width="364" height="240.24" rx="0" fill="#4A4A4A"/>
+<line x1="512" y1="104" x2="876" y2="344.24" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="876" y1="104" x2="512" y2="344.24" stroke="#5A5A5A" stroke-width="1"/>
+<text x="694.0" y="229.12" font-size="12" fill="#E8E8E8" text-anchor="middle">선택 사진 미리보기</text>
+<text x="512" y="376.24" font-size="14" fill="#E8E8E8" text-anchor="start" font-weight="600">DSC01234.JPG · 11/16 14:02</text>
+<text x="512" y="400.24" font-size="12" fill="#A8A8A8" text-anchor="start">ARW 쌍 있음 · 미편집</text>
+<text x="512" y="440.24" font-size="13" fill="#A8A8A8" text-anchor="start" font-weight="600">저장 결과</text>
+<rect x="512" y="452.24" width="364" height="56" rx="12" fill="#1E1E1E"/>
+<text x="528" y="486.24" font-size="13" fill="#A8A8A8" text-anchor="start">아직 없음</text>
+<rect x="512" y="1008" width="364" height="48" rx="24.0" fill="#8FD0B8"/>
+<text x="694.0" y="1037.0" font-size="14" fill="#00382B" text-anchor="middle" font-weight="600">레시피 적용 (3장)</text>
+<text x="442.0" y="1092" font-size="11" fill="#6F6F6F" text-anchor="middle">필터 칩 · 길게 눌러 선택 · 펼침=list-detail</text>
+<text x="442.0" y="14" font-size="1" fill="#E8E8E8" text-anchor="start"></text>
+</svg>

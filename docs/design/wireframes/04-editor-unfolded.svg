@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="884" height="1104" viewBox="0 0 884 1104" font-family="Noto Sans KR, Roboto, sans-serif">
+<title>04 편집기 supporting pane (펼침)</title>
+<rect width="100%" height="100%" fill="#121212"/>
+<text x="16" y="17" font-size="12" fill="#A8A8A8" text-anchor="start">9:41</text>
+<text x="868" y="17" font-size="12" fill="#A8A8A8" text-anchor="end">▮▮ 87%</text>
+<rect x="0" y="24" width="884" height="64" rx="0" fill="#121212"/>
+<text x="64" y="64" font-size="22" fill="#E8E8E8" text-anchor="start">3장에 적용</text>
+<circle cx="28" cy="56" r="20" fill="#2A2A2A"/>
+<text x="28" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">←</text>
+<rect x="760" y="36" width="108" height="40" rx="20.0" fill="#8FD0B8"/>
+<text x="814.0" y="61.0" font-size="14" fill="#00382B" text-anchor="middle" font-weight="600">3장 저장</text>
+<circle cx="732" cy="56" r="20" fill="#2A2A2A"/>
+<text x="732" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">◐</text>
+<circle cx="684" cy="56" r="20" fill="#2A2A2A"/>
+<text x="684" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">↷</text>
+<circle cx="636" cy="56" r="20" fill="#2A2A2A"/>
+<text x="636" y="61" font-size="11" fill="#E8E8E8" text-anchor="middle">↶</text>
+<rect x="16" y="96" width="480" height="904" rx="0" fill="#4A4A4A"/>
+<line x1="16" y1="96" x2="496" y2="1000" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="496" y1="96" x2="16" y2="1000" stroke="#5A5A5A" stroke-width="1"/>
+<text x="256.0" y="553.0" font-size="12" fill="#E8E8E8" text-anchor="middle">미리보기 (60%)</text>
+<rect x="16" y="1012" width="52" height="52" rx="0" fill="#4A4A4A"/>
+<line x1="16" y1="1012" x2="68" y2="1064" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="68" y1="1012" x2="16" y2="1064" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="76" y="1012" width="52" height="52" rx="0" fill="#4A4A4A"/>
+<line x1="76" y1="1012" x2="128" y2="1064" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="128" y1="1012" x2="76" y2="1064" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="136" y="1012" width="52" height="52" rx="0" fill="#4A4A4A"/>
+<line x1="136" y1="1012" x2="188" y2="1064" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="188" y1="1012" x2="136" y2="1064" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="508" y1="96" x2="508" y2="1080" stroke="#3D3D3D" stroke-width="1.5"/>
+<rect x="520" y="100" width="54" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="547.0" y="121" font-size="13" fill="#E8E8E8" text-anchor="middle">보관</text>
+<rect x="582" y="100" width="54" height="32" rx="8" fill="#2A2A2A" stroke="#8FD0B8" stroke-width="1.5"/>
+<text x="609.0" y="121" font-size="13" fill="#E8E8E8" text-anchor="middle">✓ 네거</text>
+<rect x="644" y="100" width="80" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="684.0" y="121" font-size="13" fill="#E8E8E8" text-anchor="middle">슬라이드</text>
+<rect x="732" y="100" width="67" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="765.5" y="121" font-size="13" fill="#E8E8E8" text-anchor="middle">시네마</text>
+<rect x="520" y="148" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="520" y1="148" x2="592" y2="220" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="592" y1="148" x2="520" y2="220" stroke="#5A5A5A" stroke-width="1"/>
+<text x="556" y="240" font-size="11" fill="#A8A8A8" text-anchor="middle">원본</text>
+<rect x="602" y="148" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="602" y1="148" x2="674" y2="220" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="674" y1="148" x2="602" y2="220" stroke="#5A5A5A" stroke-width="1"/>
+<text x="638" y="240" font-size="11" fill="#A8A8A8" text-anchor="middle">Portra</text>
+<rect x="684" y="148" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="684" y1="148" x2="756" y2="220" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="756" y1="148" x2="684" y2="220" stroke="#5A5A5A" stroke-width="1"/>
+<rect x="682" y="146" width="76" height="76" rx="8" fill="none" stroke="#8FD0B8" stroke-width="1.5"/>
+<text x="720" y="240" font-size="11" fill="#A8A8A8" text-anchor="middle">Gold</text>
+<rect x="766" y="148" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="766" y1="148" x2="838" y2="220" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="838" y1="148" x2="766" y2="220" stroke="#5A5A5A" stroke-width="1"/>
+<text x="802" y="240" font-size="11" fill="#A8A8A8" text-anchor="middle">Ektar</text>
+<rect x="520" y="260" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="520" y1="260" x2="592" y2="332" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="592" y1="260" x2="520" y2="332" stroke="#5A5A5A" stroke-width="1"/>
+<text x="556" y="352" font-size="11" fill="#A8A8A8" text-anchor="middle">Velvia</text>
+<rect x="602" y="260" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="602" y1="260" x2="674" y2="332" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="674" y1="260" x2="602" y2="332" stroke="#5A5A5A" stroke-width="1"/>
+<text x="638" y="352" font-size="11" fill="#A8A8A8" text-anchor="middle">Provia</text>
+<rect x="684" y="260" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="684" y1="260" x2="756" y2="332" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="756" y1="260" x2="684" y2="332" stroke="#5A5A5A" stroke-width="1"/>
+<text x="720" y="352" font-size="11" fill="#A8A8A8" text-anchor="middle">Tri-X</text>
+<rect x="766" y="260" width="72" height="72" rx="0" fill="#4A4A4A"/>
+<line x1="766" y1="260" x2="838" y2="332" stroke="#5A5A5A" stroke-width="1"/>
+<line x1="838" y1="260" x2="766" y2="332" stroke="#5A5A5A" stroke-width="1"/>
+<text x="802" y="352" font-size="11" fill="#A8A8A8" text-anchor="middle">Cine</text>
+<text x="520" y="396" font-size="13" fill="#A8A8A8" text-anchor="start">Gold 강도</text>
+<text x="868" y="396" font-size="13" fill="#E8E8E8" text-anchor="end" font-weight="600">80%</text>
+<rect x="520" y="414" width="348" height="4" rx="2" fill="#3D3D3D"/>
+<rect x="520" y="414" width="278.40000000000003" height="4" rx="2" fill="#8FD0B8"/>
+<circle cx="798.4000000000001" cy="416" r="10" fill="#8FD0B8"/>
+<text x="520" y="448" font-size="14" fill="#E8E8E8" text-anchor="start" font-weight="600">세부 조정</text>
+<rect x="520" y="460" width="54" height="32" rx="8" fill="#2A2A2A" stroke="#8FD0B8" stroke-width="1.5"/>
+<text x="547.0" y="481" font-size="13" fill="#E8E8E8" text-anchor="middle">✓ 기본</text>
+<rect x="582" y="460" width="67" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="615.5" y="481" font-size="13" fill="#E8E8E8" text-anchor="middle">톤커브</text>
+<rect x="657" y="460" width="67" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="690.5" y="481" font-size="13" fill="#E8E8E8" text-anchor="middle">HSL</text>
+<rect x="732" y="460" width="54" height="32" rx="8" fill="none" stroke="#3D3D3D" stroke-width="1.5"/>
+<text x="759.0" y="481" font-size="13" fill="#E8E8E8" text-anchor="middle">효과</text>
+<text x="520" y="528" font-size="13" fill="#A8A8A8" text-anchor="start">노출 EV</text>
+<text x="828" y="528" font-size="13" fill="#E8E8E8" text-anchor="end" font-weight="600">+0.3</text>
+<rect x="520" y="546" width="308" height="4" rx="2" fill="#3D3D3D"/>
+<rect x="520" y="546" width="163.24" height="4" rx="2" fill="#8FD0B8"/>
+<circle cx="683.24" cy="548" r="10" fill="#8FD0B8"/>
+<circle cx="852" cy="544" r="20" fill="#2A2A2A"/>
+<text x="852" y="549" font-size="11" fill="#E8E8E8" text-anchor="middle">↺</text>
+<text x="520" y="584" font-size="13" fill="#A8A8A8" text-anchor="start">WB 온도</text>
+<text x="828" y="584" font-size="13" fill="#E8E8E8" text-anchor="end" font-weight="600">-0.10</text>
+<rect x="520" y="602" width="308" height="4" rx="2" fill="#3D3D3D"/>
+<rect x="520" y="602" width="138.6" height="4" rx="2" fill="#8FD0B8"/>
+<circle cx="658.6" cy="604" r="10" fill="#8FD0B8"/>
+<circle cx="852" cy="600" r="20" fill="#2A2A2A"/>
+<text x="852" y="605" font-size="11" fill="#E8E8E8" text-anchor="middle">↺</text>
+<text x="520" y="640" font-size="13" fill="#A8A8A8" text-anchor="start">하이라이트</text>
+<text x="828" y="640" font-size="13" fill="#E8E8E8" text-anchor="end" font-weight="600">-20</text>
+<rect x="520" y="658" width="308" height="4" rx="2" fill="#3D3D3D"/>
+<rect x="520" y="658" width="123.2" height="4" rx="2" fill="#8FD0B8"/>
+<circle cx="643.2" cy="660" r="10" fill="#8FD0B8"/>
+<circle cx="852" cy="656" r="20" fill="#2A2A2A"/>
+<text x="852" y="661" font-size="11" fill="#E8E8E8" text-anchor="middle">↺</text>
+<text x="520" y="696" font-size="13" fill="#A8A8A8" text-anchor="start">섀도</text>
+<text x="828" y="696" font-size="13" fill="#E8E8E8" text-anchor="end" font-weight="600">+15</text>
+<rect x="520" y="714" width="308" height="4" rx="2" fill="#3D3D3D"/>
+<rect x="520" y="714" width="178.64" height="4" rx="2" fill="#8FD0B8"/>
+<circle cx="698.64" cy="716" r="10" fill="#8FD0B8"/>
+<circle cx="852" cy="712" r="20" fill="#2A2A2A"/>
+<text x="852" y="717" font-size="11" fill="#E8E8E8" text-anchor="middle">↺</text>
+<text x="520" y="752" font-size="13" fill="#A8A8A8" text-anchor="start">대비</text>
+<text x="828" y="752" font-size="13" fill="#E8E8E8" text-anchor="end" font-weight="600">+10</text>
+<rect x="520" y="770" width="308" height="4" rx="2" fill="#3D3D3D"/>
+<rect x="520" y="770" width="169.4" height="4" rx="2" fill="#8FD0B8"/>
+<circle cx="689.4" cy="772" r="10" fill="#8FD0B8"/>
+<circle cx="852" cy="768" r="20" fill="#2A2A2A"/>
+<text x="852" y="773" font-size="11" fill="#E8E8E8" text-anchor="middle">↺</text>
+<text x="520" y="808" font-size="13" fill="#A8A8A8" text-anchor="start">채도</text>
+<text x="828" y="808" font-size="13" fill="#E8E8E8" text-anchor="end" font-weight="600">0</text>
+<rect x="520" y="826" width="308" height="4" rx="2" fill="#3D3D3D"/>
+<rect x="520" y="826" width="154.0" height="4" rx="2" fill="#8FD0B8"/>
+<circle cx="674.0" cy="828" r="10" fill="#8FD0B8"/>
+<circle cx="852" cy="824" r="20" fill="#2A2A2A"/>
+<text x="852" y="829" font-size="11" fill="#E8E8E8" text-anchor="middle">↺</text>
+<text x="520" y="1064" font-size="14" fill="#8FD0B8" text-anchor="start" font-weight="600">레시피로 보관 ›</text>
+<text x="442.0" y="14" font-size="1" fill="#E8E8E8" text-anchor="start"></text>
+</svg>
