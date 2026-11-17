@@ -111,7 +111,7 @@ import kotlinx.coroutines.flow.*
                 Text("편집기 LUT 스트립의 ‘보관’에서 이 레시피를 선택하세요.", style = MaterialTheme.typography.bodySmall)
                 TextButton(enabled = entry != null && !running, onClick = {
                     sharing = SharedRecipe(value.name, recipe, if (recipe.lutId.startsWith("user-")) entry!!.name else "")
-                }) { Symbol(R.drawable.pixel_share); Text("공유 / QR") }
+                }) { Symbol(R.drawable.pixel_share); Spacer(Modifier.width(8.dp)); Text("공유 / QR") }
                 TextButton(enabled = entry != null && !running, onClick = {
                     app.settings.edit().putString("defaultRecipe", value.json).apply(); defaultJson = value.json; message = "기본 레시피로 지정했습니다"
                 }) { Text("기본으로 지정") }

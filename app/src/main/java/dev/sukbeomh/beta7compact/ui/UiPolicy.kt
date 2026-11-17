@@ -75,3 +75,32 @@ fun fittedPhoto(box: PhotoBox, imageWidth: Float, imageHeight: Float): PhotoBox 
     val scale = minOf(box.width / imageWidth, box.height / imageHeight)
     return PhotoBox(imageWidth * scale, imageHeight * scale)
 }
+
+/** How the tone-curve slider and graph map onto control points. */
+object CurveTouch {
+    /** A point this close to the slider position, as a fraction of the width, is the one being edited. */
+    const val NEAR = .02f
+    private const val GAP = .002f
+
+    /** Index of the control point at slider position [x], or null when that spot has no point yet. */
+    fun pointAt(points: List<dev.sukbeomh.beta7compact.recipe.CurvePoint>, x: Float): Int? =
+        points.indices.minByOrNull { kotlin.math.abs(points[it].x - x) }?.takeIf { kotlin.math.abs(points[it].x - x) <= NEAR }
+
+    /** Slider position pulled onto a nearby point, so an existing point is easy to pick up again. */
+    fun snap(points: List<dev.sukbeomh.beta7compact.recipe.CurvePoint>, x: Float): Float = pointAt(points, x)?.let { points[it].x } ?: x
+
+    /** Points with one at [x] set to height [y], and its index: the existing point there, or a new one. Null when the curve is full. */
+    fun place(points: List<dev.sukbeomh.beta7compact.recipe.CurvePoint>, x: Float, y: Float): Pair<List<dev.sukbeomh.beta7compact.recipe.CurvePoint>, Int>? {
+        val height = y.coerceIn(0f, 1f)
+        pointAt(points, x)?.let { i -> return points.toMutableList().also { it[i] = it[i].copy(y = height) } to i }
+        if (points.size >= 16 || points.any { kotlin.math.abs(it.x - x) < GAP }) return null
+        val placed = (points + dev.sukbeomh.beta7compact.recipe.CurvePoint(x.coerceIn(0f, 1f), height)).sortedBy { it.x }
+        return placed to placed.indexOfFirst { it.x == x.coerceIn(0f, 1f) }
+    }
+}
+
+/** Name shown under a saved result: the LUT's display name, never its internal id. */
+fun resultLabel(recipeJson: String, lutNames: Map<String, String>): String {
+    val recipe = runCatching { Recipe.fromJson(recipeJson) }.getOrNull() ?: return "레시피"
+    return lutNames[recipe.lutId] ?: recipe.requiredLutName.ifBlank { "레시피" }
+}

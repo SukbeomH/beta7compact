@@ -47,6 +47,8 @@ internal data class PhotoPreviewState(val bitmap: Bitmap? = null, val loading: B
     val results by remember(photo.key) { app.db.recipes().results(photo.key) }.collectAsStateWithLifecycle(emptyList())
     val photos by app.db.photos().observe().collectAsStateWithLifecycle(emptyList())
     var retry by remember { mutableIntStateOf(0) }
+    var lutNames by remember { mutableStateOf(emptyMap<String, String>()) }
+    LaunchedEffect(Unit) { lutNames = withContext(Dispatchers.IO) { runCatching { RecipeStore(app).entries().associate { it.id to it.name } }.getOrDefault(emptyMap()) } }
     val preview = photoPreview(app, photo, retry)
     val image = preview.bitmap
     var error by remember { mutableStateOf<String?>(null) }
@@ -77,7 +79,7 @@ internal data class PhotoPreviewState(val bitmap: Bitmap? = null, val loading: B
                         Box(Modifier.fillMaxWidth().aspectRatio(1.5f).background(Color.Black), contentAlignment = Alignment.Center) {
                             thumbnail?.let { Image(it.asImageBitmap(), "저장 결과", Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
                         }
-                        Text(runCatching { Recipe.fromJson(result.recipeJson).lutId }.getOrDefault("레시피"), Modifier.padding(8.dp))
+                        Text(resultLabel(result.recipeJson, lutNames), Modifier.padding(8.dp))
                         TextButton(onClick = { try { sharePhotos(app, listOf(Uri.parse(result.uri))) } catch (e: Exception) { error = "결과를 공유할 앱이 없습니다" } }) { Text("공유") }
                     }
                 }
