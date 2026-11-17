@@ -9,6 +9,10 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import dev.sukbeomh.beta7compact.core.Camera
 import dev.sukbeomh.beta7compact.core.CameraObject
+import dev.sukbeomh.beta7compact.remote.SonyRemoteSession
+import dev.sukbeomh.beta7compact.remote.SonySessionTransport
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -16,6 +20,29 @@ import java.io.File
 /** One owner for the physical USB interface, shared by listing, thumbs and the worker. */
 object UsbAccess {
     private val lock = Mutex()
+    /** Explicit remote-session scope; shares ownership with import and read-only diagnostics. */
+    suspend fun <T> useRemote(openTransport: suspend () -> SonySessionTransport,
+                              onSession: (SonyRemoteSession) -> Unit = {},
+                              block: suspend (SonyRemoteSession) -> T): T = lock.withLock {
+        val session = SonyRemoteSession(openTransport())
+        var failure: Throwable? = null
+        try {
+            onSession(session)
+            session.connect()
+            block(session)
+        } catch (error: Throwable) {
+            failure = error
+            throw error
+        } finally {
+            try {
+                withContext(NonCancellable) { session.close() }
+            } catch (closing: Throwable) {
+                if (failure == null) throw closing
+                if (failure !== closing) failure.addSuppressed(closing)
+            }
+        }
+    }
+
     suspend fun <T> use(context: Context, raw: Boolean, remember: (Boolean) -> Unit = {},
                         failed: (MtpFailure) -> Unit = {}, block: suspend (Camera) -> T): T =
         use(context, { raw }, remember, failed, block)

@@ -88,6 +88,8 @@ import kotlinx.coroutines.*
         Text("연구 · 읽기 전용", style = MaterialTheme.typography.titleSmall)
         CameraDiagnosticsSetting(activity = activity, enabled = canChange)
         dev.sukbeomh.beta7compact.research.FirmwareInspectionCard()
+        Text("연구 · PC Remote 실험", style = MaterialTheme.typography.titleSmall)
+        PcRemoteDiagnosticsSetting(activity = activity, enabled = canChange)
         Text("진단 · 정보", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp)) {
             TextButton(onClick = {
