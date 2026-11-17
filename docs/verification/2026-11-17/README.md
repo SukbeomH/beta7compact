@@ -64,3 +64,13 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`. SHA-256은 `apk-sha256.txt`. A
 ## 0.5.2 아이콘 수정
 
 외곽 프레임 제거, 카메라·칩 확대, inset 4dp. 버전 0.5.2/9. assembleDebug/lint 성공(`release-0.5.2.log`). APK 인증서가 기존 설치본과 일치함을 게시 전 확인(`signing-0.5.2.log`). 기능 코드 변경이 없는 리소스·버전 수정이므로 단위 테스트는 재실행하지 않았다. 실제 런처 확인·설치는 미실행. 이미지 검증 수치는 아이콘 문서에 기록했다.
+
+## 0.6.0 진단·공유
+
+기능: 모드 라벨(사용자 선택), USB VID/PID·구성·인터페이스·endpoint·권한, 실제 선택 config/interface/alternate, 단계·결과·시간·PTP 응답 코드, 지원 목록. 공유는 미리보기 후 Android text/plain chooser를 사용하며 수신자는 사용자가 선택한다. 기기 문자열·시리얼·경로·사진·raw bytes·예외 메시지는 공유에서 제외한다.
+
+첫 통합 빌드는 에이전트의 마지막 소스 저장과 겹쳐 타입 참조 오류가 났다(`release-0.6.0.log`). 편집 종료 후 `clean assembleDebug test lint --continue --no-daemon` 재실행 성공(`release-0.6.0-final.log`). debug/release 각각 196개 테스트, 실패·오류·skip 0. Room migration 두 검사도 통과했다. 서명 일치 검사 성공(`signing-0.6.0.log`).
+
+실제 연결된 폰: adb install -r 성공, 0.6.0 설정 화면 확인, 진단 실행 시 Sony 장치 없음 결과 표시, 결과 공유 버튼으로 Android 공유 메뉴와 텍스트 미리보기 확인. 메시지는 발송하지 않았다. 기기·개인정보가 포함될 수 있는 스크린샷은 무시 디렉터리에만 보관하고 저장소에 추가하지 않는다.
+
+α7C 실기 연결·권한 거부·통신 도중 분리·MTP/PC Remote 비교·가져오기 재진입은 미실행이다. 합성 테스트 결과를 실기 호환성으로 해석하지 않는다. 공식 모델별 배포 README/API 표는 공개 조사에서 확보하지 못했으며 라이선스 동의·신청서 제출도 하지 않았다.

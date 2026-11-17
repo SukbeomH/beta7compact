@@ -86,7 +86,7 @@ import kotlinx.coroutines.*
         Text("업데이트", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { UpdateSetting(app) } }
         Text("연구 · 읽기 전용", style = MaterialTheme.typography.titleSmall)
-        CameraDiagnosticsSetting(enabled = canChange)
+        CameraDiagnosticsSetting(activity = activity, enabled = canChange)
         dev.sukbeomh.beta7compact.research.FirmwareInspectionCard()
         Text("진단 · 정보", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp)) {

@@ -2,8 +2,8 @@
 package android.hardware.usb
 import dev.sukbeomh.beta7compact.usb.*
 object UsbConstants {const val USB_ENDPOINT_XFER_BULK=2;const val USB_DIR_IN=128;const val USB_DIR_OUT=0}
-class UsbEndpoint(val type:Int,val direction:Int)
-class UsbInterface(val id:Int=0,val alternateSetting:Int=0,val interfaceClass:Int=6){
+class UsbEndpoint(val type:Int,val direction:Int,val address:Int=direction or 1,val maxPacketSize:Int=512)
+class UsbInterface(val id:Int=0,val alternateSetting:Int=0,val interfaceClass:Int=6,val interfaceSubclass:Int=1,val interfaceProtocol:Int=1){
  val endpointCount=2
  fun getEndpoint(n:Int)=UsbEndpoint(2,if(n==0)128 else 0)
 }
@@ -12,7 +12,7 @@ class UsbConfiguration(val id:Int=1,val faces:List<UsbInterface> = listOf(UsbInt
  fun getInterface(i:Int)=faces[i]
 }
 class UsbDevice(val cfgs:List<UsbConfiguration> = listOf(UsbConfiguration())){
- val vendorId=0x054c;val configurationCount get()=cfgs.size;val interfaceCount get()=cfgs.first().interfaceCount
+ val vendorId=0x054c;val productId=0x1234;val configurationCount get()=cfgs.size;val interfaceCount get()=cfgs.first().interfaceCount
  fun getConfiguration(i:Int)=cfgs[i]
  fun getInterface(i:Int)=cfgs.first().getInterface(i)
 }
@@ -21,16 +21,17 @@ object Wire {
  var rawParent=8;var openResponse=0x2001;var nativeEpoch=1L;var imports=0;var thumbnails=0;var controls=0
  var nativeOpens=0;var nativeCloses=0;var rawOpens=0;var setCalls=0;var closed=0
  var nativeFailure:String?=null
+ var permission=true;var infoResponse=0x2001
  var deviceInfo=byteArrayOf(0)
  val operations=mutableListOf<Int>()
  val date="20200308T023000.1Z"
- fun reset(persist:Boolean=true,stall:Boolean=false){deviceInfo=byteArrayOf(0);session=false;nativeOwned=false;preserveSession=persist;stallAlternate=stall;nativeOpens=0;nativeCloses=0;rawOpens=0;setCalls=0;closed=0;operations.clear();rawParent=8;openResponse=0x2001;nativeEpoch=1L;imports=0;thumbnails=0;controls=0;nativeFailure=null}
+ fun reset(persist:Boolean=true,stall:Boolean=false){permission=true;infoResponse=0x2001;deviceInfo=byteArrayOf(0);session=false;nativeOwned=false;preserveSession=persist;stallAlternate=stall;nativeOpens=0;nativeCloses=0;rawOpens=0;setCalls=0;closed=0;operations.clear();rawParent=8;openResponse=0x2001;nativeEpoch=1L;imports=0;thumbnails=0;controls=0;nativeFailure=null}
  fun str(s:String)=byteArrayOf((s.length+1).toByte())+(s+"\u0000").toByteArray(Charsets.UTF_16LE)
  fun objectInfo()=buffer(52).putInt(2).putShort(0x3801.toShort()).putShort(0).putInt(4).apply{position(38);putInt(rawParent);position(52)}.array()+str("PUBLIC_TEST.JPG")+str(date)+byteArrayOf(0,0)
 }
 class UsbManager(val dev:UsbDevice=UsbDevice()){
  val deviceList=hashMapOf("synthetic" to dev)
- fun hasPermission(d:UsbDevice)=true
+ fun hasPermission(d:UsbDevice)=Wire.permission
  fun openDevice(d:UsbDevice)=UsbDeviceConnection()
 }
 class UsbDeviceConnection {
@@ -54,7 +55,7 @@ class UsbDeviceConnection {
    val cmd=PtpContainer.decode(bytes.copyOf(size));Wire.operations.add(cmd.code)
    var response=Ptp.OK;var data:ByteArray?=null
    when(cmd.code){
-    0x1001->data=Wire.deviceInfo
+    0x1001->if(Wire.infoResponse==Ptp.OK)data=Wire.deviceInfo else response=Wire.infoResponse
     0x1002->if(Wire.openResponse!=Ptp.OK)response=Wire.openResponse else if(Wire.session)response=0x201e else Wire.session=true
     0x1003->Wire.session=false
     0x1004->data=buffer(8).putInt(1).putInt(2).array()
