@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,7 +48,23 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
     val scope=rememberCoroutineScope();val store=remember { RecipeStore(app) };var previewIndex by rememberSaveable { mutableIntStateOf(0) };val photo=photos[previewIndex.coerceIn(0,photos.lastIndex)]
     val history=remember { RecipeHistory(currentRecipe) }
     val recipe=currentRecipe
-    fun change(next: Recipe) { history.set(next);onRecipeChange(history.current) }
+    // One touch on the panel is one undo step: every change after the first while that finger stays down is folded into it.
+    val touch=remember { object { var down=false;var changed=false } }
+    val touchTracker=Modifier.pointerInput(Unit) {
+        awaitPointerEventScope {
+            while(true) {
+                val pressed=awaitPointerEvent(PointerEventPass.Initial).changes.any { it.pressed }
+                if(pressed && !touch.down) touch.changed=false
+                touch.down=pressed
+            }
+        }
+    }
+    fun change(next: Recipe) {
+        val before=history.current
+        history.set(next,continuing=touch.down && touch.changed)
+        if(history.current!=before && touch.down) touch.changed=true
+        onRecipeChange(history.current)
+    }
     val panelScroll=rememberScrollState()
     var details by rememberSaveable { mutableStateOf(false) }
     var retry by remember { mutableIntStateOf(0) }
@@ -167,7 +184,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
     }
     @Composable fun Panel(modifier: Modifier, tabletop: Boolean) {
         Surface(modifier,shape=RoundedCornerShape(16.dp),color=MaterialTheme.colorScheme.surfaceContainer) {
-            Column(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().then(touchTracker)) {
             Column(Modifier.weight(1f).verticalScroll(panelScroll).padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                 if(photos.size>1) LazyRow(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                     items(photos.indices.toList()) { i ->
@@ -220,7 +237,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                 Column(Modifier.bringIntoViewRequester(strengthTarget)) {
                     Control("강도",recipe.strength,0f..1f,1f,valueLabel="${(recipe.strength*100).toInt()}%") {change(recipe.copy(strength=it))}
                 }
-                TextButton(onClick={details=!details}) { Symbol(R.drawable.pixel_tune);Text(if(details) "세부 조정 접기" else "세부 조정") }
+                TextButton(onClick={details=!details}) { Symbol(R.drawable.pixel_tune);Spacer(Modifier.width(8.dp));Text(if(details) "세부 조정 접기" else "세부 조정") }
                 if(details) {
                     TabRow(tab) { listOf("기본","톤커브","HSL","효과").forEachIndexed { i,label -> Tab(tab==i,{tab=i},text={Text(label)}) } }
                     ColorControls(tab,recipe) { change(it) }

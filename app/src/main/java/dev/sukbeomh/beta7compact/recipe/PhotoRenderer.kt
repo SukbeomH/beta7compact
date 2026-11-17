@@ -79,19 +79,21 @@ object PhotoRenderer {
             Canvas(this).apply { concat(matrix(orientation,bitmap.width,bitmap.height));drawBitmap(bitmap,0f,0f,null) }
         }
     }
-    private fun copyExif(source: File, output: File, width: Int, height: Int) {
+    /** [copyTags] false writes only the tags this app sets, for sources whose EXIF cannot be carried over. */
+    private fun copyExif(source: File, output: File, width: Int, height: Int, copyTags: Boolean) {
         val from=ExifInterface(source);val to=ExifInterface(output)
         // Copy readable platform EXIF tags, excluding offsets, dimensions, orientation and stale thumbnail.
-        val structural=setOf("ImageWidth","ImageLength","PixelXDimension","PixelYDimension","Orientation","Software",
+        // The maker note is left out: Sony's is tens of kilobytes and pushed the segment past JPEG's 64 KB limit.
+        val structural=setOf("MakerNote","ImageWidth","ImageLength","PixelXDimension","PixelYDimension","Orientation","Software",
             "JPEGInterchangeFormat","JPEGInterchangeFormatLength","StripOffsets","StripByteCounts","RowsPerStrip",
             "Compression","PhotometricInterpretation","SamplesPerPixel","BitsPerSample","PlanarConfiguration",
             "TransferFunction","WhitePoint","PrimaryChromaticities","YCbCrCoefficients","YCbCrSubSampling",
             "YCbCrPositioning","ReferenceBlackWhite","ColorSpace","DefaultCropSize","DNGVersion","NewSubfileType","SubfileType")
-        ExifInterface::class.java.fields.filter { it.name.startsWith("TAG_") && !it.name.contains("THUMBNAIL") && it.type==String::class.java }.forEach { field ->
+        if(copyTags) ExifInterface::class.java.fields.filter { it.name.startsWith("TAG_") && !it.name.contains("THUMBNAIL") && it.type==String::class.java }.forEach { field ->
             val tag=field.get(null) as String
-            if(tag !in structural) from.getAttribute(tag)?.let { to.setAttribute(tag,it) }
+            if(tag !in structural) from.getAttribute(tag)?.takeIf { it.length<=JpegFile.MAX_TAG_CHARS }?.let { to.setAttribute(tag,it) }
         }
-        to.setAttribute(ExifInterface.TAG_ORIENTATION,"1");to.setAttribute(ExifInterface.TAG_SOFTWARE,"beta7compact 0.3.0")
+        to.setAttribute(ExifInterface.TAG_ORIENTATION,"1");to.setAttribute(ExifInterface.TAG_SOFTWARE,"beta7compact ${dev.sukbeomh.beta7compact.BuildConfig.VERSION_NAME}")
         to.setAttribute(ExifInterface.TAG_IMAGE_WIDTH,width.toString());to.setAttribute(ExifInterface.TAG_IMAGE_LENGTH,height.toString())
         to.setAttribute(ExifInterface.TAG_PIXEL_X_DIMENSION,width.toString());to.setAttribute(ExifInterface.TAG_PIXEL_Y_DIMENSION,height.toString())
         to.setAttribute(ExifInterface.TAG_COLOR_SPACE,"1");to.saveAttributes()
@@ -139,8 +141,14 @@ object PhotoRenderer {
                                     } finally { tile.recycle() }
                                 }
                             }
-                            output.outputStream().use { check(result.compress(Bitmap.CompressFormat.JPEG,95,it));it.fd.sync() }
-                            copyExif(s.original,output,result.width,result.height)
+                            fun write(copyTags: Boolean) {
+                                output.outputStream().use { check(result.compress(Bitmap.CompressFormat.JPEG,95,it));it.fd.sync() }
+                                copyExif(s.original,output,result.width,result.height,copyTags)
+                            }
+                            write(true)
+                            // An oversized EXIF segment makes the file unreadable elsewhere; fall back to this app's own tags.
+                            if(!JpegFile.isWellFormed(output)) write(false)
+                            check(JpegFile.isWellFormed(output)) { "저장한 JPEG 구조가 올바르지 않습니다" }
                         } finally { result.recycle() }
                     } finally { decoder.recycle() }
                 }

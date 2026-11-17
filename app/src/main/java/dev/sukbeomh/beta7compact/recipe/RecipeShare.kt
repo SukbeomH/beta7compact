@@ -104,8 +104,10 @@ class RecipeHistory(initial: Recipe = Recipe()) {
     private val past=java.util.ArrayDeque<Recipe>();private val future=java.util.ArrayDeque<Recipe>()
     val canUndo get()=past.isNotEmpty()
     val canRedo get()=future.isNotEmpty()
-    fun set(next: Recipe) {
+    /** [continuing] folds this change into the previous step, so one drag is undone in one go. */
+    fun set(next: Recipe, continuing: Boolean=false) {
         if(next==current) return
+        if(continuing && past.isNotEmpty()) { current=next;future.clear();return }
         if(past.size==100) past.removeFirst()
         past.addLast(current);current=next;future.clear()
     }

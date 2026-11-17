@@ -1,8 +1,9 @@
 package dev.sukbeomh.beta7compact.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -115,50 +116,45 @@ private fun FoldableGroup(title: String, content: @Composable () -> Unit) {
 
 @Composable
 private fun CurveEditor(curves: Curves,change: (Curves)->Unit) {
-    var channel by rememberSaveable { mutableIntStateOf(0) };var selected by remember(channel) { mutableIntStateOf(0) }
+    var channel by rememberSaveable { mutableIntStateOf(0) };var cursor by rememberSaveable(channel) { mutableFloatStateOf(.5f) }
     val curve=curves.list()[channel]
     val latest by rememberUpdatedState(curve);val onChange by rememberUpdatedState(change)
-    val latestCurves by rememberUpdatedState(curves)
+    val latestCurves by rememberUpdatedState(curves);val latestCursor by rememberUpdatedState(cursor)
     fun update(points: List<CurvePoint>) {
         val c=ToneCurve(points)
         onChange(when(channel) {0->latestCurves.copy(rgb=c);1->latestCurves.copy(r=c);2->latestCurves.copy(g=c);else->latestCurves.copy(b=c)})
     }
+    val active=CurveTouch.pointAt(curve.points,cursor)
     Row { listOf("RGB","R","G","B").forEachIndexed { i,n -> FilterChip(channel==i,{channel=i},label={Text(n)}) } }
-    Canvas(Modifier.fillMaxWidth().height(240.dp)
+    val accent=MaterialTheme.colorScheme.primary
+    Canvas(Modifier.fillMaxWidth().height(200.dp)
         .pointerInput(channel) {
-            detectTapGestures(onTap={ position ->
-                val points=latest.points
-                val x=(position.x/size.width).coerceIn(0f,1f);val y=(1-position.y/size.height).coerceIn(0f,1f)
-                val closest=points.indices.minBy { hypot(points[it].x-x,points[it].y-y) }
-                if(hypot(points[closest].x-x,points[closest].y-y)<.06f) selected=closest
-                else if(points.size<16 && points.all { abs(it.x-x)>=.002f }) {
-                    val added=(points+CurvePoint(x,y)).sortedBy { it.x };update(added);selected=added.indexOfFirst { it.x==x }
+            // The slider picks where on the curve to work; sliding up or down anywhere in the graph moves that spot.
+            awaitEachGesture {
+                val down=awaitFirstDown(requireUnconsumed=false)
+                var points=latest.points;var index=-1;var y=latest.sample(latestCursor);var last=down.position.y
+                drag(down.id) { event ->
+                    event.consume()
+                    y=(y-(event.position.y-last)/size.height).coerceIn(0f,1f);last=event.position.y
+                    if(index<0) CurveTouch.place(points,latestCursor,y)?.let { (placed,i) -> points=placed;index=i }
+                    if(index>=0) { points=points.toMutableList().also { it[index]=CurvePoint(it[index].x,y) };update(points) }
                 }
-            })
-        }.pointerInput(channel) {
-            var dragging=0
-            detectDragGestures(onDragStart={ pos ->
-                val x=pos.x/size.width;val y=1-pos.y/size.height
-                dragging=latest.points.indices.minBy { hypot(latest.points[it].x-x,latest.points[it].y-y) };selected=dragging
-            },onDrag={ event,_ ->
-                event.consume();val points=latest.points.toMutableList();val i=dragging.coerceIn(0,points.lastIndex)
-                val x=when(i) { 0->0f;points.lastIndex->1f;else->run {
-                    val low=points[i-1].x+.001f;val high=points[i+1].x-.001f
-                    if(low<=high) (event.position.x/size.width).coerceIn(low,high) else points[i].x
-                } }
-                points[i]=CurvePoint(x,(1-event.position.y/size.height).coerceIn(0f,1f));update(points)
-            })
+            }
         }) {
         drawRect(Color.DarkGray)
         for(i in 0..4) { val t=i/4f;drawLine(Color.Gray,Offset(size.width*t,0f),Offset(size.width*t,size.height));drawLine(Color.Gray,Offset(0f,size.height*t),Offset(size.width,size.height*t)) }
+        drawLine(accent,Offset(cursor*size.width,0f),Offset(cursor*size.width,size.height),2.dp.toPx())
         val path=Path()
         for(i in 0..256) { val x=i/256f;val y=curve.sample(x);if(i==0) path.moveTo(x*size.width,(1-y)*size.height) else path.lineTo(x*size.width,(1-y)*size.height) }
         drawPath(path,Color.White,style=Stroke(3f))
-        curve.points.forEachIndexed { i,p -> drawCircle(if(i==selected) Color.Yellow else Color.White,8f,Offset(p.x*size.width,(1-p.y)*size.height)) }
+        curve.points.forEachIndexed { i,p -> drawCircle(if(i==active) Color.Yellow else Color.White,if(i==active) 6.dp.toPx() else 4.dp.toPx(),Offset(p.x*size.width,(1-p.y)*size.height)) }
+        if(active==null) drawCircle(accent,4.dp.toPx(),Offset(cursor*size.width,(1-curve.sample(cursor))*size.height),style=Stroke(2.dp.toPx()))
     }
-    Text("빈 곳 탭: 점 추가 · 드래그: 이동 · ${curve.points.size}/16점")
+    Slider(cursor,onValueChange={ cursor=CurveTouch.snap(latest.points,it) },valueRange=0f..1f,modifier=Modifier.heightIn(min=48.dp))
+    Text("위치 ${(cursor*100).roundToInt()}% · 밝기 ${(curve.sample(cursor)*100).roundToInt()}% · 점 ${curve.points.size}/16")
+    Text("슬라이더로 위치를 고르고 그래프를 위아래로 밀어 조절",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     Row {
-        TextButton(enabled=selected in 1 until curve.points.lastIndex,onClick={update(curve.points.filterIndexed { i,_->i!=selected });selected=0}) { Text("선택 점 삭제") }
-        TextButton(onClick={update(ToneCurve().points);selected=0}) { Text("채널 초기화") }
+        TextButton(enabled=active!=null && active in 1 until curve.points.lastIndex,onClick={ active?.let { a -> update(curve.points.filterIndexed { i,_->i!=a }) } }) { Text("이 점 삭제") }
+        TextButton(onClick={update(ToneCurve().points)}) { Text("채널 초기화") }
     }
 }
