@@ -14,7 +14,6 @@ import dev.sukbeomh.beta7compact.R
 import dev.sukbeomh.beta7compact.ui.components.SymbolButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -127,6 +126,9 @@ private fun CurveEditor(curves: Curves,change: (Curves)->Unit) {
     val active=CurveTouch.pointAt(curve.points,cursor)
     Row { listOf("RGB","R","G","B").forEachIndexed { i,n -> FilterChip(channel==i,{channel=i},label={Text(n)}) } }
     val accent=MaterialTheme.colorScheme.primary
+    val graphBackground=MaterialTheme.colorScheme.surfaceContainerHighest
+    val graphGrid=MaterialTheme.colorScheme.outline
+    val graphLine=MaterialTheme.colorScheme.onSurface
     Canvas(Modifier.fillMaxWidth().height(200.dp)
         .pointerInput(channel) {
             // The slider picks where on the curve to work; sliding up or down anywhere in the graph moves that spot.
@@ -141,13 +143,13 @@ private fun CurveEditor(curves: Curves,change: (Curves)->Unit) {
                 }
             }
         }) {
-        drawRect(Color.DarkGray)
-        for(i in 0..4) { val t=i/4f;drawLine(Color.Gray,Offset(size.width*t,0f),Offset(size.width*t,size.height));drawLine(Color.Gray,Offset(0f,size.height*t),Offset(size.width,size.height*t)) }
+        drawRect(graphBackground)
+        for(i in 0..4) { val t=i/4f;drawLine(graphGrid,Offset(size.width*t,0f),Offset(size.width*t,size.height));drawLine(graphGrid,Offset(0f,size.height*t),Offset(size.width,size.height*t)) }
         drawLine(accent,Offset(cursor*size.width,0f),Offset(cursor*size.width,size.height),2.dp.toPx())
         val path=Path()
         for(i in 0..256) { val x=i/256f;val y=curve.sample(x);if(i==0) path.moveTo(x*size.width,(1-y)*size.height) else path.lineTo(x*size.width,(1-y)*size.height) }
-        drawPath(path,Color.White,style=Stroke(3f))
-        curve.points.forEachIndexed { i,p -> drawCircle(if(i==active) Color.Yellow else Color.White,if(i==active) 6.dp.toPx() else 4.dp.toPx(),Offset(p.x*size.width,(1-p.y)*size.height)) }
+        drawPath(path,graphLine,style=Stroke(3f))
+        curve.points.forEachIndexed { i,p -> drawCircle(if(i==active) accent else graphLine,if(i==active) 6.dp.toPx() else 4.dp.toPx(),Offset(p.x*size.width,(1-p.y)*size.height)) }
         if(active==null) drawCircle(accent,4.dp.toPx(),Offset(cursor*size.width,(1-curve.sample(cursor))*size.height),style=Stroke(2.dp.toPx()))
     }
     Slider(cursor,onValueChange={ cursor=CurveTouch.snap(latest.points,it) },valueRange=0f..1f,modifier=Modifier.heightIn(min=48.dp))

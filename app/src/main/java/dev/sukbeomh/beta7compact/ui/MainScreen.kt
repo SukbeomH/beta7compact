@@ -55,7 +55,7 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 handleExit(EditorExitEvent.ArchiveFailed)
-                archiveError = "레시피를 보관할 수 없습니다. 다시 시도하거나 계속 편집하세요."
+                archiveError = "레시피를 저장할 수 없습니다. 다시 시도하거나 계속 편집하세요."
             }
         } }
     }
@@ -168,7 +168,7 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
                 if (wide && !fullScreen) Navigation(true)
                 Column(Modifier.weight(1f).fillMaxHeight().padding(horizontal = if (fullScreen) 0.dp else if (wide) 24.dp else 16.dp)) {
                     ObservedWorkBanner(app, ImportWorker.NAME, "가져오기", { resumeImport() }) { dispatch(NavigationAction.ViewImported) }
-                    ObservedWorkBanner(app, RecipeWorker.NAME, "레시피 저장", { RecipeWorker.resume(app) }) { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) }
+                    ObservedWorkBanner(app, RecipeWorker.NAME, "보정 사진 저장", { RecipeWorker.resume(app) }) { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) }
                     (update as? UpdateState.Available)?.takeIf { !fullScreen && navigation.tab != AppTab.SETTINGS }?.let { available ->
                         Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -223,14 +223,14 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
     }
     if (editorExitState.pending != null) AlertDialog(
         onDismissRequest = { handleExit(EditorExitEvent.ContinueEditing) },
-        title = { Text("편집 내용을 보관할까요?") },
+        title = { Text("보정 설정을 레시피로 저장할까요?") },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("보관하지 않은 변경이 있습니다. 버리면 현재 편집 내용을 되돌릴 수 없습니다.")
+            Text("저장하지 않은 보정 설정이 있습니다. 레시피로 저장하면 다른 사진에도 사용할 수 있습니다. 사진 파일은 생성하지 않습니다.")
             OutlinedTextField(editorName, { editorName = it.take(80) }, label = { Text("레시피 이름") }, enabled = !editorExitState.archiving)
             archiveError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         } },
         confirmButton = { TextButton(enabled = !editorExitState.archiving, onClick = { handleExit(EditorExitEvent.Archive) }) {
-            Text(if (editorExitState.archiving) "보관 중…" else "레시피로 보관")
+            Text(if (editorExitState.archiving) "저장 중…" else "레시피 저장")
         } },
         dismissButton = { Row {
             TextButton(enabled = !editorExitState.archiving, onClick = { handleExit(EditorExitEvent.ContinueEditing) }) { Text("계속 편집") }

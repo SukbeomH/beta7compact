@@ -144,7 +144,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
 
     fun save() {
         val snapshot=recipe;saving=true;scope.launch {
-            try { RecipeWorker.start(app,photos.map { it.key },snapshot);status="${photos.size}장 저장 대기열에 추가했습니다";error=null }
+            try { RecipeWorker.start(app,photos.map { it.key },snapshot);status="보정 사진 ${photos.size}장을 JPEG 저장 대기열에 추가했습니다";error=null }
             catch(e: Exception) { error="저장 대기열을 만들지 못했습니다" }
             finally { saving=false }
         }
@@ -165,7 +165,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
             Text(if(photos.size>1) "${photos.size}장에 적용" else "편집",Modifier.weight(1f),style=MaterialTheme.typography.titleSmall)
             Button(onClick=::save,enabled=!saving && original!=null && after!=null && !rendering,
                 modifier=if(aboveSidePanel) Modifier.padding(end=16.dp).width(352.dp) else Modifier,
-                contentPadding=PaddingValues(horizontal=12.dp)) { Text(if(photos.size>1) "${photos.size}장 저장" else "저장") }
+                contentPadding=PaddingValues(horizontal=12.dp)) { Text(if(photos.size>1) "사진 ${photos.size}장 저장" else "사진 저장") }
         }
     }
     @Composable fun Preview(box: PhotoBox) {
@@ -178,7 +178,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                     },contentScale=ContentScale.Fit)
             }
             if(rendering) LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
-            if(display==null && error==null) Text("미리보기 읽는 중…",Modifier.align(Alignment.Center))
+            if(display==null && error==null) Text("미리보기 읽는 중…",Modifier.align(Alignment.Center),color=androidx.compose.ui.graphics.Color.White)
             if(display==null && error!=null) ErrorBanner(error!!,"다시 시도",{retry++})
         }
     }
@@ -198,6 +198,8 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                     Symbol(R.drawable.symbol_raw_on,size=24.dp)
                     Text("RAW · 카메라 내장 JPEG로 편집",color=dev.sukbeomh.beta7compact.ui.theme.BetaTokens.warning)
                 }
+                Text("사진 저장: 보정된 사진을 별도 JPEG로 저장합니다. 원본은 유지됩니다.",style=MaterialTheme.typography.bodySmall)
+                Text("레시피 저장: 현재 설정을 레시피로 저장해 다른 사진에도 사용할 수 있습니다.",style=MaterialTheme.typography.bodySmall)
                 Text("LUT",style=MaterialTheme.typography.titleSmall)
                 val categories=listOf("보관","네거","슬라이드","시네마","흑백","크리에이티브","사용자")
                 val categoryIds=listOf("saved","color_negative","slide","cinema_print","bw","creative","user")
@@ -249,7 +251,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                 TextButton(onClick={tabletopOverride=!tabletop}) { Text(if(tabletop) "테이블탑 해제" else "테이블탑으로 보기") }
                 error?.let { ErrorBanner(it,"다시 시도",::recover) {error=null} }
                 status?.let { Text(it,style=MaterialTheme.typography.bodyMedium) }
-                results.forEach { result -> TextButton(onClick={try { openPhoto(app,result.uri) } catch(e: Exception) {error="결과 사진을 열 수 없습니다"}}) {Text("저장 결과 열기")} }
+                results.forEach { result -> TextButton(onClick={try { openPhoto(app,result.uri) } catch(e: Exception) {error="결과 사진을 열 수 없습니다"}}) {Text("저장한 보정 사진 열기")} }
             }
             Row(Modifier.fillMaxWidth().padding(horizontal=8.dp),verticalAlignment=Alignment.CenterVertically) {
             SymbolButton(R.drawable.pixel_compare,if(compare) "보정 사진 보기" else "원본 보기") { compare=!compare }

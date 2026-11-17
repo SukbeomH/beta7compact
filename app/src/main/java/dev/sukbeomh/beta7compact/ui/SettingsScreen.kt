@@ -67,6 +67,7 @@ import kotlinx.coroutines.*
     var notices by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ThemeSetting(app)
         Text("가져오기", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

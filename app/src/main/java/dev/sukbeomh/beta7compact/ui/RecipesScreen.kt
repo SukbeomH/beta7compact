@@ -5,6 +5,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.*
@@ -32,18 +35,20 @@ import kotlinx.coroutines.flow.*
     var error by remember { mutableStateOf<String?>(null) }
     var saving by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    TextButton(onClick = { showing = true }) { Text("레시피로 보관") }
-    if (showing) AlertDialog(onDismissRequest = { if (!saving) showing = false }, title = { Text("레시피로 보관") },
-        text = { Column { OutlinedTextField(name, changeName, label = { Text("레시피 이름") }, enabled = !saving); error?.let { Text(it, color = MaterialTheme.colorScheme.error) } } },
+    TextButton(onClick = { showing = true }) { Text("레시피 저장") }
+    if (showing) AlertDialog(onDismissRequest = { if (!saving) showing = false }, title = { Text("레시피 저장") },
+        text = { Column {
+            Text("현재 LUT와 보정값을 레시피로 저장합니다. 사진 파일은 생성하지 않습니다.\n저장한 레시피는 레시피 탭이나 편집 화면의 ‘보관’에서 다시 선택할 수 있습니다.")
+            OutlinedTextField(name, changeName, label = { Text("레시피 이름") }, enabled = !saving); error?.let { Text(it, color = MaterialTheme.colorScheme.error) } } },
         confirmButton = { TextButton(enabled = !saving, onClick = {
             val snapshot = recipe; saving = true
             scope.launch {
-                try { status("${saveNewRecipe(app, name, snapshot)} 보관 완료"); onArchived(snapshot); showing = false }
+                try { status("${saveNewRecipe(app, name, snapshot)} · 레시피를 저장했습니다"); onArchived(snapshot); showing = false }
                 catch (e: CancellationException) { throw e }
-                catch (e: Exception) { error = "레시피를 보관할 수 없습니다" }
+                catch (e: Exception) { error = "레시피를 저장할 수 없습니다" }
                 finally { saving = false }
             }
-        }) { Text("보관") } }, dismissButton = { TextButton(enabled = !saving, onClick = { showing = false }) { Text("취소") } })
+        }) { Text("레시피 저장") } }, dismissButton = { TextButton(enabled = !saving, onClick = { showing = false }) { Text("취소") } })
 }
 
 /** Marks a saved recipe that changes more than its LUT choice; sits over the card thumbnail. */
@@ -137,7 +142,7 @@ import kotlinx.coroutines.flow.*
                         AutoRecipeSetting(app) { selected = saved.firstOrNull()?.id }
                     } }
                 }
-                if (saved.isEmpty()) EmptyState("보관한 레시피가 없어요", "편집기에서 ‘레시피로 보관’을 누르면 여기에 모여요.", "사진 열기", photos)
+                if (saved.isEmpty()) EmptyState("보관한 레시피가 없어요", "편집기에서 ‘레시피 저장’을 누르면 여기에 모여요.", "사진 열기", photos)
                 saved.forEach { value ->
                     val recipe = remember(value.json) { runCatching { Recipe.fromJson(value.json) }.getOrNull() }
                     val entry = entries.firstOrNull { it.id == recipe?.lutId }
@@ -145,8 +150,17 @@ import kotlinx.coroutines.flow.*
                         Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                             Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
                                 val image = photoThumbnail(app, sample(value))
-                                if (image != null) Image(image.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                                else FilmIcon(entry?.id, Modifier.size(32.dp))
+                                if (image != null) {
+                                    Image(image.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                                    if (recipe != null) Box(
+                                        Modifier.align(Alignment.TopStart).padding(2.dp).size(28.dp)
+                                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), RoundedCornerShape(4.dp))
+                                            .semantics { contentDescription = "사용한 LUT: ${entry?.name ?: recipe.requiredLutName.ifBlank { "사용자 LUT" }}" },
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        FilmIcon(recipe.lutId, Modifier.size(24.dp))
+                                    }
+                                } else FilmIcon(entry?.id, Modifier.size(32.dp))
                                 if (recipe != null && isAdjusted(recipe)) AdjustedBadge(Modifier.align(Alignment.BottomEnd).padding(8.dp))
                             }
                             Column(Modifier.weight(1f).padding(horizontal = 8.dp)) {

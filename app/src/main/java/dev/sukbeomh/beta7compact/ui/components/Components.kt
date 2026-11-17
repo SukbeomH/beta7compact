@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -82,11 +83,15 @@ import kotlinx.coroutines.CancellationException
         if (bitmap != null) Image(bitmap.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         else Text(name.substringAfterLast('.').uppercase(), Modifier.align(Alignment.Center))
         if (badge.isNotEmpty()) Surface(Modifier.align(Alignment.BottomStart).padding(4.dp), color = BetaTokens.matte.copy(alpha = .8f)) {
-            Text(badge, Modifier.padding(4.dp), color = BetaTokens.warning, style = MaterialTheme.typography.labelSmall)
+            Text(badge, Modifier.padding(4.dp), color = Color(0xFFF2C46B), style = MaterialTheme.typography.labelSmall)
         }
-        if (selected) Icon(painterResource(R.drawable.pixel_check), "선택됨", Modifier.align(Alignment.TopEnd).padding(4.dp).size(BetaTokens.pixelIcon), tint = MaterialTheme.colorScheme.primary)
+        if (selected) Surface(Modifier.align(Alignment.TopEnd).padding(4.dp),
+            color = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary,
+            shape = RoundedCornerShape(4.dp)) {
+            Icon(painterResource(R.drawable.pixel_check), "선택됨", Modifier.padding(3.dp).size(BetaTokens.pixelIcon))
+        }
         if (edited) Surface(Modifier.align(Alignment.BottomEnd).padding(4.dp), color = BetaTokens.matte.copy(alpha = .8f)) {
-            Text("편집됨", Modifier.padding(4.dp), style = MaterialTheme.typography.labelSmall)
+            Text("편집됨", Modifier.padding(4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall)
         }
     }
 }

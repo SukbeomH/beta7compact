@@ -51,7 +51,13 @@ class MainActivity : ComponentActivity() {
         }
         ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
         receiveRecipe(intent)
-        setContent { BetaTheme {
+        setContent { BetaTheme(settings = app.settings) {
+            val dark = dev.sukbeomh.beta7compact.ui.theme.LocalAppTheme.current.dark
+            androidx.compose.runtime.SideEffect {
+                val style = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
             MainScreen(this, app)
             sharedRecipe?.let { code -> androidx.compose.runtime.key(code) {
                 RecipeImportDialog(app,code,close={sharedRecipe=null})
