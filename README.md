@@ -2,7 +2,7 @@
 
 Sony A7C(ILCE-7C) 사진을 Galaxy Z Fold 계열 Android 폰으로 가져와 필름 레시피(LUT·톤커브·HSL·그레인 등)를 적용하는 개인용 동반 앱입니다. 원본은 절대 수정하지 않고, 결과는 새 JPEG로 저장합니다.
 
-- 현재 버전: **0.5.1** (Kotlin + Jetpack Compose, minSdk 29, targetSdk 35, 패키지 `dev.sukbeomh.beta7compact`)
+- 현재 버전: **0.5.2** (Kotlin + Jetpack Compose, minSdk 29, targetSdk 35, 패키지 `dev.sukbeomh.beta7compact`)
 - 실기 확인: Galaxy Z Fold8(Android 17) + A7C fw 2.03에서 USB 가져오기·레시피 편집 동작 확인
 - 버전별 변경: [CHANGELOG](CHANGELOG.md)
 

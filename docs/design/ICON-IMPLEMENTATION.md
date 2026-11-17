@@ -33,3 +33,11 @@
 Built-in imagegen, transparent_background=true, 원본 PNG를 편집 대상으로 전달:
 
 > Edit this reference into a production Android adaptive icon foreground PNG, actual transparent alpha background. Preserve pixel camera appearance, orange lens ring, purple blue lens reflections, exact Greek lowercase beta text β7C and small </> chip. Clean up ragged outline and fake checker texture; camera body should be gray/black pixels. Preserve white pixel rounded square border with a very thin dark outline so visible on white. Everything outside and inside border except camera and chip must be transparent (no black background). Entire border and camera/chip grouped in centered square occupying only 42% of full square canvas width and height, generous fully transparent margin on all sides, for circular Android adaptive icon safe zone. No presentation labels, no shadows, no new text.
+
+## 0.5.2: 프레임 제거·확대 (2026-11-17)
+
+사용자가 기존 런처 표시를 확인한 뒤 외곽 테두리 제거와 카메라 확대를 요청했다. 위 설명·해시는 초기 0.5.0 자산 이력이다. 0.5.2는 같은 PNG 경로를 새 자산으로 교체하고 inset을 8dp에서 4dp로 줄였다. β7C 표기, 주황색 렌즈 링, 파랑·보라 반사와 코드 칩을 유지했다. 외곽 프레임은 없다.
+
+내장 imagegen 편집 프롬프트: 기존 전경의 흰색 둥근 사각형 프레임 전체를 제거하고 카메라와 오른쪽 아래 코드 칩만 유지. 정확한 β7C 문자와 </> 기호, 회색·검정 픽셀 스타일을 보존. 카메라·칩을 중앙에 확대하고 실제 투명 RGBA 배경 사용. 크롭·새 프레임·체커보드·그림자 금지.
+
+시각 확인 및 Pillow 읽기 전용 측정: 1254×1254 RGBA, alpha 0..255. 4dp inset(100dp 전경)에서 alpha≥16 픽셀 최대 중심 반경 약31.26dp로 33dp 안전 원 안에 들어간다. 아주 옅은 alpha1..15 잔여물은 밖에 있으므로 모든 비투명 픽셀의 안전 영역 준수를 주장하지 않는다. 원형을 포함해 안전 원을 포함하는 기본 마스크에서 주요 그림은 잘리지 않는 배치다. 실제 런처 소형 가독성과 OEM 마스크 검증은 미실행이다. 이미지 편집은 imagegen만 사용했고 Pillow로 이미지를 변경하지 않았다.
