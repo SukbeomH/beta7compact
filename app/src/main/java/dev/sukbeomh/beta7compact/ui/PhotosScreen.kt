@@ -1,6 +1,7 @@
 package dev.sukbeomh.beta7compact.ui
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import dev.sukbeomh.beta7compact.recipe.RecipeWorker
 import android.graphics.Bitmap
 import android.net.Uri
@@ -20,6 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.sukbeomh.beta7compact.App
 import dev.sukbeomh.beta7compact.library.*
@@ -37,11 +41,14 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
     }
     return image
 }
+@OptIn(ExperimentalLayoutApi::class)
 @Composable fun PhotosScreen(app: App, photos: List<Photo>, edit: (List<String>) -> Unit, view: (String) -> Unit, camera: () -> Unit, windowWidth: Float? = null, windowHeight: Float? = null) {
     val gridState = rememberLazyGridState()
     var selected by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var selectionMode by rememberSaveable { mutableStateOf(false) }
     var focused by rememberSaveable { mutableStateOf<String?>(null) }
+    var moreActions by remember { mutableStateOf(false) }
+    BackHandler(enabled = selectionMode) { selectionMode = false; selected = emptyList() }
     var filter by rememberSaveable { mutableStateOf("전체") }
     val scope = rememberCoroutineScope()
     var error by remember { mutableStateOf<PhotoError?>(null) }
@@ -53,7 +60,8 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
     val edited = results.map { it.photoKey }.toSet()
     val visible = photos.filter { when (filter) { "미편집" -> it.key !in edited; "편집됨" -> it.key in edited; "RAW" -> it.name.endsWith(".arw", true); else -> true } }
     val photo = photos.firstOrNull { it.key == focused } ?: visible.firstOrNull()
-    val keys = selected.filter { key -> photos.any { it.key == key } }
+    val selection = resolvePhotoSelection(selected, photos.map { it.key }.toSet(), visible.map { it.key }.toSet())
+    val keys = selection.keys
     fun share() {
         val uris = photos.filter { it.key in keys }.mapNotNull { it.uri?.let(Uri::parse) }
         try { sharePhotos(app, uris) } catch (e: Exception) { error = PhotoError("사진을 공유할 앱이 없습니다", "사진 공유 재시도", ::share) }
@@ -124,16 +132,33 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
         }
     }
 
+    @Composable fun SelectionActions() {
+        FlowRow(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Box(Modifier.heightIn(min = 48.dp), contentAlignment = Alignment.Center) {
+                Text("${keys.size}장 선택" + if(selection.hiddenCount > 0) " · 필터 밖 ${selection.hiddenCount}장" else "",
+                    Modifier.semantics {liveRegion = LiveRegionMode.Polite}, style = MaterialTheme.typography.labelLarge)
+            }
+            TextButton(onClick = {selectionMode = false; selected = emptyList()}) {Text("선택 종료")}
+            OutlinedButton(onClick = ::share, enabled = keys.isNotEmpty(),
+                modifier = Modifier.heightIn(min = 48.dp), shape = RoundedCornerShape(12.dp)) {Text("공유")}
+            Button(onClick = {edit(keys)}, enabled = keys.isNotEmpty(),
+                modifier = Modifier.heightIn(min = 48.dp), shape = RoundedCornerShape(12.dp)) {Text("레시피 적용")}
+        }
+    }
     @Composable fun ListTools() {
-        ScreenTitle("사진")
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (selectionMode) "${keys.size}장 선택" else "가져온 원본 ${photos.size}장", Modifier.weight(1f))
-                    TextButton(onClick = { selectionMode = !selectionMode; selected = emptyList() }) { Text(if (selectionMode) "선택 해제" else "선택") }
-                    if (selectionMode) TextButton(onClick = ::share, enabled = keys.isNotEmpty()) { Text("공유") }
+        ScreenTitle("사진 · ${photos.size}장") {
+            if (!selectionMode) TextButton(onClick = {selectionMode = true; selected = emptyList()}) {Text("선택")}
+            Box {
+                TextButton(onClick = {moreActions = true}) {Text("더보기")}
+                DropdownMenu(expanded = moreActions, onDismissRequest = {moreActions = false}) {
+                    DropdownMenuItem(text = {Text("보정 사진 저장 재개")}, onClick = {moreActions = false; resumeSave()})
                 }
-                TextButton(onClick = ::resumeSave) { Text("보정 사진 저장 재개") }
-                ChipStrip(listOf("전체", "미편집", "편집됨", "RAW"), filter) { filter = it }
-                error?.let { failure -> ErrorBanner(failure.message, failure.actionLabel, { error = null; failure.retry() }) { error = null } }
+            }
+        }
+        ChipStrip(listOf("전체", "미편집", "편집됨", "RAW"), filter) {filter = it}
+        error?.let {failure -> ErrorBanner(failure.message, failure.actionLabel, {error = null; failure.retry()}) {error = null}}
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val detailWidth = (maxWidth.value * .4f).coerceIn(240f, 360f).dp
@@ -153,14 +178,15 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
             }
         } else Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ListTools()
-                if (photos.isEmpty()) EmptyState("아직 가져온 사진이 없어요", "카메라를 연결해 원본을 가져오세요.", "카메라 탭으로", camera)
-                else if (selectionMode) {
+                if (selectionMode) {
                     Box(Modifier.weight(1f).fillMaxWidth()) {
-                        if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "선택한 사진은 유지됩니다. 전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
+                        if (photos.isEmpty()) EmptyState("아직 가져온 사진이 없어요", "카메라를 연결해 원본을 가져오세요.", "카메라 탭으로", camera)
+                        else if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "선택한 사진은 유지됩니다. 전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
                         else Grid(Modifier.fillMaxSize(), wide, portrait)
                     }
-                    ApplyRecipe()
-                } else if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
+                    SelectionActions()
+                } else if (photos.isEmpty()) EmptyState("아직 가져온 사진이 없어요", "카메라를 연결해 원본을 가져오세요.", "카메라 탭으로", camera)
+                else if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
                 else if (!wide || portrait) {
                     Grid(Modifier.weight(1f), wide, portrait)
                 }
