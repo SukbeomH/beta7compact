@@ -15,6 +15,7 @@ data class SonyRemoteSnapshot(
     val properties: List<SonyPropertyDescriptor>,
     val propertiesStale: Boolean = false,
     val objectsNeedRefresh: Boolean = false,
+    val advertisedOperations: List<Int> = emptyList(),
 )
 
 /** A separate, single-use observation session. OBSERVING does not grant camera write permission. */
@@ -53,7 +54,8 @@ class SonyRemoteSession(private val transport: SonySessionTransport) {
             }
             transport.exchange(SonySessionOperation.CONNECT_3)
             val properties = readProperties()
-            SonyRemoteSnapshot(info.copy(propertyCodes = frozen(info.propertyCodes), controlCodes = frozen(info.controlCodes)), properties)
+            SonyRemoteSnapshot(info.copy(propertyCodes = frozen(info.propertyCodes), controlCodes = frozen(info.controlCodes)), properties,
+                advertisedOperations = frozen(device.operations.toList()))
                 .also { snapshot = it; state = SonyRemoteSessionState.OBSERVING }
         }
     }

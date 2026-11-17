@@ -13,12 +13,13 @@ import java.io.IOException
 
 class RemoteTransportTimeoutException : IOException("Remote transport deadline exceeded")
 
-/** Bounded USB container framing for the fixed stage-2 command set. */
+/** Fixed session operations and separately opt-in capture controls; no arbitrary write API. */
 class SonySessionWireTransport(
     private val wire: SonyRemoteWire,
     private val transactionTimeoutMillis: Int = 30_000,
+    private val allowCaptureControls: Boolean = false,
     private val clockMillis: () -> Long = { System.nanoTime() / 1_000_000 },
-) : SonySessionTransport {
+) : SonyCaptureTransport {
     private val lock = Mutex()
     private val packet = ByteArray(16_384)
     private var offset = 0
@@ -36,6 +37,25 @@ class SonySessionWireTransport(
             else operation == SonySessionOperation.DEVICE_INFO || operation == SonySessionOperation.OPEN_SESSION) {
             "Remote operation outside owned PTP session"
         }
+        execute(operation.code, operation.parameters, operation.receivesData).also {
+            if (operation == SonySessionOperation.OPEN_SESSION) {
+                opened = true
+                nextTransaction = 1
+            } else if (operation == SonySessionOperation.CLOSE_SESSION) opened = false
+        }
+    }
+
+    override suspend fun control(command: SonyCaptureCommand) = lock.withLock {
+        check(allowCaptureControls) { "Capture controls are not enabled on this transport" }
+        check(opened && !closed && !broken) { "Capture control requires an owned usable session" }
+        execute(0x9207, listOf(command.propertyCode), receivesData = false,
+            outgoingData = buffer(2).putShort(command.value.toShort()).array())
+        Unit
+    }
+
+    /** Called only while holding lock, with parameters from the fixed enums above. */
+    private suspend fun execute(code: Int, parameters: List<Int>, receivesData: Boolean,
+                                outgoingData: ByteArray? = null): ByteArray {
         check(nextTransaction <= 0xffffffffL) { "PTP transaction IDs exhausted" }
         val tx = if (opened) nextTransaction++.toInt() else 0
         val started = clockMillis()
@@ -70,14 +90,19 @@ class SonySessionWireTransport(
             }
             return bytes
         }
-        try {
+        return try {
             withTimeoutOrNull(transactionTimeoutMillis.toLong()) {
-                val params = buffer(operation.parameters.size * 4).apply {
-                    operation.parameters.forEach { putInt(it) }
+                val params = buffer(parameters.size * 4).apply {
+                    parameters.forEach { putInt(it) }
                 }.array()
-                val command = PtpContainer(1, operation.code, tx, params).encode()
+                val command = PtpContainer(1, code, tx, params).encode()
                 if (wire.write(command, remaining()) != command.size) throw IOException("Remote bulk write incomplete")
                 remaining()
+                if (outgoingData != null) {
+                    val outbound = PtpContainer(2, code, tx, outgoingData).encode()
+                    if (wire.write(outbound, remaining()) != outbound.size) throw IOException("Remote DATA write incomplete")
+                    remaining()
+                }
                 var data: ByteArray? = null
                 var complete = false
                 while (!complete) {
@@ -85,12 +110,12 @@ class SonySessionWireTransport(
                     val header = le(take(12))
                     val length = header.int.toLong() and 0xffffffffL
                     val type = header.short.toInt() and 0xffff
-                    val code = header.short.toInt() and 0xffff
+                    val responseCode = header.short.toInt() and 0xffff
                     require(header.int == tx) { "Remote transaction mismatch" }
                     require(length >= 12) { "Remote container length invalid" }
                     when (type) {
                         2 -> {
-                            require(operation.receivesData && data == null && code == operation.code) { "Unexpected remote data phase" }
+                            require(receivesData && data == null && responseCode == code) { "Unexpected remote data phase" }
                             require(length - 12 <= 1_048_576) { "Remote data exceeds limit" }
                             data = take((length - 12).toInt())
                         }
@@ -98,17 +123,13 @@ class SonySessionWireTransport(
                             require(length in 12..32 && (length - 12) % 4 == 0L) { "Remote response length invalid" }
                             take((length - 12).toInt())
                             require(offset == available) { "Unexpected bytes after remote response" }
-                            if (code != 0x2001) throw PtpResponseException(code)
-                            require(!operation.receivesData || data != null) { "Remote response missing data phase" }
+                            if (responseCode != 0x2001) throw PtpResponseException(responseCode)
+                            require(!receivesData || data != null) { "Remote response missing data phase" }
                             complete = true
                         }
                         else -> throw IllegalArgumentException("Unexpected remote container type")
                     }
                 }
-                if (operation == SonySessionOperation.OPEN_SESSION) {
-                    opened = true
-                    nextTransaction = 1
-                } else if (operation == SonySessionOperation.CLOSE_SESSION) opened = false
                 data ?: byteArrayOf()
             } ?: throw RemoteTransportTimeoutException()
         } catch (failure: Exception) {

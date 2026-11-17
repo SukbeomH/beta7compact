@@ -11,6 +11,8 @@ import dev.sukbeomh.beta7compact.core.Camera
 import dev.sukbeomh.beta7compact.core.CameraObject
 import dev.sukbeomh.beta7compact.remote.SonyRemoteSession
 import dev.sukbeomh.beta7compact.remote.SonySessionTransport
+import dev.sukbeomh.beta7compact.remote.SonyCaptureSession
+import dev.sukbeomh.beta7compact.remote.SonyCaptureTransport
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
@@ -20,6 +22,36 @@ import java.io.File
 /** One owner for the physical USB interface, shared by listing, thumbs and the worker. */
 object UsbAccess {
     private val lock = Mutex()
+    /** Explicit capture scope; diagnostics continue using the read-only/control-disabled scopes. */
+    suspend fun <T> useCapture(openTransport: suspend () -> SonyCaptureTransport,
+                               onSession: (SonyCaptureSession) -> Unit = {},
+                               sessionFactory: (SonyCaptureTransport) -> SonyCaptureSession = { SonyCaptureSession(it) },
+                               block: suspend (SonyCaptureSession) -> T): T = lock.withLock {
+        val transport = openTransport()
+        val session = try { sessionFactory(transport) } catch (failure: Throwable) {
+            try { transport.close() } catch (closing: Throwable) {
+                if (failure !== closing) failure.addSuppressed(closing)
+            }
+            throw failure
+        }
+        var failure: Throwable? = null
+        try {
+            onSession(session)
+            session.connect()
+            block(session)
+        } catch (error: Throwable) {
+            failure = error
+            throw error
+        } finally {
+            try {
+                withContext(NonCancellable) { session.close() }
+            } catch (closing: Throwable) {
+                if (failure == null) throw closing
+                if (failure !== closing) failure.addSuppressed(closing)
+            }
+        }
+    }
+
     /** Explicit remote-session scope; shares ownership with import and read-only diagnostics. */
     suspend fun <T> useRemote(openTransport: suspend () -> SonySessionTransport,
                               onSession: (SonyRemoteSession) -> Unit = {},

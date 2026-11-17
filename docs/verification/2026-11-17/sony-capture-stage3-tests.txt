@@ -1,0 +1,8 @@
+testDebugUnitTest: {'tests': 304, 'failures': 0, 'errors': 0, 'skipped': 0}
+  SonyCaptureWireTest: tests=8, failures=0, errors=0, skipped=0
+  SonyCaptureSessionTest: tests=13, failures=0, errors=0, skipped=0
+  SonyCaptureIntegrationTest: tests=2, failures=0, errors=0, skipped=0
+testReleaseUnitTest: {'tests': 304, 'failures': 0, 'errors': 0, 'skipped': 0}
+  SonyCaptureWireTest: tests=8, failures=0, errors=0, skipped=0
+  SonyCaptureSessionTest: tests=13, failures=0, errors=0, skipped=0
+  SonyCaptureIntegrationTest: tests=2, failures=0, errors=0, skipped=0
