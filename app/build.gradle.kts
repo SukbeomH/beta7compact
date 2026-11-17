@@ -15,10 +15,13 @@ android {
         minSdk = 29
         targetSdk = 35
         testInstrumentationRunner = "android.test.InstrumentationTestRunner"
-        versionCode = 7
-        versionName = "0.5.0"
+        versionCode = 8
+        versionName = "0.5.1"
     }
-    signingConfigs.getByName("debug") { storeFile = rootProject.file(".android-user/debug.keystore") }
+    signingConfigs.getByName("debug") {
+        storeFile = file(providers.gradleProperty("beta7compact.signingStore")
+            .getOrElse("${System.getProperty("user.home")}/.android/debug.keystore"))
+    }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }

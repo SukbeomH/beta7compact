@@ -2,7 +2,7 @@
 
 Sony A7C(ILCE-7C) 사진을 Galaxy Z Fold 계열 Android 폰으로 가져와 필름 레시피(LUT·톤커브·HSL·그레인 등)를 적용하는 개인용 동반 앱입니다. 원본은 절대 수정하지 않고, 결과는 새 JPEG로 저장합니다.
 
-- 현재 버전: **0.5.0** (Kotlin + Jetpack Compose, minSdk 29, targetSdk 35, 패키지 `dev.sukbeomh.beta7compact`)
+- 현재 버전: **0.5.1** (Kotlin + Jetpack Compose, minSdk 29, targetSdk 35, 패키지 `dev.sukbeomh.beta7compact`)
 - 실기 확인: Galaxy Z Fold8(Android 17) + A7C fw 2.03에서 USB 가져오기·레시피 편집 동작 확인
 - 버전별 변경: [CHANGELOG](CHANGELOG.md)
 
@@ -31,7 +31,7 @@ Sony A7C(ILCE-7C) 사진을 Galaxy Z Fold 계열 Android 폰으로 가져와 필
 
 ## 빌드
 
-JDK 17 이상과 Android SDK 35 / Build Tools 35.0.0이 필요합니다. `local.properties`에 `sdk.dir`을 지정합니다(커밋 금지). Gradle 캐시·debug 서명키는 프로젝트 안의 무시 경로를 씁니다.
+JDK 17 이상과 Android SDK 35 / Build Tools 35.0.0이 필요합니다. `local.properties`에 `sdk.dir`을 지정합니다(커밋 금지). Gradle 캐시는 프로젝트 안의 무시 경로를 씁니다. 업데이트 서명은 작업 디렉터리와 무관하게 `~/.android/debug.keystore`를 사용합니다. 다른 경로는 `-Pbeta7compact.signingStore=/절대/경로`로 지정합니다. 릴리즈 전 설치된 앱과 APK의 인증서 SHA-256을 반드시 비교합니다.
 
 ```sh
 ./gradlew assembleDebug test lint --continue --no-daemon

@@ -56,3 +56,7 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`. SHA-256은 `apk-sha256.txt`. A
 ## 0.5.0 릴리즈 빌드
 
 사용자 요청으로 versionName 0.5.0, versionCode 7로 올렸다. 같은 assembleDebug/test/lint 재실행 성공(`release-build.log`). APK 메타데이터와 apksigner verify 검증 성공(`apk-signature.log`). `apk-sha256.txt`는 최종 0.5.0 APK 기준으로 갱신했다. 기존 설치본과의 서명 일치는 별도 미검증이다. 릴리즈는 codex/a7c-readonly-research의 소스 커밋에 v0.5.0 태그를 지정하며 master를 변경하지 않는다.
+
+## 0.5.1 서명 수정
+
+설치된 0.4.0(versionCode 6)과 0.5.0(versionCode 7)의 버전 순서는 정상이나 인증서가 달랐다. 사용자 홈의 기존 debug 키가 설치본 인증서와 일치함을 확인했다. 키를 공개하거나 변경하지 않고 같은 키로 0.5.1(versionCode 8)을 빌드했다. assembleDebug/test/lint 성공(`release-0.5.1.log`), 인증서 일치 검사 및 잘못 서명된 APK 거부, `adb install -r` 성공과 설치 버전 확인(`signing-fix.log`). 삭제·데이터 초기화는 수행하지 않았다. 앱 데이터 내용은 별도 열람하지 않았다. 키 관리 절차는 `docs/SIGNING.md`.
