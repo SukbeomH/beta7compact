@@ -2,7 +2,7 @@
 
 Sony A7C(ILCE-7C) 사진을 Galaxy Z Fold 계열 Android 폰으로 가져와 필름 레시피(LUT·톤커브·HSL·그레인 등)를 적용하는 개인용 동반 앱입니다. 원본은 절대 수정하지 않고, 결과는 새 JPEG로 저장합니다.
 
-- 현재 버전: **0.4.0** (Kotlin + Jetpack Compose, minSdk 29, targetSdk 35, 패키지 `dev.sukbeomh.beta7compact`)
+- 현재 버전: **0.5.0** (Kotlin + Jetpack Compose, minSdk 29, targetSdk 35, 패키지 `dev.sukbeomh.beta7compact`)
 - 실기 확인: Galaxy Z Fold8(Android 17) + A7C fw 2.03에서 USB 가져오기·레시피 편집 동작 확인
 - 버전별 변경: [CHANGELOG](CHANGELOG.md)
 
@@ -68,3 +68,9 @@ APK는 로컬에서 빌드합니다. `dist/` 산출물과 APK는 커밋하지 �
 - 결과 보고: [M1](docs/RESULT_M1.md) · [0.1.2](docs/RESULT_012.md) · [M2](docs/RESULT_M2.md) · [M5a](docs/RESULT_M5A.md) · [D2](docs/RESULT_D2.md) · [LUT](docs/RESULT_LUTS.md) · 실기 체크 [M1-DEVICE-CHECK](docs/M1-DEVICE-CHECK.md)
 
 사진·DB는 폰의 앱 전용 영역과 사용자 갤러리에만 저장됩니다. 실기 로그·MAC·개인 위치·원본 사진을 이 공개 저장소에 추가하지 마십시오.
+
+## 읽기 전용 연구 기능
+
+설정에서 카메라가 보고한 지원 명령·속성 목록을 조회하고, 선택한 로컬 파일의 크기·SHA-256·첫 64바이트를 분석할 수 있습니다. 진단은 기존 USB 소유권을 따르며 카메라 설정·셔터 명령을 보내지 않습니다. 파일 분석 결과는 자동 저장하거나 공유 진단 로그에 넣지 않습니다. 기능 목록은 실제 제어 호환성을 보장하지 않으며, 파일 해시는 정품·모델 호환성 검증이 아닙니다.
+
+[개발 계획](docs/PLAN_A7C_EXTENSIONS.md)에 범위와 단계별 검증 조건을 기록합니다. β7C 런처 아이콘은 인계 시안을 바탕으로 분리된 Adaptive Icon 리소스를 사용합니다.

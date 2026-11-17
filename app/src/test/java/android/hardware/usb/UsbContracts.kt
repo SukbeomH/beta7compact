@@ -21,9 +21,10 @@ object Wire {
  var rawParent=8;var openResponse=0x2001;var nativeEpoch=1L;var imports=0;var thumbnails=0;var controls=0
  var nativeOpens=0;var nativeCloses=0;var rawOpens=0;var setCalls=0;var closed=0
  var nativeFailure:String?=null
+ var deviceInfo=byteArrayOf(0)
  val operations=mutableListOf<Int>()
  val date="20200308T023000.1Z"
- fun reset(persist:Boolean=true,stall:Boolean=false){session=false;nativeOwned=false;preserveSession=persist;stallAlternate=stall;nativeOpens=0;nativeCloses=0;rawOpens=0;setCalls=0;closed=0;operations.clear();rawParent=8;openResponse=0x2001;nativeEpoch=1L;imports=0;thumbnails=0;controls=0;nativeFailure=null}
+ fun reset(persist:Boolean=true,stall:Boolean=false){deviceInfo=byteArrayOf(0);session=false;nativeOwned=false;preserveSession=persist;stallAlternate=stall;nativeOpens=0;nativeCloses=0;rawOpens=0;setCalls=0;closed=0;operations.clear();rawParent=8;openResponse=0x2001;nativeEpoch=1L;imports=0;thumbnails=0;controls=0;nativeFailure=null}
  fun str(s:String)=byteArrayOf((s.length+1).toByte())+(s+"\u0000").toByteArray(Charsets.UTF_16LE)
  fun objectInfo()=buffer(52).putInt(2).putShort(0x3801.toShort()).putShort(0).putInt(4).apply{position(38);putInt(rawParent);position(52)}.array()+str("PUBLIC_TEST.JPG")+str(date)+byteArrayOf(0,0)
 }
@@ -53,7 +54,7 @@ class UsbDeviceConnection {
    val cmd=PtpContainer.decode(bytes.copyOf(size));Wire.operations.add(cmd.code)
    var response=Ptp.OK;var data:ByteArray?=null
    when(cmd.code){
-    0x1001->data=byteArrayOf(0)
+    0x1001->data=Wire.deviceInfo
     0x1002->if(Wire.openResponse!=Ptp.OK)response=Wire.openResponse else if(Wire.session)response=0x201e else Wire.session=true
     0x1003->Wire.session=false
     0x1004->data=buffer(8).putInt(1).putInt(2).array()

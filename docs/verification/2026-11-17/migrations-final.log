@@ -1,0 +1,2 @@
+Room v1->v2->v3 and v2->v3 emitted SQL: fresh v3 schema matches; staged/completed keys, URIs, recipes and clocks preserved; hash NULL; integrity_check=ok.
+Room 1/2/3->4: fresh schema/index/FK match; original rows unchanged; recipes/results/jobs persist; integrity/FK checks pass.

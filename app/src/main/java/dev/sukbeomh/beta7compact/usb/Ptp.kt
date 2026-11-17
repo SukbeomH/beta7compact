@@ -37,7 +37,8 @@ class PtpReader(private val bytes: ByteArray) {
     fun end() { require(!data.hasRemaining()) { "PTP trailing bytes=${data.remaining()}" } }
 }
 
-data class DeviceInfo(val manufacturer: String, val model: String, val version: String, val operations: IntArray)
+data class DeviceInfo(val manufacturer: String, val model: String, val version: String, val operations: IntArray,
+                      val properties: IntArray = intArrayOf())
 data class ObjectInfo(val handle: Int, val storage: Int, val format: Int, val size: Long,
                       val name: String, val captured: String, val modified: String, val parent: Int = 0) {
     val isJpeg: Boolean get() = format == 0x3801
@@ -52,8 +53,10 @@ object Ptp {
         val r = PtpReader(data)
         r.u16(); r.u32(); r.u16(); r.string(); r.u16()
         val operations = r.array(2)
-        repeat(4) { r.array(2) }
-        val result = DeviceInfo(r.string(), r.string(), r.string(), operations)
+        r.array(2) // Events
+        val properties = r.array(2)
+        repeat(2) { r.array(2) } // Capture and image formats
+        val result = DeviceInfo(r.string(), r.string(), r.string(), operations, properties)
         r.string() // Serial number deliberately excluded from diagnostic output.
         r.end()
         return result

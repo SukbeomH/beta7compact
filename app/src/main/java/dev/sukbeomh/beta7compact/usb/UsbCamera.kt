@@ -24,6 +24,12 @@ object UsbAccess {
         // Read preferences after acquiring ownership: queued thumbnail reads see a prior fallback.
         open(context, raw(), remember, failed).use { block(it) }
     }
+    suspend fun inspect(context: Context): DeviceInfo = lock.withLock {
+        val device = device(context)
+        val manager = context.getSystemService(UsbManager::class.java)
+        check(manager.hasPermission(device)) { "USB 접근 권한을 허용하세요" }
+        RawCamera(manager, device, openSession = false).use { it.deviceInfo() }
+    }
     fun device(context: Context): UsbDevice {
         val candidates = context.getSystemService(UsbManager::class.java).deviceList.values.filter { it.vendorId == 0x054c }
         check(candidates.size == 1) { if (candidates.isEmpty()) "Sony 카메라를 USB로 연결하세요" else "Sony 카메라 한 대만 연결하세요" }
@@ -103,10 +109,11 @@ private class NativeCamera(private val manager: UsbManager, private val device: 
     }
 }
 
-private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
+private class RawCamera(manager: UsbManager, device: UsbDevice, openSession: Boolean = true) : Camera {
     private val connection = checkNotNull(manager.openDevice(device)) { "USB 장치를 열 수 없습니다" }
     private var face: android.hardware.usb.UsbInterface? = null
     private lateinit var client: PtpUsbClient
+    private val deviceInfoBytes: ByteArray
     init {
         try {
             fun configuration(): Int {
@@ -142,10 +149,11 @@ private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
                 override fun write(bytes: ByteArray, timeoutMs: Int) = connection.bulkTransfer(output, bytes, bytes.size, timeoutMs)
                 override fun read(bytes: ByteArray, timeoutMs: Int) = connection.bulkTransfer(input, bytes, bytes.size, timeoutMs)
             })
-            client.read(0x1001)
-            client.openSession()
+            deviceInfoBytes = client.read(0x1001)
+            if (openSession) client.openSession()
         } catch (e: Throwable) { face?.let { connection.releaseInterface(it) }; connection.close(); throw e }
     }
+    fun deviceInfo(): DeviceInfo = Ptp.deviceInfo(deviceInfoBytes)
     override fun list(): List<CameraObject> = Ptp.ids(client.read(0x1004)).flatMap { storage ->
         Ptp.ids(client.read(0x1007, storage, 0, 0)).map { handle ->
             info(handle).also { check(it.storage == storage) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" } }
