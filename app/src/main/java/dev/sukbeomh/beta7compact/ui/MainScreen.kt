@@ -204,7 +204,7 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
                         }
                         else { BackHandler { dispatch(NavigationAction.Back) }; TextButton(onClick = { dispatch(NavigationAction.Back) }) { Text("사진으로 돌아가기") } }
                     } else {
-                        ScreenTitle(if (navigation.picking) "사진 고르기" else navigation.tab.label)
+                        if (navigation.tab != AppTab.PHOTOS) ScreenTitle(if (navigation.picking) "사진 고르기" else navigation.tab.label)
                         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                         saveable.SaveableStateProvider(navigation.tab.name) {
                             when (navigation.tab) {

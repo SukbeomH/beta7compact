@@ -43,10 +43,10 @@ import java.util.*
         }
         @Composable fun Planned(modifier: Modifier) {
             Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("예정 기능", style = MaterialTheme.typography.titleSmall)
-                listOf("원격 촬영" to "USB 라이브뷰", "위치 연동" to "BLE 위치 동기화").forEach { (title, detail) ->
+                Text("실험·예정 기능", style = MaterialTheme.typography.titleSmall)
+                listOf("원격 촬영 실험" to "설정 → AF·단발 촬영 실험 · 실기 검증 전", "USB 라이브뷰 · 준비 중" to "촬영 영상 미리보기", "위치 연동 · 준비 중" to "BLE 위치 동기화").forEach { (title, detail) ->
                     OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                        Text("$title · 준비 중", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } }
                 }
@@ -96,7 +96,7 @@ import java.util.*
                 }
             }
         }
-        Button(onClick = receive, enabled = selected.isNotEmpty() && !working, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).heightIn(min = 48.dp)) { Text("${selected.size}장 가져오기") }
+        Button(onClick = receive, enabled = selected.isNotEmpty() && !working, modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 20.dp).heightIn(min = 48.dp)) { Text("${selected.size}장 가져오기") }
     }
 }
 private fun cameraDay(time: Long) = if (time <= 0) "촬영일 미상" else SimpleDateFormat("yyyy-MM-dd", Locale.KOREA).format(Date(time))
