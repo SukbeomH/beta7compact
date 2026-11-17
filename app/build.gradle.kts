@@ -15,8 +15,8 @@ android {
         minSdk = 29
         targetSdk = 35
         testInstrumentationRunner = "android.test.InstrumentationTestRunner"
-        versionCode = 14
-        versionName = "0.8.1"
+        versionCode = 15
+        versionName = "0.8.2"
     }
     signingConfigs.getByName("debug") {
         storeFile = file(providers.gradleProperty("beta7compact.signingStore")

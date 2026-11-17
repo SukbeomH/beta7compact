@@ -73,7 +73,7 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
         catch (e: Exception) { error = PhotoError("결과 사진을 공유할 앱이 없습니다", "결과 공유 재시도", { shareResult(uri) }) }
     }
     @Composable fun Grid(modifier: Modifier, wide: Boolean, portrait: Boolean = false) {
-        LazyVerticalGrid(GridCells.Fixed(3), modifier, state = gridState, horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        LazyVerticalGrid(if (wide && !portrait) GridCells.Adaptive(128.dp) else GridCells.Fixed(3), modifier, state = gridState, horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             items(visible, key = { it.key }) { item ->
                 PhotoTile(item.name, photoThumbnail(app, item.uri), item.key in keys,
                     badge = if (item.name.endsWith(".arw", true)) "RAW" else "", edited = item.key in edited,
@@ -108,13 +108,20 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
                     TextButton(onClick = { openResult(result.uri) }) { Text("${recipe?.lutId ?: "레시피"} · ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(result.created))}") }
                     TextButton(onClick = { shareResult(result.uri) }) { Text("결과 공유") }
                 }
-                Button(onClick = { edit(if (selectionMode) keys else listOf(p.key)) }, enabled = !selectionMode || keys.isNotEmpty()) {
-                    Text(if (selectionMode) "레시피 적용 (${keys.size}장)" else "레시피 적용")
-                }
+            }
+        }
+    }
+    @Composable fun ApplyRecipe() {
+        val targets = if (selectionMode) keys else listOfNotNull(photo?.key)
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+            Button(onClick = { edit(targets) }, enabled = targets.isNotEmpty(),
+                modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(if (selectionMode) "레시피 적용 (${keys.size}장)" else "레시피 적용")
             }
         }
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
+        val detailWidth = (maxWidth.value * .4f).coerceIn(240f, 360f).dp
         val portrait = isPortraitWindow(windowWidth ?: maxWidth.value, windowHeight ?: maxHeight.value)
         val wide = windowClass(windowWidth ?: maxWidth.value) != WindowClass.COMPACT
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -127,16 +134,23 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
                 ChipStrip(listOf("전체", "미편집", "편집됨", "RAW"), filter) { filter = it }
                 error?.let { failure -> ErrorBanner(failure.message, failure.actionLabel, { error = null; failure.retry() }) { error = null } }
                 if (photos.isEmpty()) EmptyState("아직 가져온 사진이 없어요", "카메라를 연결해 원본을 가져오세요.", "카메라 탭으로", camera)
-                else if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
-                else if (!wide) {
-                    Grid(Modifier.weight(1f), wide)
-                    if (selectionMode) Button(onClick = { edit(keys) }, enabled = keys.isNotEmpty(), modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("레시피 적용 (${keys.size}장)") }
-                } else if (portrait) {
-                    Grid(Modifier.weight(1f), wide, portrait = true)
-                    if (selectionMode) Button(onClick = { edit(keys) }, enabled = keys.isNotEmpty(), modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("레시피 적용 (${keys.size}장)") }
-                } else Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Grid(Modifier.weight(.45f).fillMaxHeight(), wide)
-                    Column(Modifier.weight(.55f)) { Preview(Modifier.fillMaxWidth().weight(1f)); Info(Modifier.fillMaxWidth().weight(1f)) }
+                else if (selectionMode) {
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "선택한 사진은 유지됩니다. 전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
+                        else Grid(Modifier.fillMaxSize(), wide, portrait)
+                    }
+                    ApplyRecipe()
+                } else if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
+                else if (!wide || portrait) {
+                    Grid(Modifier.weight(1f), wide, portrait)
+                } else Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Grid(Modifier.weight(1f).fillMaxHeight(), wide)
+                    Column(Modifier.width(detailWidth).fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Preview(Modifier.fillMaxWidth().weight(1f))
+                        Info(Modifier.fillMaxWidth().weight(1f))
+                        ApplyRecipe()
+                    }
                 }
             }
     }

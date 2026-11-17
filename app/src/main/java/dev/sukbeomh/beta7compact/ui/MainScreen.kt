@@ -72,6 +72,8 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
     var raw by remember { mutableStateOf(app.settings.getBoolean("raw", true)) }
     val usbDiagnostic by app.usbDiagnostic.collectAsStateWithLifecycle()
     val link by app.usbState.collectAsStateWithLifecycle()
+    var objectGeneration by remember { mutableStateOf(-1L) }
+    var thumbnailNamespace by remember { mutableStateOf<String?>(null) }
     val refresh by activity.refresh.collectAsStateWithLifecycle()
     val update by app.updater.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { app.updater.checkIfDue() }
@@ -103,7 +105,13 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
                     objects = emptyList(); app.usb(LinkEvent.FOUND); return@launch
                 }
                 app.usb(LinkEvent.LOST); app.usb(LinkEvent.FOUND); app.usb(LinkEvent.OPEN)
+                val cacheGeneration = app.cameraThumbnails.token()
+                val namespace = cameraThumbnailNamespace(app)
                 val list = withContext(Dispatchers.IO) { app.useUsb { it.list() } }
+                if (app.cameraThumbnails.token() != cacheGeneration) return@launch
+                objectGeneration = cacheGeneration
+                app.cameraThumbnails.retain(list.map { cameraThumbnailKey(it) }.toSet(), cacheGeneration)
+                thumbnailNamespace = namespace
                 objects = list; selected = selected.intersect(list.map { it.key }.toSet()).toList()
                 app.usb(LinkEvent.READY); detail = "사진 ${list.size}장 · 새 사진 ${list.count { !it.isKnown(completed) }}장"
             } catch (e: CancellationException) { throw e }
@@ -201,7 +209,7 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
                         saveable.SaveableStateProvider(navigation.tab.name) {
                             when (navigation.tab) {
                                 AppTab.CAMERA -> if (navigation.picking) CameraPicker(objects, completed, selected.toSet(), working,
-                                    { selected = it.toList() }, { cameraThumb(app, it, raw, working) }, { receive(selected.toSet()) }, { dispatch(NavigationAction.Back) })
+                                    { selected = it.toList() }, { cameraThumb(app, it, raw, working, thumbnailNamespace, objectGeneration) }, { receive(selected.toSet()) }, { dispatch(NavigationAction.Back) })
                                 else CameraScreen(status, connected, usbDiagnostic ?: detail, busy, working,
                                     objects.count { !it.isKnown(completed) }, records.count { it.imported == null }, ::resolve, ::scanUsb,
                                     { receive(null) }, {
@@ -238,11 +246,44 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
         } },
     )
 }
-@Composable private fun cameraThumb(app: App, obj: CameraObject, raw: Boolean, importing: Boolean): Bitmap? {
-    var bitmap by remember(obj.key, raw) { mutableStateOf<Bitmap?>(null) }
-    LaunchedEffect(obj.key, raw, importing) {
-        if (!importing) bitmap = withContext(Dispatchers.IO) {
-            runCatching { app.useUsb { camera -> camera.thumbnail(obj)?.let { BitmapFactory.decodeByteArray(it, 0, it.size) } } }.getOrNull()
+private fun cameraThumbnailKey(obj: CameraObject) = "${obj.storage}/${obj.parent}/${obj.handle}/${obj.metadataKey}"
+
+private fun cameraThumbnailNamespace(app: App): String? = runCatching {
+    val device = UsbAccess.device(app)
+    val serial = device.serialNumber?.takeIf { it.isNotBlank() } ?: return@runCatching null
+    dev.sukbeomh.beta7compact.cache.DiskThumbnailCache.hash("${device.vendorId}/${device.productId}/$serial")
+}.getOrNull()
+
+@Composable private fun cameraThumb(app: App, obj: CameraObject, raw: Boolean, importing: Boolean, namespace: String?, objectGeneration: Long): Bitmap? {
+    val key = cameraThumbnailKey(obj)
+    val diskKey = namespace?.takeIf { obj.hasRawTime }?.let { "$it/${obj.storage}/${obj.parent}/${obj.metadataKey}" }
+    val generation = app.cameraThumbnails.token()
+    if (generation != objectGeneration) return null
+    var bitmap by remember(key, generation) { mutableStateOf(app.cameraThumbnails.get(key)) }
+    LaunchedEffect(key, generation, raw, importing) {
+        if (!importing && bitmap == null) {
+            try {
+                val loaded = withContext(Dispatchers.IO) {
+                    // Check again under USB ownership so queued duplicate requests reuse the first result.
+                    app.useUsb { camera ->
+                        if (app.cameraThumbnails.token() != generation) null
+                        else app.cameraThumbnails.get(key) ?: run {
+                            val cached = diskKey?.takeIf { cameraThumbnailNamespace(app) == namespace }?.let { app.diskThumbnails.get(it) }
+                            val decoded = cached?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+                            if (cached != null && decoded == null && diskKey != null) app.diskThumbnails.remove(diskKey)
+                            val image = decoded ?: camera.thumbnail(obj)?.let { data ->
+                                BitmapFactory.decodeByteArray(data, 0, data.size)?.also {
+                                    if (diskKey != null && cameraThumbnailNamespace(app) == namespace) app.diskThumbnails.put(diskKey, data)
+                                }
+                            }
+                            image?.also { app.cameraThumbnails.put(key, it, generation) }
+                        }
+                    }
+                }
+                if (app.cameraThumbnails.token() == generation) bitmap = loaded
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { /* Failed reads are not cached; a later visit can retry. */ }
+            catch (_: OutOfMemoryError) { app.cameraThumbnails.clear() }
         }
     }
     return bitmap
