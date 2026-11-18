@@ -4,7 +4,12 @@ import android.content.Context
 import dev.sukbeomh.beta7compact.usb.PtpResponseException
 import dev.sukbeomh.beta7compact.usb.UsbAccess
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.net.InetAddress
+import java.net.SocketTimeoutException
+import javax.net.SocketFactory
 
 enum class CaptureExperimentAction { AUTOFOCUS, SINGLE_CAPTURE }
 enum class CaptureExperimentOutcome { AF_LOCK_OBSERVED, CAPTURE_SUBMITTED_UNCONFIRMED, FAILED }
@@ -85,15 +90,27 @@ suspend fun runCaptureExperiment(context: Context, action: CaptureExperimentActi
         }
     })
 
-/** Opens only inside UsbAccess's shared ownership scope. The factory seam is for deterministic mocks. */
+internal suspend fun runWifiCaptureExperiment(target: WifiDiagnosticTarget.Address, guid: ByteArray,
+                                              action: CaptureExperimentAction, claimPriority: Boolean): CaptureExperimentReport =
+    withContext(Dispatchers.IO) {
+        val connector = ptpIpConnector(SocketFactory.getDefault(), InetAddress.getByAddress(target.address))
+        runCaptureExperiment(action, wifi = true, sessionFactory = { SonyCaptureSession(it, claimPriority = claimPriority, wifi = true) }, open = { onStage ->
+            val transport = PtpIpSessionTransport.open(connector, guid, "beta7compact", allowCaptureControls = true,
+                allowPriorityWrite = claimPriority, stage = onStage)
+            CaptureExperimentConnection(transport, eventPollingAvailable = true)
+        })
+    }
+
+/** Shares camera ownership and cleanup across capture transports. */
 internal suspend fun runCaptureExperiment(
     action: CaptureExperimentAction,
     open: suspend ((String) -> Unit) -> CaptureExperimentConnection,
     sessionFactory: (SonyCaptureTransport) -> SonyCaptureSession = { SonyCaptureSession(it) },
+    wifi: Boolean = false,
 ): CaptureExperimentReport {
     val started = System.nanoTime()
     fun elapsed() = ((System.nanoTime() - started) / 1_000_000).coerceAtLeast(0)
-    var stage = "WAITING_FOR_USB"
+    var stage = if (wifi) "WAITING_FOR_WIFI" else "WAITING_FOR_USB"
     var firstFailureStage: String? = null
     var resourceClose = RemoteResourceClose.NOT_CREATED
     var cleanupErrorCount = 0
@@ -115,10 +132,14 @@ internal suspend fun runCaptureExperiment(
     fun failed(name: String) { if (firstFailureStage == null) firstFailureStage = name }
     try {
         UsbAccess.useCapture(openTransport = {
-            stage = "DISCOVERY"
+            stage = if (wifi) "COMMAND_CONNECT" else "DISCOVERY"
             resourceClose = RemoteResourceClose.UNCONFIRMED
             val connection = open { incoming ->
-                stage = incoming.takeIf { it in setOf("DISCOVERY", "PERMISSION", "CONFIGURATION", "INTERFACE", "CLAIM") } ?: "USB_OPEN"
+                val openStages = if (wifi) setOf("COMMAND_CONNECT", "INIT_COMMAND", "EVENT_CONNECT", "INIT_EVENT")
+                    else setOf("DISCOVERY", "PERMISSION", "CONFIGURATION", "INTERFACE", "CLAIM")
+                if (incoming in openStages) stage = incoming
+                else if (wifi) return@open
+                else stage = "USB_OPEN"
                 record(stage, RemoteTraceStatus.START)
             }
             selection = connection.selection
@@ -233,7 +254,7 @@ internal suspend fun runCaptureExperiment(
                 unsupportedCode = error.propertyCode; unsupportedType = error.dataType
                 CaptureExperimentFailure.UNSUPPORTED_PROPERTY_TYPE
             }
-            is RemoteTransportTimeoutException -> CaptureExperimentFailure.TIMEOUT
+            is RemoteTransportTimeoutException, is SocketTimeoutException -> CaptureExperimentFailure.TIMEOUT
             is IOException -> CaptureExperimentFailure.IO
             is IllegalArgumentException, is IllegalStateException -> CaptureExperimentFailure.INVALID_DATA_OR_CAPABILITY
             else -> CaptureExperimentFailure.OTHER

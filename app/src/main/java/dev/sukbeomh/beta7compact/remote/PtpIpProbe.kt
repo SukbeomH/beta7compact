@@ -21,6 +21,7 @@ object PtpIp {
     const val INIT_FAIL = 5
     const val COMMAND_REQUEST = 6
     const val COMMAND_RESPONSE = 7
+    const val EVENT = 8
     const val START_DATA = 9
     const val DATA = 10
     const val END_DATA = 12
@@ -42,14 +43,39 @@ object PtpIp {
     }
     fun initEvent(connection: Int): ByteArray =
         packet(INIT_EVENT_REQUEST, ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(connection).array())
-    /** Data phase 1: no data sent by this side. */
-    fun command(code: Int, transaction: Int): ByteArray =
-        packet(COMMAND_REQUEST, ByteBuffer.allocate(10).order(ByteOrder.LITTLE_ENDIAN).putInt(1).putShort(code.toShort()).putInt(transaction).array())
+    fun command(code: Int, transaction: Int, parameters: List<Int> = emptyList(), sendsData: Boolean = false): ByteArray =
+        packet(COMMAND_REQUEST, ByteBuffer.allocate(10 + parameters.size * 4).order(ByteOrder.LITTLE_ENDIAN).apply {
+            putInt(if (sendsData) 2 else 1).putShort(code.toShort()).putInt(transaction)
+            parameters.forEach { putInt(it) }
+        }.array())
+
+    internal fun startData(transaction: Int, length: Int): ByteArray =
+        packet(START_DATA, ByteBuffer.allocate(12).order(ByteOrder.LITTLE_ENDIAN).putInt(transaction).putLong(length.toLong()).array())
+
+    internal fun endData(transaction: Int, data: ByteArray): ByteArray =
+        packet(END_DATA, ByteBuffer.allocate(4 + data.size).order(ByteOrder.LITTLE_ENDIAN).putInt(transaction).put(data).array())
     fun pong(): ByteArray = packet(PONG, byteArrayOf())
 
     fun read(channel: PtpIpChannel, timeoutMillis: Int): Packet {
         val header = ByteArray(8)
         channel.readFully(header, timeoutMillis)
+        return readBody(channel, header, timeoutMillis)
+    }
+
+    /** Returns null only if the event channel was idle before the packet started. */
+    internal fun readEvent(channel: PtpIpChannel, timeoutMillis: Int): Packet? {
+        val first = ByteArray(1)
+        try {
+            channel.readFully(first, timeoutMillis)
+        } catch (_: SocketTimeoutException) {
+            return null
+        }
+        val rest = ByteArray(7)
+        channel.readFully(rest, timeoutMillis)
+        return readBody(channel, first + rest, timeoutMillis)
+    }
+
+    private fun readBody(channel: PtpIpChannel, header: ByteArray, timeoutMillis: Int): Packet {
         val fields = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
         val length = fields.int
         val type = fields.int

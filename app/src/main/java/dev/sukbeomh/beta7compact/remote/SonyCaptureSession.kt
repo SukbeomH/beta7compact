@@ -41,9 +41,12 @@ class SonyCaptureSession(
     private val pause: suspend (Long) -> Unit = { delay(it) },
     /** The user allowed, for this run only, writing control priority before the action and putting it back after. */
     private val claimPriority: Boolean = false,
+    /** The ILCE-7C can advertise its Wi-Fi shutter buttons as controls without property descriptors. */
+    private val wifi: Boolean = false,
 ) {
     private val mutex = Mutex()
     private val remote = SonyRemoteSession(transport, pause)
+    private val focusTimeoutMillis = if (wifi) 3000L else 1000L
     private var connectedAt = 0L
     private var halfAttempted = false
     private var fullAttempted = false
@@ -129,12 +132,13 @@ class SonyCaptureSession(
     /** Write only when the property is the expected one-byte, enabled, writable value; then read it back. */
     private suspend fun claimPriority(properties: List<SonyPropertyDescriptor>): List<SonyPropertyDescriptor> {
         val priority = properties.singleOrNull { it.code == 0xd25a }
-        if (priority == null || priority.dataType !in PRIORITY_TYPES || priority.rawEnabled != 1 || priority.rawGetSet and 1 == 0) {
+        val current = priority?.currentValue
+        if (priority == null || current == null || priority.dataType !in PRIORITY_TYPES || priority.rawEnabled != 1 || priority.rawGetSet and 1 == 0) {
             priorityStatus = SonyPriorityStatus.NOT_WRITABLE
             return properties
         }
-        if (priority.currentValue == BigInteger.ONE) { priorityStatus = SonyPriorityStatus.ALREADY_APPLICATION; return properties }
-        previousPriority = priority.currentValue
+        if (current == BigInteger.ONE) { priorityStatus = SonyPriorityStatus.ALREADY_APPLICATION; return properties }
+        previousPriority = current
         priorityStatus = SonyPriorityStatus.WRITTEN_UNCONFIRMED
         transport.set(SonySettingCommand.PRIORITY_APPLICATION)
         var latest = properties
@@ -158,13 +162,22 @@ class SonyCaptureSession(
         if (previousPriority != BigInteger.ZERO) { priorityRestore = SonyPriorityRestore.SKIPPED_UNKNOWN_PREVIOUS; return@withContext }
         priorityRestore = try {
             transport.set(SonySettingCommand.PRIORITY_CAMERA)
-            val after = try { readProperties().singleOrNull { it.code == 0xd25a }?.currentValue } catch (_: Throwable) { null }
-            if (after == BigInteger.ZERO) SonyPriorityRestore.CONFIRMED else SonyPriorityRestore.UNCONFIRMED
+            confirmPriorityRestored()
         } catch (_: Throwable) { SonyPriorityRestore.FAILED }
     }
 
+    private suspend fun confirmPriorityRestored(): SonyPriorityRestore {
+        repeat(10) { attempt ->
+            if (attempt > 0) pause(100)
+            val value = try { readProperties().singleOrNull { it.code == 0xd25a }?.currentValue }
+            catch (_: Exception) { return SonyPriorityRestore.UNCONFIRMED }
+            if (value == BigInteger.ZERO) return SonyPriorityRestore.CONFIRMED
+        }
+        return SonyPriorityRestore.UNCONFIRMED
+    }
+
     private suspend fun focus(before: List<SonyPropertyDescriptor>): List<SonyPropertyDescriptor> =
-        withTimeoutOrNull(1000) { focusWithinDeadline(before) } ?: throw SonyFocusNotAcquiredException()
+        withTimeoutOrNull(focusTimeoutMillis) { focusWithinDeadline(before) } ?: throw SonyFocusNotAcquiredException()
 
     private suspend fun focusWithinDeadline(before: List<SonyPropertyDescriptor>): List<SonyPropertyDescriptor> {
         state = SonyCaptureState.FOCUSING
@@ -175,12 +188,12 @@ class SonyCaptureSession(
         // A lock is fresh when focus was not already locked before the press, or was seen unlocked after it.
         // Fast AF can report "locked" on the very first read, so the pre-press value counts as the unlocked sighting.
         var sawUnlock = number(before, 0xd213, 2) != 2L
-        repeat(20) {
+        repeat((focusTimeoutMillis / 50).toInt()) {
             val elapsed = clockMillis() - started
-            if (elapsed < 0 || elapsed >= 1000) throw SonyFocusNotAcquiredException()
+            if (elapsed < 0 || elapsed >= focusTimeoutMillis) throw SonyFocusNotAcquiredException()
             val properties = readProperties()
             val afterRead = clockMillis() - started
-            if (afterRead < 0 || afterRead >= 1000) throw SonyFocusNotAcquiredException()
+            if (afterRead < 0 || afterRead >= focusTimeoutMillis) throw SonyFocusNotAcquiredException()
             when (number(properties, 0xd213, 2)) {
                 1L -> sawUnlock = true
                 2L -> if (sawUnlock) return properties
@@ -206,15 +219,25 @@ class SonyCaptureSession(
         eligible(priority.currentValue == BigInteger.ONE, SonyCaptureEligibilityReason.PRIORITY_MODE, 0xd25a)
         eligible(number(properties, 0xd222, 4) == 0x10L, SonyCaptureEligibilityReason.STORAGE_TARGET, 0xd222)
         eligible(number(properties, 0xd215, 4) == 0L, SonyCaptureEligibilityReason.PENDING_OBJECTS, 0xd215)
-        number(properties, 0xd213, 2)
+        val focusState = number(properties, 0xd213, 2)
         fun normalShutter(code: Int) {
             val value = number(properties, code, 6)
             eligible((value ushr 16) > 0 && (value and 0xffff) > 0, SonyCaptureEligibilityReason.SHUTTER_MODE, code)
         }
         normalShutter(0xd20d)
         if (!mode3 && properties.any { it.code == 0xd229 }) normalShutter(0xd229)
-        for (code in listOf(0xd2c1, 0xd2c2)) {
-            val descriptor = properties.singleOrNull { it.code == code } ?: throw SonyCaptureEligibilityException(SonyCaptureEligibilityReason.PROPERTY_MISSING, code)
+        val buttons = listOf(0xd2c1, 0xd2c2)
+        val snapshot = checkNotNull(remote.snapshot)
+        val controlsWithoutDescriptors = wifi && mode3 && remote.deviceModel == "ILCE-7C" &&
+            0x9207 in snapshot.advertisedOperations && snapshot.extendedInfo.controlCodes.containsAll(buttons)
+        for (code in buttons) {
+            val descriptor = properties.singleOrNull { it.code == code }
+            if (descriptor == null) {
+                eligible(controlsWithoutDescriptors, SonyCaptureEligibilityReason.PROPERTY_MISSING, code)
+                val expectedFocus = if (buttonsReleased) 1L else 2L
+                eligible(focusState == expectedFocus, SonyCaptureEligibilityReason.BUTTON_STATE, code)
+                continue
+            }
             eligible(descriptor.dataType == 4, SonyCaptureEligibilityReason.PROPERTY_TYPE, code)
             eligible(descriptor.rawGetSet == 0x81 && descriptor.rawEnabled == 1, SonyCaptureEligibilityReason.BUTTON_STATE, code)
             if (buttonsReleased || code == 0xd2c2) eligible(descriptor.currentValue == BigInteger.ONE, SonyCaptureEligibilityReason.BUTTON_STATE, code)
@@ -225,8 +248,9 @@ class SonyCaptureSession(
     private fun number(properties: List<SonyPropertyDescriptor>, code: Int, type: Int): Long {
         val property = properties.singleOrNull { it.code == code } ?: throw SonyCaptureEligibilityException(SonyCaptureEligibilityReason.PROPERTY_MISSING, code)
         eligible(property.dataType == type, SonyCaptureEligibilityReason.PROPERTY_TYPE, code)
-        eligible(property.currentValue.signum() >= 0 && property.currentValue.bitLength() <= 63, SonyCaptureEligibilityReason.PROPERTY_VALUE, code)
-        return property.currentValue.toLong()
+        val value = property.currentValue ?: throw SonyCaptureEligibilityException(SonyCaptureEligibilityReason.PROPERTY_VALUE, code)
+        eligible(value.signum() >= 0 && value.bitLength() <= 63, SonyCaptureEligibilityReason.PROPERTY_VALUE, code)
+        return value.toLong()
     }
 
     private suspend fun <T> action(block: suspend () -> T): T {

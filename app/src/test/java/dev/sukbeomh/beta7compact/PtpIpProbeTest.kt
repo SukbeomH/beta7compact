@@ -5,6 +5,7 @@ import dev.sukbeomh.beta7compact.usb.buffer
 import org.junit.Test
 import java.net.ConnectException
 import java.net.SocketTimeoutException
+import kotlinx.coroutines.runBlocking
 import kotlin.test.*
 
 class PtpIpProbeTest {
@@ -132,5 +133,98 @@ class PtpIpProbeTest {
     @Test fun endlessPingsAreCutOff() {
         val report = runPtpIpProbe(camera({ _, c -> c.reply(packet(PtpIp.PING)) }).second, guid, "b", null, clock(), {})
         assertEquals(WifiDiagnosticFailure.INVALID_DATA, report.failure); assertEquals(17, report.pings)
+    }
+
+    @Test fun observationNegotiatesBothChannelsReadsPropertiesAndCloses() = runBlocking {
+        val snapshot = hex("01 00 00 00 00 00 00 00 23 d2 ff ff 00 01 00 02 41 00 00 00 02 00 00 01 00 00")
+        val requests = mutableListOf<ByteArray>()
+        var transaction = 0
+        val (channels, connector) = camera({ bytes, c ->
+            if (bytes[4].toInt() == PtpIp.INIT_COMMAND_REQUEST) {
+                c.reply(ack())
+            } else {
+                requests += bytes
+                val code = PtpIp.u16(bytes, 12)
+                val tx = PtpIp.u32(bytes, 14)
+                assertEquals(if (requests.size <= 2) 0 else ++transaction, tx)
+                val data = when (code) {
+                    0x1001 -> deviceInfo(0x9201, 0x9202, 0x9209)
+                    0x9201 -> ByteArray(8)
+                    0x9202 -> hex("2c 01") + codes(0xd223) + codes()
+                    0x9209 -> snapshot
+                    else -> null
+                }
+                if (data != null) {
+                    c.reply(packet(PtpIp.START_DATA, buffer(12).putInt(tx).putLong(data.size.toLong()).array()))
+                    c.reply(packet(PtpIp.END_DATA, buffer(4).putInt(tx).array() + data))
+                }
+                c.reply(packet(PtpIp.COMMAND_RESPONSE, buffer(6).putShort(0x2001).putInt(tx).array()))
+            }
+        }, { _, c -> c.reply(packet(PtpIp.INIT_EVENT_ACK) + packet(PtpIp.EVENT, hex("03 c2 ff ff ff ff 23 d2 00 00"))) })
+        val result = collectWifiObservation(connector, guid)
+        assertNull(result.failure)
+        assertEquals(0x012c, result.protocol)
+        assertEquals(1, result.propertyCount)
+        assertEquals(1, result.textPropertyCount)
+        assertEquals(1, result.secondaryEnumerationCount)
+        assertEquals(listOf(0xc203), result.eventCodes)
+        assertEquals(SonyPtpCloseStatus.CONFIRMED, result.ptpCloseStatus)
+        assertEquals(SonySessionOperation.entries.map { it.code }, requests.map { PtpIp.u16(it, 12) })
+        assertEquals(3, PtpIp.u32(requests[5], 18))
+        assertTrue(channels.all { it.closed })
+        assertFalse(result.safeText().contains("SECRET-SERIAL"))
+    }
+
+    @Test fun observationRejectionClosesCommandAndEventChannels() = runBlocking {
+        val (channels, connector) = camera({ _, c -> c.reply(ack()) },
+            { _, c -> c.reply(packet(PtpIp.INIT_FAIL, ByteArray(4))) })
+        val result = collectWifiObservation(connector, guid)
+        assertEquals("INIT_EVENT", result.failureStage)
+        assertEquals(WifiDiagnosticFailure.INIT_REJECTED, result.failure)
+        assertEquals(SonyPtpCloseStatus.NOT_OPENED, result.ptpCloseStatus)
+        assertEquals(2, channels.size)
+        assertTrue(channels.all { it.closed && it.writes.size == 1 })
+    }
+
+    @Test fun captureSendsFixedControlAndPriorityValuesAsPtpIpData() = runBlocking {
+        fun peer() = camera({ bytes, channel ->
+            when (bytes[4].toInt()) {
+                PtpIp.INIT_COMMAND_REQUEST -> channel.reply(ack())
+                PtpIp.COMMAND_REQUEST -> if (PtpIp.u32(bytes, 8) == 1) {
+                    channel.reply(packet(PtpIp.COMMAND_RESPONSE, buffer(6).putShort(0x2001).putInt(PtpIp.u32(bytes, 14)).array()))
+                }
+                PtpIp.END_DATA -> channel.reply(packet(PtpIp.COMMAND_RESPONSE, buffer(6).putShort(0x2001).putInt(PtpIp.u32(bytes, 8)).array()))
+            }
+        })
+
+        val (observationChannels, observationConnector) = peer()
+        PtpIpSessionTransport.open(observationConnector, guid, "b7") {}.use { observation ->
+            observation.exchange(SonySessionOperation.OPEN_SESSION)
+            assertFailsWith<IllegalStateException> { observation.control(SonyCaptureCommand.HALF_PRESS) }
+            assertFailsWith<IllegalStateException> { observation.set(SonySettingCommand.PRIORITY_APPLICATION) }
+            observation.exchange(SonySessionOperation.CLOSE_SESSION)
+        }
+        assertEquals(3, observationChannels[0].writes.size)
+
+        val (afChannels, afConnector) = peer()
+        PtpIpSessionTransport.open(afConnector, guid, "b7", allowCaptureControls = true) {}.use { af ->
+            af.exchange(SonySessionOperation.OPEN_SESSION)
+            assertFailsWith<IllegalStateException> { af.set(SonySettingCommand.PRIORITY_APPLICATION) }
+            af.control(SonyCaptureCommand.HALF_PRESS)
+        }
+        val afFrames = afChannels[0].writes.drop(2)
+        assertContentEquals(hex("16 00 00 00 06 00 00 00 02 00 00 00 07 92 01 00 00 00 c1 d2 00 00"), afFrames[0])
+        assertContentEquals(hex("14 00 00 00 09 00 00 00 01 00 00 00 02 00 00 00 00 00 00 00"), afFrames[1])
+        assertContentEquals(hex("0e 00 00 00 0c 00 00 00 01 00 00 00 02 00"), afFrames[2])
+
+        val (captureChannels, captureConnector) = peer()
+        PtpIpSessionTransport.open(captureConnector, guid, "b7", allowCaptureControls = true, allowPriorityWrite = true) {}.use { capture ->
+            capture.exchange(SonySessionOperation.OPEN_SESSION)
+            capture.set(SonySettingCommand.PRIORITY_CAMERA)
+        }
+        val priorityFrames = captureChannels[0].writes.drop(2)
+        assertEquals(0x9205, PtpIp.u16(priorityFrames[0], 12))
+        assertEquals(0xd25a, PtpIp.u32(priorityFrames[0], 18))
+        assertContentEquals(hex("0d 00 00 00 0c 00 00 00 01 00 00 00 00"), priorityFrames[2])
     }
 }

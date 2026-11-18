@@ -29,10 +29,10 @@ internal fun ptpIpGuid(app: App): ByteArray {
     }
 }
 
-/** Read-only check that the camera answers PTP/IP over Wi-Fi. Unverified on a real ILCE-7C. */
+/** Connection diagnostic and address-based Sony observation. */
 @Composable fun WifiRemoteDiagnosticsSetting(app: App, enabled: Boolean) {
     var opened by remember { mutableStateOf(false) }
-    TextButton(onClick = { opened = true }) { Text("Wi-Fi 연결 진단 · 실기 미검증") }
+    TextButton(onClick = { opened = true }) { Text("Wi-Fi 연결 진단") }
     if (!opened) return
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
@@ -44,29 +44,38 @@ internal fun ptpIpGuid(app: App): ByteArray {
     var acknowledged by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var report by remember { mutableStateOf<WifiDiagnosticReport?>(null) }
+    var observation by remember { mutableStateOf<WifiObservationReport?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    fun run() {
+    fun run(observe: Boolean) {
+        if (observe && direct) return
         val target = if (direct) {
             if (ssid.isBlank() || passphrase.length !in 8..63) { error = "카메라 화면의 네트워크 이름과 8~63자 암호를 입력하세요."; return }
             WifiDiagnosticTarget.CameraNetwork(ssid.trim(), passphrase)
         } else WifiDiagnosticTarget.Address(PtpIp.localAddress(address) ?: run {
             error = "카메라의 사설 IPv4 주소를 입력하세요. 예: 192.168.0.12"; return
         })
-        busy = true; acknowledged = false; error = null; report = null
+        busy = true; acknowledged = false; error = null; report = null; observation = null
         passphrase = "" // Used for this run only.
         scope.launch {
-            try { report = runWifiDiagnostic(context.applicationContext, target, ptpIpGuid(app)) }
+            try {
+                val guid = ptpIpGuid(app)
+                if (observe && target is WifiDiagnosticTarget.Address) {
+                    observation = runWifiObservation(target, guid)
+                } else {
+                    report = runWifiDiagnostic(context.applicationContext, target, guid)
+                }
+            }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Exception) { error = "진단을 완료하지 못했습니다. Wi-Fi를 켜고 다시 시도하세요." }
             finally { busy = false }
         }
     }
-    val shared = report?.let { "beta7compact ${BuildConfig.VERSION_NAME} Wi-Fi 연결 진단\n" + it.safeText() }
+    val logTitle = if (observation == null) "Wi-Fi 연결 진단" else "Wi-Fi 관찰 세션"
+    val shared = (observation?.safeText() ?: report?.safeText())?.let { "beta7compact ${BuildConfig.VERSION_NAME} $logTitle\n$it" }
     AlertDialog(onDismissRequest = { if (!busy) opened = false }, title = { Text("Wi-Fi 연결 진단") },
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("실제 α7C에서 아직 확인하지 못한 기능입니다. 카메라가 Wi-Fi로 PC Remote 연결(PTP/IP)에 응답하는지만 확인합니다. " +
-                "세션 열기·Sony 연결·촬영·설정 쓰기는 하지 않습니다.")
-            Text("카메라 준비: 네트워크 → 스마트폰으로 제어 끔 → PC Remote 기능 → PC Remote 켬. USB 케이블은 뽑아 두세요.",
+            Text("진단 실행은 카메라가 Wi-Fi로 PC Remote 연결(PTP/IP)에 응답하는지 확인합니다.")
+            Text("카메라 준비: 네트워크 → 스마트폰으로 제어 끔 → PC Remote 기능 → PC Remote 켬. 카메라의 USB 케이블은 분리하세요.",
                 style = MaterialTheme.typography.bodySmall)
             Row {
                 TextButton(onClick = { direct = true }, enabled = !busy) { Text(if (direct) "✓ 카메라의 Wi-Fi에 접속" else "카메라의 Wi-Fi에 접속") }
@@ -87,15 +96,14 @@ internal fun ptpIpGuid(app: App): ByteArray {
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
                 Text("이름과 암호는 저장하지 않고 이번 실행에만 씁니다.", style = MaterialTheme.typography.bodySmall)
             } else {
-                Text("카메라와 휴대폰이 이미 같은 네트워크(공유기 또는 휴대폰 핫스팟)에 있을 때 씁니다.\n" +
-                    "1. 핫스팟을 쓴다면 보안을 WPA2, 대역을 2.4GHz로 맞추세요. 카메라는 WPA3 전용 네트워크에 붙지 못할 수 있습니다.\n" +
-                    "2. 카메라: 네트워크 → 액세스 지점 설정에서 네트워크를 등록 → PC Remote 연결 방법을 Wi-Fi 액세스 포인트로.\n" +
-                    "3. 카메라: Wi-Fi 정보 표시에서 IP 주소를 확인해 아래에 입력하세요.\n" +
-                    "이 방식은 카메라가 페어링을 요구합니다. 앱은 페어링 절차를 수행하지 않으므로, 연결 인사가 거부되거나 시간 초과로 끝나면 그 결과가 그대로 기록됩니다.",
+                Text("Android Wi-Fi 설정에서 카메라의 Wi-Fi Direct 네트워크에 연결하거나, 카메라와 휴대폰을 같은 네트워크에 연결하세요. " +
+                    "카메라의 Wi-Fi 정보에 표시된 IP 주소를 입력하세요. 액세스 포인트 방식은 카메라에서 페어링이 필요할 수 있습니다.",
                     style = MaterialTheme.typography.bodySmall)
                 OutlinedTextField(address, { address = it.take(15) }, label = { Text("카메라 IP 주소") }, singleLine = true, enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
             }
+            if (!direct) Text("관찰 세션은 Sony 연결을 열어 속성과 이벤트를 조회합니다. 연결 과정에서 카메라 모드가 바뀔 수 있습니다.",
+                style = MaterialTheme.typography.bodySmall)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(acknowledged, { acknowledged = it }, enabled = enabled && !busy)
                 Text("카메라에 이 앱의 무작위 식별값과 이름(beta7compact)을 보내고, 카메라 화면에 연결 확인창이 뜰 수 있음을 확인했습니다.",
@@ -104,8 +112,12 @@ internal fun ptpIpGuid(app: App): ByteArray {
             if (!enabled) Text("사진 가져오기가 끝난 뒤 실행하세요.")
             // Above the button, so a refused input is visible without scrolling.
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            TextButton(onClick = ::run, enabled = enabled && acknowledged && !busy) { Text(if (busy) "진단 진행 중… (최대 약 2분)" else "진단 실행") }
+            if (!busy) {
+                TextButton(onClick = { run(observe = false) }, enabled = enabled && acknowledged) { Text("진단 실행") }
+                if (!direct) TextButton(onClick = { run(observe = true) }, enabled = enabled && acknowledged) { Text("Wi-Fi 관찰 세션 실행") }
+            }
             if (busy) {
+                Text("진행 중…")
                 LinearProgressIndicator(Modifier.fillMaxWidth())
                 Text("카메라 화면에 확인창이 뜨면 내용을 기록하고 OK를 누르세요.")
             }
@@ -120,16 +132,21 @@ internal fun ptpIpGuid(app: App): ByteArray {
                     WifiDiagnosticFailure.INIT_REJECTED -> "카메라가 연결 인사를 거부했습니다. 페어링이 필요한 방식일 수 있습니다. 거부사유 값을 포함해 로그를 공유해주세요."
                     else -> "연결 도중 실패했습니다. 실패 단계가 포함된 로그를 공유해주세요."
                 })
-                Text("공유할 진단 로그", style = MaterialTheme.typography.titleSmall)
-                SelectionContainer { Text(shared.orEmpty(), style = MaterialTheme.typography.bodySmall) }
+            }
+            observation?.let { result ->
+                Text(if (result.failure == null) "Wi-Fi 관찰 세션을 완료했습니다." else "Wi-Fi 관찰 세션이 실패했습니다.")
+            }
+            shared?.let { log ->
+                Text("공유할 로그", style = MaterialTheme.typography.titleSmall)
+                SelectionContainer { Text(log, style = MaterialTheme.typography.bodySmall) }
                 Text("위 내용만 공유합니다. 네트워크 이름·암호·카메라 식별값·기기 문자열은 제외하며 자동 저장·전송하지 않습니다.")
                 Row {
                     TextButton(enabled = !busy, onClick = {
                         try { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"; putExtra(Intent.EXTRA_SUBJECT, "beta7compact Wi-Fi 연결 진단"); putExtra(Intent.EXTRA_TEXT, shared)
-                        }, "진단 로그 공유")) } catch (_: Exception) { error = "진단 로그를 공유할 앱이 없습니다." }
+                            type = "text/plain"; putExtra(Intent.EXTRA_SUBJECT, "beta7compact $logTitle"); putExtra(Intent.EXTRA_TEXT, log)
+                        }, "$logTitle 로그 공유")) } catch (_: Exception) { error = "로그를 공유할 앱이 없습니다." }
                     }) { Text("로그 공유") }
-                    TextButton(enabled = !busy, onClick = { report = null }) { Text("결과 지우기") }
+                    TextButton(enabled = !busy, onClick = { report = null; observation = null }) { Text("결과 지우기") }
                 }
             }
         } },

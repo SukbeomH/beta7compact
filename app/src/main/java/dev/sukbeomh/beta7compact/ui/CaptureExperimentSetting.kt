@@ -4,30 +4,36 @@ import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import dev.sukbeomh.beta7compact.BuildConfig
+import dev.sukbeomh.beta7compact.App
 import dev.sukbeomh.beta7compact.MainActivity
 import dev.sukbeomh.beta7compact.remote.CaptureExperimentAction
 import dev.sukbeomh.beta7compact.remote.CaptureExperimentOutcome
 import dev.sukbeomh.beta7compact.remote.CaptureExperimentReport
 import dev.sukbeomh.beta7compact.remote.RemoteResourceClose
+import dev.sukbeomh.beta7compact.remote.PtpIp
 import dev.sukbeomh.beta7compact.remote.SonyButtonReleaseStatus
 import dev.sukbeomh.beta7compact.remote.SonyPriorityRestore
 import dev.sukbeomh.beta7compact.remote.SonyPriorityStatus
 import dev.sukbeomh.beta7compact.remote.SonyPtpCloseStatus
+import dev.sukbeomh.beta7compact.remote.WifiDiagnosticTarget
 import dev.sukbeomh.beta7compact.remote.runCaptureExperiment
+import dev.sukbeomh.beta7compact.remote.runWifiCaptureExperiment
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@Composable fun CaptureExperimentSetting(activity: MainActivity, enabled: Boolean) {
+@Composable fun CaptureExperimentSetting(activity: MainActivity, app: App, enabled: Boolean) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var opened by remember { mutableStateOf(false) }
@@ -39,11 +45,22 @@ import kotlinx.coroutines.withContext
     var report by remember { mutableStateOf<CaptureExperimentReport?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var guideExpanded by remember { mutableStateOf(false) }
+    var wifi by remember { mutableStateOf(false) }
+    var address by remember { mutableStateOf("") }
 
     val execute: (CaptureExperimentAction) -> Unit = execute@ { selected ->
         if (busy || !enabled) return@execute
         if (selected == CaptureExperimentAction.SINGLE_CAPTURE && !confirmCapture) return@execute
         if (selected == CaptureExperimentAction.AUTOFOCUS && (!acknowledged || action != selected)) return@execute
+        val wifiTarget = if (wifi) {
+            val bytes = PtpIp.localAddress(address)
+            if (bytes == null) {
+                error = "카메라의 사설 IPv4 주소를 입력하세요. 예: 192.168.0.12"
+                confirmCapture = false
+                return@execute
+            }
+            WifiDiagnosticTarget.Address(bytes)
+        } else null
         acknowledged = false
         confirmCapture = false
         // Permission to write control priority covers this run only.
@@ -54,7 +71,11 @@ import kotlinx.coroutines.withContext
         error = null
         scope.launch {
             try {
-                report = withContext(Dispatchers.IO) { runCaptureExperiment(context.applicationContext, selected, claim) }
+                report = if (wifiTarget == null) {
+                    withContext(Dispatchers.IO) { runCaptureExperiment(context.applicationContext, selected, claim) }
+                } else {
+                    runWifiCaptureExperiment(wifiTarget, ptpIpGuid(app), selected, claim)
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
@@ -72,7 +93,7 @@ import kotlinx.coroutines.withContext
     }) { Text("AF·단발 촬영 실험") }
     if (!opened) return
     val sharedText = report?.let {
-        "beta7compact ${BuildConfig.VERSION_NAME} AF·단발 촬영 실험\n" + it.safeText()
+        "beta7compact ${BuildConfig.VERSION_NAME} ${if (wifi) "Wi-Fi" else "USB"} AF·단발 촬영 실험\n" + it.safeText()
     }
     AlertDialog(
         onDismissRequest = { if (!busy && !confirmCapture) opened = false },
@@ -80,13 +101,29 @@ import kotlinx.coroutines.withContext
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Sony 카메라용 미검증 실험 기능입니다. 원형 α7C(ILCE-7C) 이외 기종도 실행할 수 있으나 호환성이 확인되지 않았습니다. 렌즈가 움직이거나 실제 셔터가 작동해 사진이 카드에 저장될 수 있습니다.")
-                Text("Sony 연결 과정에서 카메라 모드가 바뀔 수 있습니다. 완료 뒤 PC Remote 끄기·MTP 선택 또는 USB 재연결이 필요할 수 있습니다.")
+                Text("Sony 연결 과정에서 카메라 모드가 바뀔 수 있습니다.")
+                Row {
+                    TextButton(enabled = !busy && !confirmCapture, onClick = {
+                        wifi = false; acknowledged = false; claimPriority = false; error = null; report = null
+                    }) { Text(if (wifi) "USB" else "✓ USB") }
+                    TextButton(enabled = !busy && !confirmCapture, onClick = {
+                        wifi = true; acknowledged = false; claimPriority = false; error = null; report = null
+                    }) { Text(if (wifi) "✓ Wi-Fi 주소 입력" else "Wi-Fi 주소 입력") }
+                }
+                if (wifi) {
+                    Text("Android Wi-Fi 설정에서 카메라 네트워크에 연결한 뒤 카메라 IP 주소를 입력하세요.",
+                        style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(address, { address = it.take(15); acknowledged = false },
+                        label = { Text("카메라 IP 주소") }, singleLine = true, enabled = !busy && !confirmCapture,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                }
                 TextButton(onClick = { guideExpanded = !guideExpanded }) {
                     Text("카메라 설정·테스트 안내 · ${if (guideExpanded) "접기" else "펼치기"}")
                 }
                 if (guideExpanded) {
                     Text("아래 설정은 원형 α7C 기준입니다. 다른 기종은 카메라 설명서에서 PC Remote 설정을 확인하세요.")
-                    Text("• 스마트폰 제어 끔 → PC Remote 켬 → 연결 방법 USB\n" +
+                    val method = if (wifi) "Wi-Fi Direct" else "USB"
+                    Text("• 스마트폰 제어 끔 → PC Remote 켬 → 연결 방법 $method\n" +
                         "• 정지사진 M/P/A/S 모드, 단일 촬영, Bulb 이외의 셔터속도\n" +
                         "• PC Remote 정지 이미지 저장 위치: 카메라만. 기록 가능한 카드를 준비하세요.\n" +
                         "• 자동 초점 모드를 사용하세요. 앱은 조회한 초점 상태가 새로 잠기는지 확인하며, 지원하지 않는 상태에서는 실행을 거부합니다.\n" +
@@ -120,7 +157,7 @@ import kotlinx.coroutines.withContext
                             confirmCapture = true
                         } else execute(CaptureExperimentAction.AUTOFOCUS)
                     }) { Text(if (busy) "실험 진행 중…" else "선택한 실험 실행") }
-                    TextButton(enabled = enabled && !busy && !confirmCapture, onClick = {
+                    if (!wifi) TextButton(enabled = enabled && !busy && !confirmCapture, onClick = {
                         acknowledged = false
                         try {
                             activity.usbPermission()
@@ -135,7 +172,7 @@ import kotlinx.coroutines.withContext
                     Text("연결·실험·버튼 해제·종료 처리를 기다리고 있습니다. 완료될 때까지 카메라를 조작하거나 케이블을 분리하지 마세요.")
                 }
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                report?.let { CaptureExperimentExplanation(it) }
+                report?.let { CaptureExperimentExplanation(it, wifi) }
                 sharedText?.let { text ->
                     Text("공유할 결과 로그", style = MaterialTheme.typography.titleSmall)
                     SelectionContainer { Text(text, style = MaterialTheme.typography.bodySmall) }
@@ -153,7 +190,8 @@ import kotlinx.coroutines.withContext
                         TextButton(enabled = !busy && !confirmCapture, onClick = { report = null; acknowledged = false }) { Text("결과 지우기") }
                     }
                 }
-                Text("자동 재시도하지 않습니다. 실패해도 촬영이 이루어졌을 수 있으므로, 다시 실행하기 전에 카메라와 저장된 사진을 확인하세요. 가져오기로 돌아가려면 PC Remote를 끄고 MTP를 선택한 뒤 필요하면 재연결하세요.")
+                Text("자동 재시도하지 않습니다. 실패해도 촬영이 이루어졌을 수 있으므로, 다시 실행하기 전에 카메라와 저장된 사진을 확인하세요.")
+                if (!wifi) Text("USB 가져오기로 돌아가려면 PC Remote를 끄고 MTP를 선택한 뒤 필요하면 카메라 케이블을 재연결하세요.")
             }
         },
         confirmButton = { TextButton(enabled = !busy && !confirmCapture, onClick = { opened = false }) { Text("닫기") } },
@@ -182,7 +220,7 @@ import kotlinx.coroutines.withContext
     }
 }
 
-@Composable private fun CaptureExperimentExplanation(report: CaptureExperimentReport) {
+@Composable private fun CaptureExperimentExplanation(report: CaptureExperimentReport, wifi: Boolean) {
     Text("결과 해석", style = MaterialTheme.typography.titleSmall)
     Text(when (report.outcome) {
         CaptureExperimentOutcome.AF_LOCK_OBSERVED -> "새로운 초점 잠금 상태를 관찰했습니다. AF만 실행했으며 전체 셔터 명령은 보내지 않았습니다. 실제 초점 품질은 카메라에서 확인하세요."
@@ -202,11 +240,12 @@ import kotlinx.coroutines.withContext
     }
     if (report.halfReleaseStatus == SonyButtonReleaseStatus.UNCONFIRMED ||
         report.fullReleaseStatus == SonyButtonReleaseStatus.UNCONFIRMED) {
-        Text("버튼 해제 응답이 확인되지 않았습니다. 반복 실행하지 말고 카메라의 동작·상태를 직접 확인한 뒤 USB를 재연결하세요. 로그의 반셔터·전체 셔터 해제 상태를 함께 공유해주세요.",
+        val connection = if (wifi) "카메라 Wi-Fi" else "카메라 USB"
+        Text("버튼 해제 응답이 확인되지 않았습니다. 반복 실행 전에 카메라 상태를 직접 확인하고 $connection 연결을 점검하세요. 로그의 반셔터·전체 셔터 해제 상태를 함께 공유해주세요.",
             color = MaterialTheme.colorScheme.error)
     }
     if (report.resourceClose != RemoteResourceClose.CONFIRMED || report.ptpCloseStatus == SonyPtpCloseStatus.UNCONFIRMED) {
-        Text("세션 또는 USB 자원 종료가 확인되지 않았습니다. 로그를 보관하고 카메라 상태를 확인한 뒤 다음 시험을 진행하세요.")
+        Text("세션 또는 연결 종료가 확인되지 않았습니다. 로그를 보관하고 카메라 상태를 확인한 뒤 다음 시험을 진행하세요.")
     }
     Text("버튼 해제·세션 종료의 OK 응답은 물리 상태나 카메라 모드 원복을 보장하지 않습니다. 로그와 함께 폰·카메라 펌웨어·렌즈·촬영 모드 및 카메라 메시지를 알려주세요.")
 }

@@ -90,8 +90,8 @@ class SonyPropertyParserTest {
         assertFailsWith<IllegalArgumentException> { SonyPropertyParser.descriptor(oversized) }
         assertFailsWith<IllegalArgumentException> { SonyPropertyParser.snapshot(oversized) }
     }
-    @Test fun unsupportedStringArrayAnd128BitTypesAreExplicitlyRejected() {
-        for (type in listOf(0xffff, 0x4006, 9, 10)) {
+    @Test fun unsupportedArrayAnd128BitTypesAreExplicitlyRejected() {
+        for (type in listOf(0x4006, 9, 10)) {
             val packet = scalar.copyOf().apply {
                 this[2] = type.toByte()
                 this[3] = (type ushr 8).toByte()
@@ -100,4 +100,27 @@ class SonyPropertyParserTest {
         }
     }
 
+    @Test fun secondaryEnumerationPreservesBothListsAndFollowingDescriptor() {
+        val first = hex("07 50 04 00 01 01 64 00 c8 00 02 02 00 64 00 c8 00")
+        val second = hex("01 00 c8 00")
+        val decoded = SonyPropertyParser.snapshot(snapshot(first + second, scalar))
+        assertEquals(SonyPropertyForm.Enumeration(listOf(BigInteger.valueOf(100), BigInteger.valueOf(200)),
+            listOf(BigInteger.valueOf(200))), decoded.first().form)
+        assertEquals(0xd21e, decoded.last().code)
+        assertEquals(emptyList(), (SonyPropertyParser.descriptor(first + hex("00 00")).form as SonyPropertyForm.Enumeration).secondaryValues)
+        assertFailsWith<IllegalArgumentException> { SonyPropertyParser.descriptor(first + hex("02 00 c8 00")) }
+    }
+
+    @Test fun ptpStringsPreserveValuesAndRequireTerminatedContent() {
+        val noForm = hex("23 d2 ff ff 00 01 00 02 00 ac 00 00 00")
+        val decoded = SonyPropertyParser.snapshot(snapshot(noForm, scalar)).first()
+        assertNull(decoded.currentValue)
+        assertEquals("", decoded.textValues?.defaultValue)
+        assertEquals("가", decoded.textValues?.currentValue)
+        val withEnum = noForm.dropLast(1).toByteArray() + hex("02 01 00 02 41 00 00 00 01 00 00")
+        assertEquals(SonyPropertyForm.TextEnumeration(listOf("A"), listOf("")), SonyPropertyParser.descriptor(withEnum).form)
+        assertFailsWith<IllegalArgumentException> {
+            SonyPropertyParser.descriptor(noForm.copyOf().apply { this[10] = 1 })
+        }
+    }
 }
