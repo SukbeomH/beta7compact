@@ -89,6 +89,8 @@ import kotlinx.coroutines.*
         Text("연구 · 읽기 전용", style = MaterialTheme.typography.titleSmall)
         CameraDiagnosticsSetting(activity = activity, enabled = canChange)
         dev.sukbeomh.beta7compact.research.FirmwareInspectionCard()
+        Text("연구 · 사진 보정 실험", style = MaterialTheme.typography.titleSmall)
+        dev.sukbeomh.beta7compact.perspective.LocalWarpExperimentSetting(app)
         Text("연구 · PC Remote 실험", style = MaterialTheme.typography.titleSmall)
         PcRemoteDiagnosticsSetting(activity = activity, enabled = canChange)
         CaptureExperimentSetting(activity = activity, enabled = canChange)
