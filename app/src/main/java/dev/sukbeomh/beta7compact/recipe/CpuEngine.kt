@@ -27,11 +27,11 @@ object CpuEngine {
             val sampled=lut.sample(c)
             return FloatArray(3) { (c[it]+(sampled[it]-c[it])*recipe.strength).coerceIn(0f,1f) }
         }
-        if(recipe.version==1) base=look(base) // Preserve immutable M2 snapshots.
+        if(recipe.colorVersion==1) base=look(base) // Preserve immutable M2 snapshots.
         val gains=floatArrayOf(2f.pow(recipe.wb.temperature*.5f),2f.pow(-recipe.wb.tint*.5f),2f.pow(-recipe.wb.temperature*.5f))
         val encoded=FloatArray(3) { srgb(linear(base[it])*gains[it]*2f.pow(recipe.ev)).coerceIn(0f,1f) }
         val edited=ColorMath.apply(encoded,recipe.edits)
-        return if(recipe.version==1) edited else look(edited)
+        return if(recipe.colorVersion==1) edited else look(edited)
     }
     fun pixel(rgb: FloatArray, lut: Lut, recipe: Recipe, x: Float, y: Float, width: Int, height: Int): FloatArray {
         val encoded = color(rgb,lut,recipe)

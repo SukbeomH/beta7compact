@@ -12,6 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.drawBehind
 import dev.sukbeomh.beta7compact.R
 import dev.sukbeomh.beta7compact.ui.components.SymbolButton
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
@@ -51,7 +54,7 @@ internal fun Control(label: String,value: Float,range: ClosedFloatingPointRange<
         SymbolButton(R.drawable.pixel_reset,"$label 초기화") { change(reset) }
     }
     val tick=MaterialTheme.colorScheme.onSurfaceVariant
-    Slider(value,onValueChange=change,valueRange=range,modifier=resetGesture.heightIn(min=48.dp).drawBehind {
+    Slider(value,onValueChange=change,valueRange=range,modifier=resetGesture.heightIn(min=48.dp).semantics {contentDescription=label;stateDescription=valueLabel}.drawBehind {
         val x=8.dp.toPx()+(size.width-16.dp.toPx())*((reset-range.start)/(range.endInclusive-range.start))
         drawLine(tick,Offset(x,size.height/2-7.dp.toPx()),Offset(x,size.height/2+7.dp.toPx()),1.dp.toPx())
     })
@@ -60,7 +63,7 @@ internal fun Control(label: String,value: Float,range: ClosedFloatingPointRange<
 @Composable
 internal fun ColorControls(tab: Int,recipe: Recipe,change: (Recipe)->Unit) {
     val e=recipe.edits
-    fun edit(next: ColorEdits) = change(recipe.copy(version=2,edits=next))
+    fun edit(next: ColorEdits) = change(recipe.copy(version=maxOf(2,recipe.version),colorVersion=2,edits=next))
     when(tab) {
         0 -> {
             Row { Text("S-Log3/S-Gamut3.Cine JPEG",Modifier.weight(1f));Switch(recipe.inputTransform!=InputTransform.NONE,{change(recipe.copy(inputTransform=if(it) InputTransform.SLOG3_SGAMUT3_CINE else InputTransform.NONE))}) }
@@ -101,6 +104,15 @@ internal fun ColorControls(tab: Int,recipe: Recipe,change: (Recipe)->Unit) {
             Control("하이라이트 채도",t.highlightSaturation,0f..100f) { edit(e.copy(split=t.copy(highlightSaturation=it))) }
             Control("스플릿 톤 균형",t.balance,-100f..100f) { edit(e.copy(split=t.copy(balance=it))) }
             }
+        }
+        4 -> {
+                Control("배럴 ↔ 핀쿠션",recipe.distortion,-1f..1f,
+                    valueLabel=when { recipe.distortion==0f -> "0 · 꺼짐"; recipe.distortion<0 -> "배럴 ${(-recipe.distortion*100).roundToInt()}"; else -> "핀쿠션 ${(recipe.distortion*100).roundToInt()}" }) {
+                    change(recipe.copy(version=3,distortion=it))
+                }
+                Text("사진 전체를 변형하며 가장자리가 일부 잘립니다. 렌즈 자동 보정이 아닙니다.",
+                    style=MaterialTheme.typography.bodySmall)
+                Text("레시피·일괄 적용에 포함 · .cube LUT에는 제외",style=MaterialTheme.typography.bodySmall)
         }
     }
     Text("슬라이더 또는 이름을 두 번 누르면 초기화")
@@ -158,5 +170,6 @@ private fun CurveEditor(curves: Curves,change: (Curves)->Unit) {
     Row {
         TextButton(enabled=active!=null && active in 1 until curve.points.lastIndex,onClick={ active?.let { a -> update(curve.points.filterIndexed { i,_->i!=a }) } }) { Text("이 점 삭제") }
         TextButton(onClick={update(ToneCurve().points)}) { Text("채널 초기화") }
+
     }
 }

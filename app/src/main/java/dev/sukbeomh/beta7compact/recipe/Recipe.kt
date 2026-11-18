@@ -7,10 +7,12 @@ enum class InputTransform { NONE, SLOG3_SGAMUT3_CINE }
 data class Recipe(val lutId: String = "identity", val strength: Float = 1f,
     val inputTransform: InputTransform = InputTransform.NONE, val wb: WhiteBalance = WhiteBalance(),
     val ev: Float = 0f, val grain: Grain = Grain(), val vignette: Float = 0f, val version: Int = 2,
-    val edits: ColorEdits = ColorEdits(), val requiredLutName: String = "") {
+    val edits: ColorEdits = ColorEdits(), val requiredLutName: String = "", val distortion: Float = 0f, val colorVersion: Int = minOf(version,2)) {
     init {
+        require(colorVersion in 1..2 && (version==3 || colorVersion==version)) { "색 처리 버전이 잘못되었습니다" }
+        require(distortion.isFinite() && distortion in -1f..1f && (version==3 || distortion==0f)) { "왜곡 조절 값이 잘못되었습니다" }
         require(requiredLutName.length<=160 && requiredLutName.none { it.isISOControl() }) { "LUT 이름이 잘못되었습니다" }
-        require((version==2 || edits==ColorEdits()) && version in 1..2 && Regex("[a-zA-Z0-9_-]{1,100}").matches(lutId)) { "지원하지 않는 레시피입니다" }
+        require((version>=2 || edits==ColorEdits()) && version in 1..3 && Regex("[a-zA-Z0-9_-]{1,100}").matches(lutId)) { "지원하지 않는 레시피입니다" }
         require(strength in 0f..1f && wb.temperature in -1f..1f && wb.tint in -1f..1f && ev in -5f..5f &&
             grain.size in 1f..32f && grain.amount in 0f..1f && vignette in 0f..1f) { "레시피 값이 범위를 벗어났습니다" }
     }
@@ -21,7 +23,7 @@ data class Recipe(val lutId: String = "identity", val strength: Float = 1f,
         val t=edits.split
         val editJson="""{"highlights":${edits.highlights},"shadows":${edits.shadows},"contrast":${edits.contrast},"saturation":${edits.saturation},"vibrance":${edits.vibrance},"curves":$curves,"hsl":$bands,"split":{"sh":${t.shadowHue},"ss":${t.shadowSaturation},"hh":${t.highlightHue},"hs":${t.highlightSaturation},"balance":${t.balance}}}"""
         val metadata=if(requiredLutName.isEmpty()) "" else ",\"lutName64\":\"${java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(requiredLutName.toByteArray(Charsets.UTF_8))}\""
-        val extra=(if(version==2) ",\"edits\":$editJson" else "")+metadata
+        val extra=(if(version>=2) ",\"edits\":$editJson" else "")+metadata+(if(version==3) ",\"distortion\":$distortion,\"colorVersion\":$colorVersion" else "")
         return """{"lutId":"$lutId","strength":$strength,"inputTransform":"${inputTransform.name}","wb":{"temperature":${wb.temperature},"tint":${wb.tint}},"ev":$ev,"grain":{"size":${grain.size},"amount":${grain.amount},"seed":${grain.seed}},"vignette":$vignette,"version":$version$extra}"""
     }
     companion object {
@@ -35,8 +37,15 @@ data class Recipe(val lutId: String = "identity", val strength: Float = 1f,
             val w = obj("wb"); val g = obj("grain")
             val seed = g["seed"] as? Double ?: error("시드가 없습니다")
             require(seed % 1.0 == 0.0 && seed in Int.MIN_VALUE.toDouble()..Int.MAX_VALUE.toDouble())
-            require(root["version"] == 1.0 || root["version"] == 2.0) { "지원하지 않는 레시피 버전입니다" }
+            require(root["version"] == 1.0 || root["version"] == 2.0 || root["version"] == 3.0) { "지원하지 않는 레시피 버전입니다" }
             val version=(root["version"] as Double).toInt()
+            require(version==3 || ("distortion" !in root && "colorVersion" !in root)) { "왜곡 조절은 레시피 v3이 필요합니다" }
+            val distortion=if(version==3) root.number("distortion") else 0f
+            val colorVersion=if(version==3) {
+                val value=root["colorVersion"] as? Double ?: error("색 처리 버전이 없습니다")
+                require(value==1.0 || value==2.0) { "색 처리 버전이 잘못되었습니다" }
+                value.toInt()
+            } else version
             @Suppress("UNCHECKED_CAST") fun Map<String,Any>.objectAt(k: String) = get(k) as? Map<String,Any> ?: error("레시피 항목이 없습니다")
             val edits=if(version==1) ColorEdits() else {
                 val e=obj("edits");val curves=e.objectAt("curves");val bands=e.objectAt("hsl");val t=e.objectAt("split")
@@ -53,7 +62,7 @@ data class Recipe(val lutId: String = "identity", val strength: Float = 1f,
                 WhiteBalance(w.number("temperature"),w.number("tint")), root.number("ev"),
                 Grain(g.number("size"),g.number("amount"),seed.toInt()),root.number("vignette"),version,edits,(root["lutName64"] as? String)?.let {
                     String(java.util.Base64.getUrlDecoder().decode(it),Charsets.UTF_8)
-                } ?: "")
+                } ?: "",distortion,colorVersion)
         }
     }
 }

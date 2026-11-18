@@ -54,7 +54,7 @@ fun navigate(state: NavigationState, action: NavigationAction): NavigationState 
 fun isAdjusted(recipe: Recipe): Boolean {
     val grain = if (recipe.grain.amount == 0f) Grain() else recipe.grain.copy(seed = Grain().seed)
     val baseline = Recipe(lutId = recipe.lutId, inputTransform = recipe.inputTransform, requiredLutName = recipe.requiredLutName)
-    return recipe.copy(grain = grain, version = baseline.version) != baseline
+    return recipe.copy(grain = grain, version = 3, colorVersion = 2) != baseline.copy(version = 3)
 }
 
 /** A 3:2 display box, independent of the image aspect ratio. Units can be dp or px. */

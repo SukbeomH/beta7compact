@@ -113,7 +113,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                     val lut=store.load(snapshot.lutId)
                     app.contentResolver.openOutputStream(uri,"wt")?.bufferedWriter(Charsets.UTF_8)?.use { RecipeBaker.writeCube(snapshot,lut,it) }
                         ?: error("출력 파일을 열 수 없습니다")
-                };status="33³ .cube 저장 완료 · 입력 변환은 LUT 앞에서 유지 · 그레인·비네트 제외";error=null
+                };status="33³ .cube 저장 완료 · 입력 변환은 LUT 앞에서 유지 · 그레인·비네트·왜곡 제외";error=null
             } catch(e: CancellationException) { throw e }
             catch(e: Exception) { error="LUT를 내보낼 수 없습니다" }
             finally { baking=false;bakeSnapshot=null }
@@ -131,13 +131,15 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
         val p=original ?: return@LaunchedEffect
         rendering=true;delay(60)
         try {
-            after=withContext(Dispatchers.Default) { synchronized(PhotoRenderer.lock) {
+            after=withContext(Dispatchers.Default) { val execution=coroutineContext; synchronized(PhotoRenderer.lock) {
                 GpuEngine(store.load(recipe.lutId)).use { gpu ->
-                    val processed=gpu.render(p.bitmap,recipe,fullWidth=p.sourceWidth,fullHeight=p.sourceHeight,
-                        scaleX=p.sourceWidth.toFloat()/p.bitmap.width,scaleY=p.sourceHeight.toFloat()/p.bitmap.height)
-                    val upright=PhotoRenderer.upright(processed,p.orientation)
-                    if(upright!==processed) processed.recycle()
-                    upright
+                    val warped=DistortionRenderer.preview(p.bitmap,p.sourceWidth,p.sourceHeight,recipe.distortion) {execution.ensureActive()}
+                    try {
+                        val processed=gpu.render(warped,recipe,fullWidth=p.sourceWidth,fullHeight=p.sourceHeight,
+                            scaleX=p.sourceWidth.toFloat()/p.bitmap.width,scaleY=p.sourceHeight.toFloat()/p.bitmap.height)
+                        try { PhotoRenderer.upright(processed,p.orientation) }
+                        finally { if(p.orientation!=1) processed.recycle() }
+                    } finally { if(warped!==p.bitmap) warped.recycle() }
                 }
             } };error=null
         } catch(e: CancellationException) { throw e }
@@ -262,13 +264,13 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                 }
                 TextButton(onClick={details=!details}) { Symbol(R.drawable.pixel_tune);Spacer(Modifier.width(8.dp));Text(if(details) "세부 조정 접기" else "세부 조정") }
                 if(details) {
-                    TabRow(tab) { listOf("기본","톤커브","HSL","효과").forEachIndexed { i,label -> Tab(tab==i,{tab=i},text={Text(label)}) } }
+                    ScrollableTabRow(selectedTabIndex=tab,edgePadding=0.dp) { listOf("기본","톤커브","HSL","효과","왜곡").forEachIndexed { i,label -> Tab(tab==i,{tab=i},text={Text(label)}) } }
                     ColorControls(tab,recipe) { change(it) }
                 }
                 TextButton(onClick={pick.launch(arrayOf("*/*"))}) { Text("사용자 .cube 가져오기 (2~65)") }
-                TextButton(onClick={change(Recipe(inputTransform=recipe.inputTransform))}) { Text("색 보정 초기화 · 입력 변환 유지") }
+                TextButton(onClick={change(Recipe(inputTransform=recipe.inputTransform,distortion=recipe.distortion,version=if(recipe.distortion==0f) 2 else 3))}) { Text("색 보정 초기화 · 입력 변환·왜곡 유지") }
                 TextButton(enabled=!baking && entries.any { it.id==recipe.lutId },onClick={bakeSnapshot=recipe;exportCube.launch("beta7compact-recipe.cube")}) { Text(if(baking) "LUT 굽는 중…" else "현재 색을 33³ .cube로 내보내기") }
-                Text("구운 LUT는 색 보정 초기화 후 선택하세요. 입력 변환은 유지합니다.",style=MaterialTheme.typography.bodySmall)
+                Text("구운 LUT는 색 보정 초기화 후 선택하세요. 입력 변환은 유지하며 왜곡은 .cube에 포함되지 않습니다.",style=MaterialTheme.typography.bodySmall)
                 TextButton(onClick={tabletopOverride=!tabletop}) { Text(if(tabletop) "테이블탑 해제" else "테이블탑으로 보기") }
                 error?.let { ErrorBanner(it,"다시 시도",::recover) {error=null} }
                 results.forEach { result -> TextButton(onClick={try { openPhoto(app,result.uri) } catch(e: Exception) {error="결과 사진을 열 수 없습니다"}}) {Text("저장한 보정 사진 열기")} }

@@ -128,6 +128,7 @@ object PhotoRenderer {
                         // Reserve headroom for decoder/native JPEG/GPU. Reject without downsampling.
                         val required=width.toLong()*height*4
                         require(required <= Runtime.getRuntime().maxMemory()*0.60) { "이미지가 메모리 상한을 초과했습니다" }
+                        val distortion=ManualDistortion(width,height,recipe.distortion)
                         val result=Bitmap.createBitmap(if(orientation>=5) height else width,if(orientation>=5) width else height,Bitmap.Config.ARGB_8888)
                         try {
                             val canvas=Canvas(result);canvas.concat(matrix(orientation,width,height))
@@ -135,7 +136,8 @@ object PhotoRenderer {
                                 val options=BitmapFactory.Options().apply { inPreferredConfig=Bitmap.Config.ARGB_8888;inPreferredColorSpace=ColorSpace.get(ColorSpace.Named.SRGB) }
                                 for(y in 0 until height step 512) for(x in 0 until width step 512) {
                                     execution.ensureActive()
-                                    val tile=decoder.decodeRegion(Rect(x,y,minOf(x+512,width),minOf(y+512,height)),options) ?: error("타일을 읽을 수 없습니다")
+                                    val tile=if(recipe.distortion==0f) decoder.decodeRegion(Rect(x,y,minOf(x+512,width),minOf(y+512,height)),options) ?: error("타일을 읽을 수 없습니다")
+                                    else DistortionRenderer.tile(decoder,distortion,x,y,minOf(512,width-x),minOf(512,height-y),options) {execution.ensureActive()}
                                     try { val rendered=gpu.render(tile,recipe,x,y,width,height)
                                         try { canvas.drawBitmap(rendered,x.toFloat(),y.toFloat(),null) } finally { rendered.recycle() }
                                     } finally { tile.recycle() }

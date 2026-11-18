@@ -93,6 +93,7 @@ object RecipeBaker {
     fun writeCube(recipe: Recipe,lut: Lut,writer: java.io.Writer) {
         val baked=bake(recipe,lut)
         writer.write("# Input: encoded sRGB. Apply ${recipe.inputTransform.name} before this LUT.\n")
+        writer.write("# Grain, vignette and manual distortion are excluded from this color LUT.\n")
         writer.write("TITLE \"beta7compact recipe\"\nLUT_3D_SIZE 33\nDOMAIN_MIN 0 0 0\nDOMAIN_MAX 1 1 1\n")
         for(i in baked.values.indices step 3) writer.write("${baked.values[i]} ${baked.values[i+1]} ${baked.values[i+2]}\n")
     }

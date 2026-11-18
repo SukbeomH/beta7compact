@@ -1,0 +1,8 @@
+Debug: 42 suites; {'tests': 346, 'failures': 0, 'errors': 0, 'skipped': 0}
+Release: 42 suites; {'tests': 346, 'failures': 0, 'errors': 0, 'skipped': 0}
+Room v1->v2->v3 and v2->v3 emitted SQL: fresh v3 schema matches; staged/completed keys, URIs, recipes and clocks preserved; hash NULL; integrity_check=ok.
+Room 1/2/3->4: fresh schema/index/FK match; original rows unchanged; recipes/results/jobs persist; integrity/FK checks pass.
+PASS: APK signature verified; certificate matches existing installations: eaf9514a8a00e3d029e98e772cf0185bfafd270645cb21bc057f198a2d9e23f8
+package: name='dev.sukbeomh.beta7compact' versionCode='20' versionName='0.8.7' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+APK SHA-256: 52474134897118f0e2c9e0f10aa3dc4143791719023a72008b2f34a34a53bbca
+lint: {'Fatal': 0, 'Error': 0, 'Warning': 17, 'Information': 1}
