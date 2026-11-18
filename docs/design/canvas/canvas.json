@@ -1,0 +1,251 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-16T05:25:18Z"
+  },
+  "title": "beta7compact 앱 화면",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 412,
+      "h": 915,
+      "title": "카메라 · 연결됨",
+      "is_interactive": true
+    },
+    "Camera-Disconnected.dc.html": {
+      "x": 492,
+      "y": 0,
+      "w": 412,
+      "h": 915,
+      "title": "카메라 · 미연결",
+      "is_interactive": true
+    },
+    "Camera-Pick.dc.html": {
+      "x": 984,
+      "y": 0,
+      "w": 412,
+      "h": 915,
+      "title": "사진 고르기",
+      "is_interactive": true
+    },
+    "Photos.dc.html": {
+      "x": 1476,
+      "y": 0,
+      "w": 412,
+      "h": 915,
+      "title": "사진",
+      "is_interactive": true
+    },
+    "Photo-Detail.dc.html": {
+      "x": 1968,
+      "y": 0,
+      "w": 412,
+      "h": 915,
+      "title": "사진 상세",
+      "is_interactive": true
+    },
+    "Editor.dc.html": {
+      "x": 2460,
+      "y": 0,
+      "w": 412,
+      "h": 915,
+      "title": "편집기",
+      "is_interactive": true
+    },
+    "Editor-Adjust.dc.html": {
+      "x": 2952,
+      "y": 0,
+      "w": 412,
+      "h": 915,
+      "title": "편집기 · 세부 조정",
+      "is_interactive": true
+    },
+    "Recipes.dc.html": {
+      "x": 3444,
+      "y": 0,
+      "w": 412,
+      "h": 915,
+      "title": "레시피",
+      "is_interactive": true
+    },
+    "Settings.dc.html": {
+      "x": 3936,
+      "y": 0,
+      "w": 412,
+      "h": 2240,
+      "title": "설정 · 스크롤 전체",
+      "is_interactive": true
+    },
+    "Wide-Camera.dc.html": {
+      "x": 0,
+      "y": 2660,
+      "w": 1104,
+      "h": 884,
+      "title": "펼침 · 카메라",
+      "is_interactive": true
+    },
+    "Wide-Photos.dc.html": {
+      "x": 1184,
+      "y": 2660,
+      "w": 1104,
+      "h": 884,
+      "title": "펼침 · 사진",
+      "is_interactive": true
+    },
+    "Wide-Editor.dc.html": {
+      "x": 2368,
+      "y": 2660,
+      "w": 1104,
+      "h": 884,
+      "title": "펼침 가로 · 편집기 (C) · 힌지 평평",
+      "is_interactive": true
+    },
+    "Wide-Recipes.dc.html": {
+      "x": 3552,
+      "y": 2660,
+      "w": 1104,
+      "h": 884,
+      "title": "펼침 · 레시피",
+      "is_interactive": true
+    },
+    "Tall-Editor.dc.html": {
+      "x": 0,
+      "y": 3964,
+      "w": 884,
+      "h": 1104,
+      "title": "펼침 세로 · 편집기 (B)",
+      "is_interactive": true
+    },
+    "Tall-Photo-Detail.dc.html": {
+      "x": 964,
+      "y": 3964,
+      "w": 884,
+      "h": 1104,
+      "title": "펼침 세로 · 사진 상세 (E)",
+      "is_interactive": true
+    },
+    "Tabletop-Editor.dc.html": {
+      "x": 1928,
+      "y": 3964,
+      "w": 1104,
+      "h": 884,
+      "title": "테이블탑 · 편집기 (D) · 힌지 30–150°",
+      "is_interactive": true
+    },
+    "Film-Icons.dc.html": {
+      "x": 4428,
+      "y": 0,
+      "w": 1000,
+      "h": 960,
+      "title": "필름 아이콘 시안 · 픽셀 아트"
+    },
+    "Film-Icons-Text.dc.html": {
+      "x": 5508,
+      "y": 0,
+      "w": 1000,
+      "h": 1300,
+      "title": "필름 아이콘 시안 · ISO·이름 포함"
+    },
+    "Pixel-Icons.dc.html": {
+      "x": 6588,
+      "y": 0,
+      "w": 1000,
+      "h": 680,
+      "title": "픽셀 아이콘 시안 · UI 아이콘"
+    },
+    "Photos-Select.dc.html": {
+      "x": 1476,
+      "y": 1035,
+      "w": 412,
+      "h": 915,
+      "title": "사진 · 선택 모드",
+      "is_interactive": true
+    },
+    "Photos-More.dc.html": {
+      "x": 1968,
+      "y": 1035,
+      "w": 412,
+      "h": 915,
+      "title": "사진 · 더보기 메뉴",
+      "is_interactive": true
+    },
+    "Editor-Curve.dc.html": {
+      "x": 2460,
+      "y": 1035,
+      "w": 412,
+      "h": 915,
+      "title": "편집기 · 톤커브",
+      "is_interactive": true
+    },
+    "Editor-Distortion.dc.html": {
+      "x": 2952,
+      "y": 1035,
+      "w": 412,
+      "h": 915,
+      "title": "편집기 · 왜곡",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Camera-Disconnected.dc.html",
+    "Camera-Pick.dc.html",
+    "Photos.dc.html",
+    "Photo-Detail.dc.html",
+    "Editor.dc.html",
+    "Editor-Adjust.dc.html",
+    "Recipes.dc.html",
+    "Settings.dc.html",
+    "Wide-Camera.dc.html",
+    "Wide-Photos.dc.html",
+    "Wide-Editor.dc.html",
+    "Wide-Recipes.dc.html",
+    "Tall-Editor.dc.html",
+    "Tall-Photo-Detail.dc.html",
+    "Tabletop-Editor.dc.html",
+    "Film-Icons.dc.html",
+    "Film-Icons-Text.dc.html",
+    "Pixel-Icons.dc.html",
+    "Photos-Select.dc.html",
+    "Photos-More.dc.html",
+    "Editor-Curve.dc.html",
+    "Editor-Distortion.dc.html"
+  ],
+  "notes": {
+    "row-folded": {
+      "x": 0,
+      "y": -300,
+      "text": "접힘 · 412 × 915dp",
+      "kind": "title1",
+      "maxW": 4348
+    },
+    "row-unfolded": {
+      "x": 0,
+      "y": 2360,
+      "text": "펼침 가로 · 평평하게 펼침 · 1104 × 884dp",
+      "kind": "title1",
+      "maxW": 4656
+    },
+    "row-tall": {
+      "x": 0,
+      "y": 3664,
+      "text": "펼침 세로 884 × 1104dp · 테이블탑(반쯤 접음) 1104 × 884dp",
+      "kind": "title1",
+      "maxW": 3032
+    },
+    "posture-rule": {
+      "x": 3112,
+      "y": 3964,
+      "w": 560,
+      "fill": "teal",
+      "text": "펼침 가로 vs 테이블탑\n\n창 크기는 같고(1104 × 884dp) 자세로 갈립니다. 동시에 선택되지 않습니다.\n\n· 테이블탑: 너비 ≥ 600dp + 기기 90°/270° 회전 + 힌지 각도 30–150°. 먼저 판정합니다.\n· 펼침 가로: 위 조건이 아니고 가로 창일 때(완전히 펼친 평평한 상태).\n· 힌지 센서가 없거나 각도를 모르면 펼침 가로로 남고, 편집 패널의 ‘테이블탑으로 보기’로 수동 전환합니다.\n\n테이블탑 배치는 편집기에만 있습니다. 카메라·사진·레시피 탭은 반쯤 접어도 펼침 가로 배치를 그대로 씁니다."
+    }
+  },
+  "designSystems": []
+}

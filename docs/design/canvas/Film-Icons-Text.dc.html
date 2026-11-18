@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>필름 아이콘 시안 · ISO·이름 포함</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:#8FD0B8}a:hover{color:#E8E8E8}
+</style>
+</helmet>
+<div style="width: 1000px; height: 1300px; box-sizing: border-box; padding: 32px; display: flex; flex-direction: column; gap: 20px; background: #121212; color: #E8E8E8; font-family: 'Noto Sans KR', Roboto, system-ui, sans-serif; font-size: 16px; line-height: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 400; line-height: 28px">필름 아이콘 시안 · ISO·이름 포함 · 32 × 32 픽셀 아트</h1>
+<div style="color: #A8A8A8; font-size: 14px; line-height: 20px">A안 파트로네의 띠를 넓혀 이름(위)과 ISO(아래, 2배 크기)를 3 × 5 픽셀 글자로 넣었습니다. 왼쪽은 확대(128dp), 오른쪽은 실제 썸네일 크기(72dp). 이름은 7자까지 들어가서 긴 이름은 줄였습니다.</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 16px">
+<sc-for list="{{ films }}" as="item" hint-placeholder-count="22">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: flex-end; gap: 8px">
+<svg role="img" aria-label="{{ item.label }}" viewBox="0 0 32 32" width="128" height="128" style="shape-rendering: crispEdges">
+<rect x="11" y="1" width="8" height="2" fill="#5A5A5A"></rect>
+<rect x="1" y="3" width="28" height="3" fill="#B8B8B8"></rect>
+<rect x="1" y="6" width="28" height="22" fill="{{ item.body }}"></rect>
+<rect x="1" y="8" width="28" height="18" fill="{{ item.band }}"></rect>
+<rect x="1" y="28" width="28" height="3" fill="#B8B8B8"></rect>
+<rect x="29" y="9" width="3" height="16" fill="#4A3526"></rect>
+<rect x="30" y="11" width="1" height="2" fill="#D9C7B0"></rect>
+<rect x="30" y="16" width="1" height="2" fill="#D9C7B0"></rect>
+<rect x="30" y="21" width="1" height="2" fill="#D9C7B0"></rect>
+<path d="{{ item.nameD }}" fill="{{ item.mark }}"></path>
+<path d="{{ item.isoD }}" fill="{{ item.mark }}"></path>
+</svg>
+<div style="width: 72px; height: 72px; box-sizing: border-box; border: 1px solid #3D3D3D; border-radius: 8px; padding: 3px; display: flex">
+<svg aria-hidden="true" viewBox="0 0 32 32" width="64" height="64" style="shape-rendering: crispEdges">
+<rect x="11" y="1" width="8" height="2" fill="#5A5A5A"></rect>
+<rect x="1" y="3" width="28" height="3" fill="#B8B8B8"></rect>
+<rect x="1" y="6" width="28" height="22" fill="{{ item.body }}"></rect>
+<rect x="1" y="8" width="28" height="18" fill="{{ item.band }}"></rect>
+<rect x="1" y="28" width="28" height="3" fill="#B8B8B8"></rect>
+<rect x="29" y="9" width="3" height="16" fill="#4A3526"></rect>
+<rect x="30" y="11" width="1" height="2" fill="#D9C7B0"></rect>
+<rect x="30" y="16" width="1" height="2" fill="#D9C7B0"></rect>
+<rect x="30" y="21" width="1" height="2" fill="#D9C7B0"></rect>
+<path d="{{ item.nameD }}" fill="{{ item.mark }}"></path>
+<path d="{{ item.isoD }}" fill="{{ item.mark }}"></path>
+</svg>
+</div>
+</div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500">{{ item.name }}</div>
+<div style="font-size: 11px; line-height: 16px; color: #A8A8A8">{{ item.caption }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":1300}}'>
+class Component extends DCLogic {
+renderVals() {
+const FONT = {
+'A': '010101111101101', 'C': '011100100100011', 'D': '110101101101110',
+'E': '111100110100111', 'G': '011100101101011', 'H': '101101111101101',
+'I': '111010010010111', 'K': '101101110101101', 'L': '100100100100111',
+'M': '101111111101101', 'N': '110101101101101', 'O': '010101101101010',
+'P': '110101110100100', 'R': '110101110101101', 'S': '011100010001110',
+'T': '111010010010010', 'U': '101101101101111', 'V': '101101101101010',
+'X': '101101010101101', '-': '000000111000000',
+'0': '111101101101111', '1': '010110010010111', '2': '111001111100111',
+'3': '111001111001111', '4': '101101111001001', '5': '111100111001111',
+'6': '111100111101111', '8': '111101111101111', '9': '111101111001111'
+};
+const textPath = (text, top, scale) => {
+const width = (text.length * 4 - 1) * scale;
+const left = 1 + Math.floor((28 - width) / 2);
+let d = '';
+for (let i = 0; i !== text.length; i++) {
+const bits = FONT[text[i]] || '';
+for (let b = 0; b !== bits.length; b++) {
+if (bits[b] === '1') {
+const x = left + (i * 4 + (b % 3)) * scale;
+const y = top + Math.floor(b / 3) * scale;
+d += 'M' + x + ' ' + y + 'h' + scale + 'v' + scale + 'h-' + scale + 'z';
+}
+}
+}
+return d;
+};
+const Y = '#F4C430';
+const G = '#2E9E5B';
+const W = '#F2F2F2';
+const K = '#1C1C1C';
+const film = (name, group, short, iso, body, band, mark) => ({
+name: name,
+caption: group + ' · ' + short + ' / ' + iso,
+label: name + ' 아이콘, 이름 ' + short + ', ISO ' + iso,
+body: body,
+band: band,
+mark: mark,
+nameD: textPath(short, 9, 1),
+isoD: textPath(iso, 15, 2)
+});
+return {
+films: [
+film('Portra 160', '네거', 'PORTRA', '160', Y, '#B9A3E3', '#3B2A63'),
+film('Portra 400', '네거', 'PORTRA', '400', Y, '#7E5BC2', W),
+film('Portra 800', '네거', 'PORTRA', '800', Y, '#4B2E83', W),
+film('Ektar 100', '네거', 'EKTAR', '100', Y, '#C62828', W),
+film('Gold 200', '네거', 'GOLD', '200', Y, '#F28C28', '#5A2E00'),
+film('Pro 400H', '네거', 'PRO-H', '400', G, '#C79BD6', '#3B2A63'),
+film('Superia X-Tra 400', '네거', 'SUPERIA', '400', G, '#1B3F8F', W),
+film('Vista 100', '네거', 'VISTA', '100', '#E8452C', '#1D4E9E', W),
+film('Velvia 50', '슬라이드', 'VELVIA', '50', G, '#B0206A', W),
+film('Provia 100F', '슬라이드', 'PROVIA', '100', G, '#4FA3E0', K),
+film('Astia 100F', '슬라이드', 'ASTIA', '100', G, '#E8C9A0', K),
+film('Sensia 100', '슬라이드', 'SENSIA', '100', G, '#8E7CC3', W),
+film('Kodachrome 64', '슬라이드', 'KCHROME', '64', '#E53935', Y, K),
+film('Ektachrome 100D', '슬라이드', 'ECHROME', '100', Y, '#1E63B5', W),
+film('Vision3 250D + 2383', '시네마', '2383', '250', '#3A3A3A', Y, K),
+film('Vision3 250D + 2393', '시네마', '2393', '250', '#3A3A3A', '#F28C28', K),
+film('Vision3 250D + 3513', '시네마', '3513', '250', '#3A3A3A', G, W),
+film('Tri-X 400', '흑백', 'TRI-X', '400', Y, '#222222', W),
+film('HP5 Plus 400', '흑백', 'HP5', '400', W, '#2FA84F', K),
+film('Delta 100', '흑백', 'DELTA', '100', W, '#3FB4C8', K),
+film('Neopan Acros 100', '흑백', 'ACROS', '100', K, G, W),
+film('APX 100', '흑백', 'APX', '100', '#E8452C', W, K)
+]
+};
+}
+}
+</script>
+</body>
+</html>
