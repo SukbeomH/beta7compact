@@ -72,12 +72,13 @@ import kotlinx.coroutines.withContext
         title = { Text("AF·단발 촬영 실험") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("원형 α7C(ILCE-7C)용 미검증 실험 기능입니다. 기존 읽기 전용 진단과 달리 렌즈가 움직일 수 있고, 단발 촬영을 선택하면 실제 셔터가 작동해 사진이 카드에 저장될 수 있습니다.")
+                Text("Sony 카메라용 미검증 실험 기능입니다. 원형 α7C(ILCE-7C) 이외 기종도 실행할 수 있으나 호환성이 확인되지 않았습니다. 렌즈가 움직이거나 실제 셔터가 작동해 사진이 카드에 저장될 수 있습니다.")
                 Text("Sony 연결 과정에서 카메라 모드가 바뀔 수 있습니다. 완료 뒤 PC Remote 끄기·MTP 선택 또는 USB 재연결이 필요할 수 있습니다.")
                 TextButton(onClick = { guideExpanded = !guideExpanded }) {
                     Text("카메라 설정·테스트 안내 · ${if (guideExpanded) "접기" else "펼치기"}")
                 }
                 if (guideExpanded) {
+                    Text("아래 설정은 원형 α7C 기준입니다. 다른 기종은 카메라 설명서에서 PC Remote 설정을 확인하세요.")
                     Text("• 스마트폰 제어 끔 → PC Remote 켬 → 연결 방법 USB\n" +
                         "• 정지사진 M/P/A/S 모드, 단일 촬영, Bulb 이외의 셔터속도\n" +
                         "• PC Remote 정지 이미지 저장 위치: 카메라만. 기록 가능한 카드를 준비하세요.\n" +
@@ -95,8 +96,8 @@ import kotlinx.coroutines.withContext
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = acknowledged, onCheckedChange = { acknowledged = it }, enabled = enabled && !busy && !confirmCapture)
                     Text(if (action == CaptureExperimentAction.AUTOFOCUS)
-                        "렌즈 동작과 모드 변경 가능성을 확인했고, 이번 AF 실험을 실행합니다."
-                    else "실제 촬영·카드 저장과 모드 변경 가능성을 확인했고, 이번 단발 촬영 실험을 실행합니다.",
+                        "기종별 호환성 미확인, 렌즈 동작과 모드 변경 가능성을 확인했고, 이번 AF 실험을 실행합니다."
+                    else "기종별 호환성 미확인, 실제 촬영·카드 저장과 모드 변경 가능성을 확인했고, 이번 단발 촬영 실험을 실행합니다.",
                         modifier = Modifier.weight(1f))
                 }
                 if (!enabled) Text("사진 가져오기가 끝난 뒤 실행하세요.")

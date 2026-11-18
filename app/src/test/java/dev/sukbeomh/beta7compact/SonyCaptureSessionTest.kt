@@ -23,6 +23,7 @@ class SonyCaptureSessionTest {
         handle?.let { buffer(4).putInt(it).array() } ?: byteArrayOf()).encode()
 
     private inner class Peer(val mode3: Boolean = false) : SonyCaptureTransport {
+        var model = "ILCE-7C"
         var opcode = true
         var controlsAdvertised = true
         val controlCalls = mutableListOf<SonyCaptureCommand>()
@@ -61,7 +62,7 @@ class SonyCaptureSessionTest {
         override suspend fun exchange(operation: SonySessionOperation): ByteArray = when (operation) {
             SonySessionOperation.DEVICE_INFO -> buffer(8).putShort(100).putInt(17).putShort(100).array() +
                 byteArrayOf(0, 0, 0) + codes(0x9201, 0x9202, 0x9209, if (opcode) 0x9207 else 0x1001) +
-                codes() + codes() + codes() + codes() + text("Sony") + text("ILCE-7C") + text("synthetic") + text("")
+                codes() + codes() + codes() + codes() + text("Sony") + text(model) + text("synthetic") + text("")
             SonySessionOperation.EXTENDED_INFO -> buffer(2).putShort(if (mode3) 0x12c else 0xc8).array() +
                 codes() + if (controlsAdvertised) codes(0xd2c1, 0xd2c2) else codes()
             SonySessionOperation.PROPERTY_SNAPSHOT -> { snapshotHook(); properties() }
@@ -92,6 +93,14 @@ class SonyCaptureSessionTest {
         assertTrue(peer.clock >= 3000)
         assertFailsWith<IllegalStateException> { session.autofocus() }
         session.close(); assertEquals(1, peer.closed)
+    }
+
+    @Test fun otherSonyModelStillRequiresSafeCaptureProfile() = runBlocking {
+        val peer = Peer().apply { model = "ILCE-7CM2"; overrides[0x5013] = 4 to 2L }
+        val session = peer.session(); session.connect()
+        assertFailsWith<SonyCaptureEligibilityException> { session.autofocus() }
+        assertTrue(peer.controlCalls.isEmpty())
+        session.close()
     }
 
     @Test fun singleCaptureReleasesBeforeObservationAndNeverClaimsSavedImage() = runBlocking {

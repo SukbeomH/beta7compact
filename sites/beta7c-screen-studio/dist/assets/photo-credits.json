@@ -1,0 +1,23 @@
+[
+  {
+    "id": "street",
+    "source": "https://unsplash.com/photos/a-street-in-seoul-with-buildings-and-signs-iSxnJ9h3xnU",
+    "image": "https://images.unsplash.com/photo-1748838309706-efb8d72337dd?auto=format&fit=crop&w=1400&q=85",
+    "license": "Unsplash License",
+    "role": "demo photo, not a user photo"
+  },
+  {
+    "id": "cafe",
+    "source": "https://unsplash.com/photos/a-storefront-with-large-windows-and-wooden-doors-GYXy7F92DUY",
+    "image": "https://images.unsplash.com/photo-1772331274672-a5eecb4c6498?auto=format&fit=crop&w=1400&q=85",
+    "license": "Unsplash License",
+    "role": "demo photo, not a user photo"
+  },
+  {
+    "id": "forest",
+    "source": "https://unsplash.com/photos/trees-and-a-river-with-a-bridge-in-the-distance-tWbfYhKGpZ8",
+    "image": "https://images.unsplash.com/photo-1777647131724-34f238303bfc?auto=format&fit=crop&w=1400&q=85",
+    "license": "Unsplash License",
+    "role": "demo photo, not a user photo"
+  }
+]
