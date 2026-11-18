@@ -1,5 +1,7 @@
 # D1 정보 구조(IA) 제안
 
+> 이 문서는 초기 D1 설계 제안입니다. 화면 문구와 기능은 이후 변경됐습니다. 0.8.8 기준 웹 재현은 [Screen Studio](../../sites/beta7c-screen-studio/README.md), 현재 기능은 [프로젝트 README](../../README.md)를 참고하세요.
+
 근거: [RESEARCH.md](RESEARCH.md) §1 문제 P1–P12, §6 원칙.
 
 ## 1. 최상위 내비게이션 (4개 목적지)
