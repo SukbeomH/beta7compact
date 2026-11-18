@@ -15,6 +15,7 @@ import androidx.work.WorkManager
 import dev.sukbeomh.beta7compact.*
 import dev.sukbeomh.beta7compact.R
 import dev.sukbeomh.beta7compact.core.*
+import dev.sukbeomh.beta7compact.library.isExternal
 import dev.sukbeomh.beta7compact.library.Photo
 import dev.sukbeomh.beta7compact.recipe.Recipe
 import dev.sukbeomh.beta7compact.recipe.RecipeWorker
@@ -80,7 +81,7 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
     val records by app.db.photos().observe().collectAsStateWithLifecycle(emptyList())
     val work by remember { WorkManager.getInstance(app).getWorkInfosForUniqueWorkFlow(ImportWorker.NAME) }.collectAsStateWithLifecycle(emptyList())
     val working = work.any { !it.state.isFinished }
-    val completed = records.filter { it.imported != null }.flatMap { it.cameraObject().compatibleKeys }.toSet()
+    val completed = records.filter { it.imported != null && !it.isExternal }.flatMap { it.cameraObject().compatibleKeys }.toSet()
     val device = remember(refresh) { runCatching { UsbAccess.device(app) }.getOrNull() }
     val permission = device?.let { app.getSystemService(UsbManager::class.java).hasPermission(it) } == true
     val mtp = device?.let { camera -> (0 until camera.interfaceCount).any { camera.getInterface(it).interfaceClass == 6 } } == true

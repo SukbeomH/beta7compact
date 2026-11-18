@@ -2,6 +2,9 @@ package dev.sukbeomh.beta7compact.ui
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import dev.sukbeomh.beta7compact.recipe.RecipeWorker
 import android.graphics.Bitmap
 import android.net.Uri
@@ -52,13 +55,51 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
     var filter by rememberSaveable { mutableStateOf("전체") }
     val scope = rememberCoroutineScope()
     var error by remember { mutableStateOf<PhotoError?>(null) }
+    var adding by remember { mutableStateOf(false) }
+    var addStatus by remember { mutableStateOf<String?>(null) }
+    var addJob by remember { mutableStateOf<Job?>(null) }
+    fun addImages(uris: List<Uri>) {
+        if(uris.isEmpty() || adding) return
+        if(uris.size>ExternalImagePolicy.MAX_ITEMS) {
+            error=PhotoError("한 번에 50장까지 추가할 수 있습니다", "확인", {error=null});return
+        }
+        adding=true
+        addJob=scope.launch {
+            var added=0;var duplicate=0;var failed=0
+            try {
+                for((index,uri) in uris.distinct().withIndex()) {
+                    addStatus="사진 추가 중 · ${index+1}/${uris.distinct().size}"
+                    try {
+                        val (key,result)=ExternalPhotoImporter.add(app,uri)
+                        if(result==ExternalPhotoImporter.Result.ADDED) added++ else duplicate++
+                        focused=key
+                    } catch(e: CancellationException) {throw e}
+                    catch(e: Exception) {failed++}
+                    catch(e: OutOfMemoryError) {failed++}
+                }
+                filter="전체"
+                addStatus="추가 ${added}장 · 이미 있음 ${duplicate}장" + if(failed>0) " · 실패 ${failed}장" else ""
+                if(failed>0) error=PhotoError("추가하지 못한 사진은 지원 형식·64MiB 한도·읽기 권한을 확인해 주세요", "확인", {error=null})
+                if(added>0 || duplicate>0) gridState.requestScrollToItem(0)
+            } catch(e: CancellationException) {
+                addStatus="사진 추가 중단 · 완료된 사진은 목록에 유지됩니다"
+                throw e
+            } finally {adding=false;addJob=null}
+        }
+    }
+    val photoPicker=rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(ExternalImagePolicy.MAX_ITEMS),::addImages)
+    val filePicker=rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments(),::addImages)
+    fun pickPhotos() {
+        try {photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))}
+        catch(e: Exception) {error=PhotoError("사진 선택기를 열 수 없습니다. 더보기에서 파일로 추가해 주세요", "확인", {error=null})}
+    }
     // Existing per-photo result flows preserve Room v4 and react to completed exports.
     val results by remember(photos.map { it.key }) {
         if (photos.isEmpty()) flowOf(emptyList<RecipeResult>())
         else combine(photos.map { app.db.recipes().results(it.key) }) { rows -> rows.flatMap { it } }
     }.collectAsStateWithLifecycle(emptyList())
     val edited = results.map { it.photoKey }.toSet()
-    val visible = photos.filter { when (filter) { "미편집" -> it.key !in edited; "편집됨" -> it.key in edited; "RAW" -> it.name.endsWith(".arw", true); else -> true } }
+    val visible = photos.filter { when (filter) { "미편집" -> it.key !in edited; "편집됨" -> it.key in edited; "RAW" -> it.name.endsWith(".arw", true); "외부" -> it.isExternal; else -> true } }
     val photo = photos.firstOrNull { it.key == focused } ?: visible.firstOrNull()
     val selection = resolvePhotoSelection(selected, photos.map { it.key }.toSet(), visible.map { it.key }.toSet())
     val keys = selection.keys
@@ -85,7 +126,7 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
         LazyVerticalGrid(if (wide && !portrait) GridCells.Adaptive(128.dp) else GridCells.Fixed(3), modifier, state = gridState, horizontalArrangement = Arrangement.spacedBy(2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             items(visible, key = { it.key }) { item ->
                 PhotoTile(item.name, photoThumbnail(app, item.uri), item.key in keys,
-                    badge = if (item.name.endsWith(".arw", true)) "RAW" else "", edited = item.key in edited,
+                    badge = if (item.isExternal) "외부" else if (item.name.endsWith(".arw", true)) "RAW" else "", edited = item.key in edited,
                     onLongClick = { selectionMode = true; selected = (selected + item.key).distinct(); focused = item.key }) {
                     focused = item.key
                     if (selectionMode) selected = if (item.key in selected) selected - item.key else selected + item.key
@@ -149,15 +190,27 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
     }
     @Composable fun ListTools() {
         ScreenTitle("사진 · ${photos.size}장") {
-            if (!selectionMode) TextButton(onClick = {selectionMode = true; selected = emptyList()}) {Text("선택")}
+            if (!selectionMode) TextButton(onClick = ::pickPhotos,enabled=!adding) {Text("사진 추가")}
             Box {
                 TextButton(onClick = {moreActions = true}) {Text("더보기")}
                 DropdownMenu(expanded = moreActions, onDismissRequest = {moreActions = false}) {
+                    DropdownMenuItem(text = {Text("사진 선택")},enabled=!selectionMode,onClick={moreActions=false;selectionMode=true;selected=emptyList()})
+                    DropdownMenuItem(text = {Text("파일에서 사진 추가")},enabled=!adding && !selectionMode,onClick={
+                        moreActions=false
+                        try {filePicker.launch(arrayOf("image/*"))}
+                        catch(e: Exception) {error=PhotoError("파일 선택기를 열 수 없습니다", "확인", {error=null})}
+                    })
+                    DropdownMenuItem(text = {Text("카메라에서 가져오기")},onClick={moreActions=false;camera()})
                     DropdownMenuItem(text = {Text("보정 사진 저장 재개")}, onClick = {moreActions = false; resumeSave()})
                 }
             }
         }
-        ChipStrip(listOf("전체", "미편집", "편집됨", "RAW"), filter) {filter = it}
+        if(adding) {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+            TextButton(onClick={addJob?.cancel()}) {Text("사진 추가 중단")}
+        }
+        addStatus?.let {Text(it,Modifier.semantics {liveRegion=LiveRegionMode.Polite},style=MaterialTheme.typography.bodySmall)}
+        ChipStrip(listOf("전체", "미편집", "편집됨", "RAW", "외부"), filter) {filter = it}
         error?.let {failure -> ErrorBanner(failure.message, failure.actionLabel, {error = null; failure.retry()}) {error = null}}
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -180,12 +233,12 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
                 ListTools()
                 if (selectionMode) {
                     Box(Modifier.weight(1f).fillMaxWidth()) {
-                        if (photos.isEmpty()) EmptyState("아직 가져온 사진이 없어요", "카메라를 연결해 원본을 가져오세요.", "카메라 탭으로", camera)
+                        if (photos.isEmpty()) EmptyState("아직 추가한 사진이 없어요", "폰 사진을 추가하거나 더보기에서 카메라 원본을 가져오세요.", "사진 추가", {if(!adding) pickPhotos()})
                         else if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "선택한 사진은 유지됩니다. 전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
                         else Grid(Modifier.fillMaxSize(), wide, portrait)
                     }
                     SelectionActions()
-                } else if (photos.isEmpty()) EmptyState("아직 가져온 사진이 없어요", "카메라를 연결해 원본을 가져오세요.", "카메라 탭으로", camera)
+                } else if (photos.isEmpty()) EmptyState("아직 추가한 사진이 없어요", "폰 사진을 추가하거나 더보기에서 카메라 원본을 가져오세요.", "사진 추가", {if(!adding) pickPhotos()})
                 else if (visible.isEmpty()) EmptyState("이 필터에 사진이 없어요", "전체 사진을 확인해 보세요.", "전체 보기", { filter = "전체" })
                 else if (!wide || portrait) {
                     Grid(Modifier.weight(1f), wide, portrait)
@@ -194,7 +247,7 @@ private data class PhotoError(val message: String, val actionLabel: String, val 
     }
 }
 internal fun openPhoto(app: App, uri: String) {
-    app.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(uri), "image/jpeg").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))
+    app.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(Uri.parse(uri), app.contentResolver.getType(Uri.parse(uri)) ?: "image/*").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION))
 }
 internal fun sharePhotos(app: App, uris: List<Uri>) {
     if (uris.isEmpty()) return

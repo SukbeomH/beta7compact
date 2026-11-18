@@ -81,7 +81,7 @@ object PhotoRenderer {
     }
     /** [copyTags] false writes only the tags this app sets, for sources whose EXIF cannot be carried over. */
     private fun copyExif(source: File, output: File, width: Int, height: Int, copyTags: Boolean) {
-        val from=ExifInterface(source);val to=ExifInterface(output)
+        val from=runCatching { ExifInterface(source) }.getOrNull();val to=ExifInterface(output)
         // Copy readable platform EXIF tags, excluding offsets, dimensions, orientation and stale thumbnail.
         // The maker note is left out: Sony's is tens of kilobytes and pushed the segment past JPEG's 64 KB limit.
         val structural=setOf("MakerNote","ImageWidth","ImageLength","PixelXDimension","PixelYDimension","Orientation","Software",
@@ -89,7 +89,7 @@ object PhotoRenderer {
             "Compression","PhotometricInterpretation","SamplesPerPixel","BitsPerSample","PlanarConfiguration",
             "TransferFunction","WhitePoint","PrimaryChromaticities","YCbCrCoefficients","YCbCrSubSampling",
             "YCbCrPositioning","ReferenceBlackWhite","ColorSpace","DefaultCropSize","DNGVersion","NewSubfileType","SubfileType")
-        if(copyTags) ExifInterface::class.java.fields.filter { it.name.startsWith("TAG_") && !it.name.contains("THUMBNAIL") && it.type==String::class.java }.forEach { field ->
+        if(copyTags && from!=null) ExifInterface::class.java.fields.filter { it.name.startsWith("TAG_") && !it.name.contains("THUMBNAIL") && it.type==String::class.java }.forEach { field ->
             val tag=field.get(null) as String
             if(tag !in structural) from.getAttribute(tag)?.takeIf { it.length<=JpegFile.MAX_TAG_CHARS }?.let { to.setAttribute(tag,it) }
         }

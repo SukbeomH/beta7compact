@@ -30,7 +30,7 @@ interface PhotoDao {
     @Query("SELECT * FROM photos") suspend fun all(): List<Photo>
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(photos: List<Photo>)
     @Transaction suspend fun enqueue(photos: List<Photo>) {
-        val rows = all().toMutableList()
+        val rows = all().filterNot { it.isExternal }.toMutableList()
         val known = rows.flatMap { it.cameraObject().compatibleKeys }.toMutableSet()
         for (photo in photos.distinctBy { it.key }) {
             val obj = photo.cameraObject()
@@ -79,8 +79,8 @@ abstract class LibraryDb : RoomDatabase() {
 }
 class RoomJournal(private val dao: PhotoDao,
     private val onComplete: (suspend (String, String, Long) -> Unit)? = null) : ImportJournal {
-    override suspend fun pending() = dao.pending().map { it.cameraObject() }
-    override suspend fun completedItems() = dao.all().filter { it.imported != null }.map { it.cameraObject() }
+    override suspend fun pending() = dao.pending().filterNot { it.isExternal }.map { it.cameraObject() }
+    override suspend fun completedItems() = dao.all().filter { it.imported != null && !it.isExternal }.map { it.cameraObject() }
     override suspend fun contentHash(key: String) = dao.get(key)?.contentHash
     override suspend fun hashed(key: String, hash: String) = dao.hashed(key, hash)
     override suspend fun uri(key: String) = dao.get(key)?.uri

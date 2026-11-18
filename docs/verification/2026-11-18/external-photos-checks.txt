@@ -1,0 +1,7 @@
+Debug: 43 suites; {'tests': 355, 'failures': 0, 'errors': 0, 'skipped': 0}
+Release: 43 suites; {'tests': 355, 'failures': 0, 'errors': 0, 'skipped': 0}
+Room v1->v2->v3 and v2->v3 emitted SQL: fresh v3 schema matches; staged/completed keys, URIs, recipes and clocks preserved; hash NULL; integrity_check=ok.
+Room 1/2/3->4: fresh schema/index/FK match; original rows unchanged; recipes/results/jobs persist; integrity/FK checks pass.
+PASS: APK signature verified; certificate matches existing installations: eaf9514a8a00e3d029e98e772cf0185bfafd270645cb21bc057f198a2d9e23f8
+APK SHA-256: 832f6a8fab2b0ac65f3dbe7ebf55064910e497f1818e75018e8922f5901f2f40
+lint: {'Fatal': 0, 'Error': 0, 'Warning': 17, 'Information': 1}
