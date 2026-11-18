@@ -83,12 +83,15 @@ internal fun bleShareText(version: String, searched: Boolean, report: ScanReport
         }
     }
     fun toggle(on: Boolean) {
+        // Permission for the unlock write covers one run: it is cleared whenever the switch changes.
+        val allowed = unlock
+        unlock = false
         if (!on) app.stopService(Intent(app, LocationService::class.java))
         else activity.requestBle { granted ->
             if (!granted) message = "정확한 위치·Bluetooth·알림 권한을 허용하세요"
             else try {
                 scanJob?.cancel()
-                ContextCompat.startForegroundService(activity, Intent(activity, LocationService::class.java).putExtra("unlock", unlock))
+                ContextCompat.startForegroundService(activity, Intent(activity, LocationService::class.java).putExtra("unlock", allowed))
             } catch (e: Exception) { message = "앱을 연 상태에서 위치 전송을 켜세요" }
         }
     }

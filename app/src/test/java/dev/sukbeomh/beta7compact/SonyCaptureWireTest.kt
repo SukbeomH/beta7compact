@@ -28,7 +28,7 @@ class SonyCaptureWireTest {
                 dataHook()
                 if (shortData) return bytes.size - 1
                 pending = controlReply(packet)
-            } else if (packet.code != 0x9207) {
+            } else if (packet.code != 0x9207 && packet.code != 0x9205) {
                 pending = PtpContainer(3, 0x2001, packet.transaction, byteArrayOf()).encode()
             }
             return bytes.size
@@ -88,6 +88,21 @@ class SonyCaptureWireTest {
         expected.forEachIndexed { index, bytes -> assertContentEquals(hex(bytes), wire.writes[index + 1]) }
         client.exchange(SonySessionOperation.CLOSE_SESSION)
         assertEquals(5, PtpContainer.decode(wire.writes.last()).transaction)
+    }
+
+    @Test fun priorityWriteIsOneByteOnItsOwnOpcodeAndNeedsItsOwnPermission() = runBlocking {
+        val closed = SonySessionWireTransport(Wire(), allowCaptureControls = true)
+        closed.exchange(SonySessionOperation.OPEN_SESSION)
+        assertFailsWith<IllegalStateException> { closed.set(SonySettingCommand.PRIORITY_APPLICATION) }
+        val wire = Wire()
+        val client = SonySessionWireTransport(wire, allowCaptureControls = true, allowPriorityWrite = true)
+        client.exchange(SonySessionOperation.OPEN_SESSION)
+        client.set(SonySettingCommand.PRIORITY_APPLICATION); client.set(SonySettingCommand.PRIORITY_CAMERA)
+        val expected = listOf(
+            "10 00 00 00 01 00 05 92 01 00 00 00 5a d2 00 00", "0d 00 00 00 02 00 05 92 01 00 00 00 01",
+            "10 00 00 00 01 00 05 92 02 00 00 00 5a d2 00 00", "0d 00 00 00 02 00 05 92 02 00 00 00 00",
+        )
+        expected.forEachIndexed { index, bytes -> assertContentEquals(hex(bytes), wire.writes[index + 1]) }
     }
 
     @Test fun rejectedResponsePreservesCodeAndAllowsExplicitReleaseAttempt() = runBlocking {

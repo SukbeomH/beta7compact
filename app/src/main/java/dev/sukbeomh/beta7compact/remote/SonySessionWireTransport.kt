@@ -18,6 +18,7 @@ class SonySessionWireTransport(
     private val wire: SonyRemoteWire,
     private val transactionTimeoutMillis: Int = 30_000,
     private val allowCaptureControls: Boolean = false,
+    private val allowPriorityWrite: Boolean = false,
     private val clockMillis: () -> Long = { System.nanoTime() / 1_000_000 },
 ) : SonyCaptureTransport {
     private val lock = Mutex()
@@ -50,6 +51,13 @@ class SonySessionWireTransport(
         check(opened && !closed && !broken) { "Capture control requires an owned usable session" }
         execute(0x9207, listOf(command.propertyCode), receivesData = false,
             outgoingData = buffer(2).putShort(command.value.toShort()).array())
+        Unit
+    }
+
+    override suspend fun set(command: SonySettingCommand) = lock.withLock {
+        check(allowCaptureControls && allowPriorityWrite) { "Setting writes are not enabled on this transport" }
+        check(opened && !closed && !broken) { "Setting write requires an owned usable session" }
+        execute(0x9205, listOf(command.propertyCode), receivesData = false, outgoingData = byteArrayOf(command.value.toByte()))
         Unit
     }
 

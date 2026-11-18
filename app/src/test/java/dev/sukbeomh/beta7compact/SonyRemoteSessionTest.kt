@@ -278,4 +278,34 @@ class SonyRemoteSessionTest {
         assertEquals(SonyRemoteSessionState.OBSERVING, session.state)
         session.close()
     }
+
+    @Test fun emptyExtendedInfoIsRequestedAgainUntilTheCameraAnswers() = runBlocking {
+        val fake = Fake(); var asked = 0; val waits = mutableListOf<Long>()
+        fake.extended = byteArrayOf()
+        fake.exchangeHook = { if (it == SonySessionOperation.EXTENDED_INFO && ++asked == 3) fake.extended = ext2 }
+        val session = SonyRemoteSession(fake) { waits += it }
+        assertEquals(SonyProtocolVersion.MODE_2, session.connect().extendedInfo.protocolVersion)
+        assertEquals(3, fake.calls.count { it == SonySessionOperation.EXTENDED_INFO }); assertEquals(listOf(50L, 50L), waits)
+        session.close()
+    }
+
+    @Test fun extendedInfoThatStaysEmptyFailsAfterBoundedRetries() = runBlocking {
+        val fake = Fake().apply { extended = byteArrayOf() }
+        val session = SonyRemoteSession(fake) {}
+        assertFailsWith<IllegalArgumentException> { session.connect() }
+        assertEquals(11, fake.calls.count { it == SonySessionOperation.EXTENDED_INFO })
+        assertEquals(SonyRemoteSessionState.FAILED, session.state); assertEquals(1, fake.closes)
+    }
+
+    @Test fun diagnosticKeepsOnlyTheListedConditionPropertiesAndSaysWhenOneIsMissing() {
+        fun property(code: Int, type: Int, value: Long) = SonyPropertyDescriptor(code, type, 0x01, 1,
+            java.math.BigInteger.ZERO, java.math.BigInteger.valueOf(value), SonyPropertyForm.None)
+        val lines = RemoteDiagnosticReport.conditions(listOf(property(0xd25a, 2, 0), property(0xd222, 4, 0x11),
+            property(0x5007, 4, 0x190), property(0xd215, 4, 0x8001), property(0xd215, 4, 0)))
+        assertEquals(RemoteDiagnosticReport.CONDITION_CODES.size, lines.size)
+        assertContains(lines, "0xD25A type=0x0002 getset=0x01 enabled=1 value=0x0")
+        assertContains(lines, "0xD222 type=0x0004 getset=0x01 enabled=1 value=0x11")
+        assertContains(lines, "0xD215 중복 2"); assertContains(lines, "0xD221 없음")
+        assertTrue(lines.none { it.startsWith("0x5007") })
+    }
 }

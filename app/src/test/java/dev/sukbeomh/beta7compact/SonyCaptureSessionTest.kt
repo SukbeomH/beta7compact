@@ -34,6 +34,18 @@ class SonyCaptureSessionTest {
         var full = false
         var focus = ArrayDeque(listOf(1L, 2L))
         var focusFallback = 2L
+        var idleFocus = 1L
+        var priorityAccess = 1
+        var priorityAccepted = true
+        var restoreFails = false
+        var restoreIgnored = false
+        val sets = mutableListOf<SonySettingCommand>()
+        fun session(claim: Boolean) = SonyCaptureSession(this, { clock }, { clock += it; waitCalls++ }, claim)
+        override suspend fun set(command: SonySettingCommand) {
+            sets += command
+            if (command == SonySettingCommand.PRIORITY_CAMERA) { if (restoreFails) throw java.io.IOException("restore"); if (restoreIgnored) return }
+            if (priorityAccepted) overrides[0xd25a] = (overrides[0xd25a]?.first ?: 2) to command.value.toLong()
+        }
         var access = 0x81
         var enabled = 1
         val overrides = mutableMapOf<Int, Pair<Int, Long>>()
@@ -49,14 +61,14 @@ class SonyCaptureSessionTest {
             val props = linkedMapOf(
                 0x5013 to (varyingType to 1L), 0x500a to (4 to 2L), 0x500e to (varyingType to 1L),
                 0xd25a to (2 to 1L), 0xd222 to (4 to 0x10L), 0xd215 to (4 to 0L),
-                0xd213 to (2 to if (half) (focus.removeFirstOrNull() ?: focusFallback) else 1L),
+                0xd213 to (2 to if (half) (focus.removeFirstOrNull() ?: focusFallback) else idleFocus),
                 0xd20d to (6 to 0x0001007dL), 0xd2c1 to (4 to if (half) 2L else 1L),
                 0xd2c2 to (4 to 1L),
             )
             props.putAll(overrides)
             omitted.forEach { props.remove(it) }
             return buffer(8).putInt(props.size).putInt(0).array() + props.entries.fold(byteArrayOf()) { a, (code, pair) ->
-                a + descriptor(code, pair.first, pair.second, if (code in listOf(0xd2c1, 0xd2c2)) access else 0, enabled)
+                a + descriptor(code, pair.first, pair.second, if (code in listOf(0xd2c1, 0xd2c2)) access else if (code == 0xd25a) priorityAccess else 0, enabled)
             }
         }
         override suspend fun exchange(operation: SonySessionOperation): ByteArray = when (operation) {
@@ -121,13 +133,87 @@ class SonyCaptureSessionTest {
 
     @Test fun staleFocusAndNoFocusDoNotFireShutter() = runBlocking {
         for (state in listOf(2L, 3L, 1L)) {
-            val peer = Peer().apply { focus.clear(); focusFallback = state }
+            // A lock is stale when focus already read "locked" before the press and never left it.
+            val peer = Peer().apply { focus.clear(); focusFallback = state; if (state == 2L) idleFocus = 2L }
             val session = peer.session(); session.connect()
             assertFailsWith<SonyFocusNotAcquiredException> { session.captureSingle() }
             assertEquals(listOf(SonyCaptureCommand.HALF_PRESS, SonyCaptureCommand.HALF_RELEASE), peer.controlCalls)
             assertEquals(SonyCaptureState.FAILED, session.state)
             assertEquals(1, peer.closed)
         }
+    }
+
+    @Test fun lockReportedOnTheFirstReadAfterAnUnlockedStartIsFresh() = runBlocking {
+        val peer = Peer().apply { focus.clear(); focusFallback = 2L }
+        val session = peer.session(); session.connect()
+        assertEquals(SonyAutofocusResult.LOCK_OBSERVED, session.autofocus())
+        assertEquals(listOf(SonyCaptureCommand.HALF_PRESS, SonyCaptureCommand.HALF_RELEASE), peer.controlCalls)
+        session.close()
+    }
+
+    @Test fun allowedRunTakesPriorityReadsItBackAndReturnsItAfterTheAction() = runBlocking {
+        for (type in listOf(1, 2)) {
+            val peer = Peer().apply { overrides[0xd25a] = type to 0L }
+            val session = peer.session(claim = true); session.connect()
+            assertEquals(SonyAutofocusResult.LOCK_OBSERVED, session.autofocus())
+            assertEquals(listOf(SonySettingCommand.PRIORITY_APPLICATION, SonySettingCommand.PRIORITY_CAMERA), peer.sets)
+            assertEquals(SonyPriorityStatus.WRITTEN_CONFIRMED, session.priorityStatus)
+            assertEquals(SonyPriorityRestore.CONFIRMED, session.priorityRestore)
+            assertEquals(0L, peer.overrides[0xd25a]!!.second)
+            session.close(); assertEquals(2, peer.sets.size)
+        }
+    }
+
+    @Test fun priorityIsNeverWrittenWithoutTheRunsPermissionOrWhenAlreadyApplication() = runBlocking {
+        val refused = Peer().apply { overrides[0xd25a] = 2 to 0L }
+        val session = refused.session(); session.connect()
+        val error = assertFailsWith<SonyCaptureEligibilityException> { session.autofocus() }
+        assertEquals(SonyCaptureEligibilityReason.PRIORITY_MODE, error.reason)
+        assertTrue(refused.sets.isEmpty()); assertTrue(refused.controlCalls.isEmpty())
+        assertEquals(SonyPriorityStatus.NOT_REQUESTED, session.priorityStatus)
+        val already = Peer(); val second = already.session(claim = true); second.connect()
+        second.autofocus()
+        assertTrue(already.sets.isEmpty()); assertEquals(SonyPriorityStatus.ALREADY_APPLICATION, second.priorityStatus)
+        assertEquals(SonyPriorityRestore.NOT_NEEDED, second.priorityRestore)
+    }
+
+    @Test fun readOnlyOrUnexpectedPriorityIsLeftAloneAndRefusesTheAction() = runBlocking {
+        for (change in listOf<Peer.() -> Unit>({ priorityAccess = 0 }, { enabled = 0 }, { overrides[0xd25a] = 4 to 0L })) {
+            val peer = Peer().apply { overrides[0xd25a] = 2 to 0L }.apply(change)
+            val session = peer.session(claim = true); session.connect()
+            assertFailsWith<SonyCaptureEligibilityException> { session.autofocus() }
+            assertTrue(peer.sets.isEmpty()); assertTrue(peer.controlCalls.isEmpty())
+            assertEquals(SonyPriorityStatus.NOT_WRITABLE, session.priorityStatus)
+        }
+    }
+
+    @Test fun writeThatDoesNotTakeEffectRefusesTheActionAndStillReturnsPriority() = runBlocking {
+        val peer = Peer().apply { overrides[0xd25a] = 2 to 0L; priorityAccepted = false }
+        val session = peer.session(claim = true); session.connect()
+        val error = assertFailsWith<SonyCaptureEligibilityException> { session.captureSingle() }
+        assertEquals(SonyCaptureEligibilityReason.PRIORITY_MODE, error.reason)
+        assertTrue(peer.controlCalls.isEmpty())
+        assertEquals(SonyPriorityStatus.WRITTEN_UNCONFIRMED, session.priorityStatus)
+        assertEquals(listOf(SonySettingCommand.PRIORITY_APPLICATION, SonySettingCommand.PRIORITY_CAMERA), peer.sets)
+    }
+
+    @Test fun restoreThatFailsOrDoesNotTakeEffectIsReportedWithoutHidingTheResult() = runBlocking {
+        for ((fails, expected) in listOf(true to SonyPriorityRestore.FAILED, false to SonyPriorityRestore.UNCONFIRMED)) {
+            val peer = Peer().apply { overrides[0xd25a] = 2 to 0L; restoreFails = fails; restoreIgnored = !fails }
+            val session = peer.session(claim = true); session.connect()
+            assertEquals(SonyAutofocusResult.LOCK_OBSERVED, session.autofocus())
+            assertEquals(expected, session.priorityRestore)
+            assertEquals(SonyCaptureState.FINISHED, session.state)
+            session.close(); assertEquals(2, peer.sets.size)
+        }
+    }
+
+    @Test fun priorityThatWasNeitherCameraNorApplicationIsNotGuessedBack() = runBlocking {
+        val peer = Peer().apply { overrides[0xd25a] = 2 to 2L }
+        val session = peer.session(claim = true); session.connect()
+        session.autofocus()
+        assertEquals(listOf(SonySettingCommand.PRIORITY_APPLICATION), peer.sets)
+        assertEquals(SonyPriorityRestore.SKIPPED_UNKNOWN_PREVIOUS, session.priorityRestore)
     }
 
     @Test fun unsupportedProfileRefusesBeforeAnyButtonCommand() = runBlocking {

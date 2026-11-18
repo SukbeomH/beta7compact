@@ -19,7 +19,8 @@ data class SonyRemoteSnapshot(
 )
 
 /** A separate, single-use observation session. OBSERVING does not grant camera write permission. */
-class SonyRemoteSession(private val transport: SonySessionTransport) {
+class SonyRemoteSession(private val transport: SonySessionTransport,
+                        private val pause: suspend (Long) -> Unit = { kotlinx.coroutines.delay(it) }) {
     private val mutex = Mutex()
     private var opened = false
     private var transportClosed = false
@@ -48,7 +49,14 @@ class SonyRemoteSession(private val transport: SonySessionTransport) {
             // Sequence reference: libgphoto2 31a2f408 library.c:740-775, without PriorityMode write.
             transport.exchange(SonySessionOperation.CONNECT_1)
             transport.exchange(SonySessionOperation.CONNECT_2)
-            val info = SonyExtendedInfoParser.parse(transport.exchange(SonySessionOperation.EXTENDED_INFO))
+            // The camera can answer with an empty payload right after phase 2; libgphoto2 (ptp.c) and AlphaWire both ask again.
+            var extended = transport.exchange(SonySessionOperation.EXTENDED_INFO)
+            var retries = 0
+            while (extended.size < 2 && retries++ < EXTENDED_INFO_RETRIES) {
+                pause(50)
+                extended = transport.exchange(SonySessionOperation.EXTENDED_INFO)
+            }
+            val info = SonyExtendedInfoParser.parse(extended)
             require(0x9209 in device.operations || 0x9209 in info.propertyCodes || 0x9209 in info.controlCodes) {
                 "Sony property snapshot operation not advertised"
             }
@@ -144,4 +152,5 @@ class SonyRemoteSession(private val transport: SonySessionTransport) {
     }
 
     private fun <T> frozen(values: List<T>): List<T> = Collections.unmodifiableList(ArrayList(values))
+    private companion object { const val EXTENDED_INFO_RETRIES = 10 }
 }
