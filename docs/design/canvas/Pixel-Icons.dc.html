@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>픽셀 아이콘 시안</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500&display=swap">
+<style>
+body{margin:0}
+a{color:#8FD0B8}a:hover{color:#E8E8E8}
+</style>
+</helmet>
+<div style="width: 1000px; height: 680px; box-sizing: border-box; padding: 32px; display: flex; flex-direction: column; gap: 20px; background: #121212; color: #E8E8E8; font-family: 'Noto Sans KR', Roboto, system-ui, sans-serif; font-size: 16px; line-height: 24px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 22px; font-weight: 400; line-height: 28px">픽셀 아이콘 시안 · UI 아이콘 15종 · 18 × 18</h1>
+<div style="color: #A8A8A8; font-size: 14px; line-height: 20px">18 × 18 격자, 선 굵기 2칸으로 다시 그린 시안입니다. 왼쪽은 확대(108dp, 한 칸 6dp), 오른쪽은 실제 크기(18dp, 한 칸 1dp, 터치 영역 48dp). 색은 놓인 자리의 글자색을 따라갑니다.</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px 16px">
+<sc-for list="{{ icons }}" as="item" hint-placeholder-count="15">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: flex-end; gap: 8px">
+<div style="width: 108px; height: 108px; border-radius: 8px; background: #1E1E1E; display: flex">
+<svg role="img" aria-label="{{ item.name }}" viewBox="0 0 18 18" width="108" height="108" fill="currentColor" style="shape-rendering: crispEdges">
+<path d="{{ item.p1 }}" fill-rule="{{ item.rule }}"></path>
+<path d="{{ item.p2 }}" fill-rule="{{ item.rule }}" fill-opacity="0.7"></path>
+<path d="{{ item.p3 }}" fill-opacity="0.55"></path>
+<path d="{{ item.p4 }}" fill-opacity="0.6"></path>
+</svg>
+</div>
+<div style="width: 48px; height: 48px; border-radius: 8px; background: #1E1E1E; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" viewBox="0 0 18 18" width="{{ item.size }}" height="{{ item.size }}" fill="currentColor" style="shape-rendering: crispEdges">
+<path d="{{ item.p1 }}" fill-rule="{{ item.rule }}"></path>
+<path d="{{ item.p2 }}" fill-rule="{{ item.rule }}" fill-opacity="0.7"></path>
+<path d="{{ item.p3 }}" fill-opacity="0.55"></path>
+<path d="{{ item.p4 }}" fill-opacity="0.6"></path>
+</svg>
+</div>
+</div>
+<div style="font-size: 12px; line-height: 16px; font-weight: 500">{{ item.name }}</div>
+<div style="font-size: 11px; line-height: 16px; color: #A8A8A8">{{ item.where }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":680}}'>
+class Component extends DCLogic {
+renderVals() {
+const d = (rects) => rects.map((r) => 'M' + r[0] + ' ' + r[1] + 'h' + r[2] + 'v' + r[3] + 'h-' + r[2] + 'z').join('');
+const mirror = (rects) => rects.map((r) => [18 - r[0] - r[2], r[1], r[2], r[3]]);
+const refresh = [[6, 2, 5, 2], [4, 3, 2, 2], [3, 4, 2, 2], [2, 6, 2, 6], [3, 12, 2, 2], [4, 13, 2, 2], [6, 14, 6, 2], [12, 13, 2, 2], [13, 12, 2, 2], [14, 9, 2, 3], [11, 3, 2, 2], [12, 4, 2, 2], [14, 1, 2, 6], [10, 5, 6, 2]];
+const undo = [[1, 6, 1, 2], [2, 5, 1, 4], [3, 4, 1, 6], [4, 3, 1, 8], [5, 2, 1, 10], [6, 6, 9, 2], [14, 7, 2, 7], [6, 13, 9, 2]];
+const layered = (name, where, p1, p2, p3, p4) => ({ name: name, where: where, size: 18, rule: 'evenodd', p1: p1, p2: p2, p3: p3, p4: p4 });
+const flat = (name, where, rects) => ({ name: name, where: where, size: 18, rule: 'nonzero', p1: d(rects), p2: '', p3: '', p4: '' });
+const usb = flat('USB', '카메라 연결 상태 칩', [[8, 0, 2, 1], [7, 1, 4, 1], [6, 2, 6, 1], [8, 3, 2, 11], [7, 14, 4, 3], [6, 15, 6, 1], [2, 6, 3, 3], [3, 9, 2, 3], [3, 11, 5, 2], [13, 4, 3, 3], [14, 7, 2, 2], [10, 8, 6, 2]]);
+usb.size = 18;
+return {
+icons: [
+layered('카메라', '내비 탭', 'M1 4h16v11H1zM6 7v6h6V7zM14 6v1h2V6z', 'M6 2h6v2H6z', '', 'M8 9h2v2H8z'),
+layered('사진', '내비 탭', 'M5 1h12v12H5zM7 3v8h8V3zM8 9h6v1H8zM9 8h4v1H9zM10 7h2v1h-2z', 'M12 4h2v2h-2z', '', 'M1 5h2v10h10v2H1z'),
+layered('레시피', '내비 탭 · 무채색 파트로네', 'M3 2h10v3H3zM3 13h10v3H3z', 'M7 0h4v2H7zM13 6h4v7h-4zM15 7v1h1V7zM15 9v1h1V9zM15 11v1h1v-1z', 'M3 5h10v8H3z', 'M3 7h10v4H3z'),
+layered('설정', '내비 탭', 'M4 4h10v10H4zM7 7v4h4V7zM7 1h4v3H7zM7 14h4v3H7zM1 7h3v4H1zM14 7h3v4h-3z', 'M3 3h2v2H3zM13 3h2v2h-2zM3 13h2v2H3zM13 13h2v2h-2z', '', ''),
+flat('뒤로', '사진 상세 · 편집기 상단', [[1, 8, 15, 2], [3, 7, 3, 1], [4, 6, 3, 1], [5, 5, 3, 1], [6, 4, 3, 1], [7, 3, 3, 1], [3, 10, 3, 1], [4, 11, 3, 1], [5, 12, 3, 1], [6, 13, 3, 1], [7, 14, 3, 1]]),
+flat('다시 스캔', '카메라', refresh),
+flat('초기화', '강도 · 세부 조정 슬라이더', mirror(refresh)),
+usb,
+flat('선택됨', '사진 고르기 · LUT 썸네일', [[6, 1, 6, 2], [4, 2, 2, 2], [3, 3, 2, 2], [2, 4, 2, 2], [1, 6, 2, 6], [2, 12, 2, 2], [3, 13, 2, 2], [4, 14, 2, 2], [6, 15, 6, 2], [12, 14, 2, 2], [13, 13, 2, 2], [14, 12, 2, 2], [15, 6, 2, 6], [14, 4, 2, 2], [13, 3, 2, 2], [12, 2, 2, 2], [5, 8, 2, 2], [6, 9, 2, 2], [7, 10, 2, 2], [8, 9, 2, 2], [9, 8, 2, 2], [10, 7, 2, 2], [11, 6, 2, 2]]),
+flat('세부 조정', '편집기 · 레시피 카드 배지', [[1, 4, 16, 2], [11, 2, 3, 6], [1, 8, 16, 2], [4, 6, 3, 6], [1, 12, 16, 2], [11, 10, 3, 6]]),
+flat('원본 보기', '편집기 하단', [[1, 3, 8, 2], [1, 13, 8, 2], [1, 3, 2, 12], [8, 1, 2, 16], [10, 3, 7, 12]]),
+flat('실행 취소', '편집기 하단', undo),
+flat('다시 실행', '편집기 하단', mirror(undo)),
+flat('즐겨찾기', '레시피 카드', [[8, 1, 2, 2], [7, 3, 4, 2], [6, 5, 6, 1], [1, 6, 16, 1], [2, 7, 14, 1], [3, 8, 12, 1], [4, 9, 10, 2], [4, 11, 10, 1], [3, 12, 5, 1], [10, 12, 5, 1], [3, 13, 4, 1], [11, 13, 4, 1], [2, 14, 4, 1], [12, 14, 4, 1], [2, 15, 3, 1], [13, 15, 3, 1]]),
+flat('공유', '레시피 상세', [[12, 1, 4, 4], [12, 13, 4, 4], [2, 7, 4, 4], [6, 7, 2, 2], [8, 6, 2, 2], [10, 5, 2, 2], [11, 4, 2, 2], [6, 9, 2, 2], [8, 10, 2, 2], [10, 11, 2, 2], [11, 12, 2, 2]])
+]
+};
+}
+}
+</script>
+</body>
+</html>
