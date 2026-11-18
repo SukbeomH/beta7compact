@@ -40,6 +40,7 @@ internal fun ptpIpGuid(app: App): ByteArray {
     var ssid by remember { mutableStateOf("") }
     var passphrase by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
+    var qr by remember { mutableStateOf("") }
     var acknowledged by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var report by remember { mutableStateOf<WifiDiagnosticReport?>(null) }
@@ -74,6 +75,13 @@ internal fun ptpIpGuid(app: App): ByteArray {
             if (direct) {
                 Text("PC Remote 연결 방법을 Wi-Fi Direct로 두고, Wi-Fi Direct 정보에 표시된 이름과 암호를 입력하세요. " +
                     "실행하면 Android가 이 네트워크에 연결할지 묻습니다. 연결 중에는 이 네트워크로 인터넷이 되지 않습니다.", style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(qr, { text ->
+                    qr = text.take(200)
+                    // Fills the two fields below as soon as the pasted text is a camera or standard Wi-Fi QR code.
+                    CameraWifiQr.parse(qr)?.let { ssid = it.ssid; passphrase = it.passphrase; qr = ""; error = null }
+                }, label = { Text("QR 내용 붙여넣기(선택)") }, singleLine = true, enabled = !busy)
+                Text("카메라가 Wi-Fi 연결용 QR을 보여 주면 휴대폰 카메라로 읽어 나온 글자(W01:… 또는 WIFI:…)를 붙여넣으세요. 이름과 암호가 아래에 채워집니다.",
+                    style = MaterialTheme.typography.bodySmall)
                 OutlinedTextField(ssid, { ssid = it.take(32) }, label = { Text("네트워크 이름(SSID)") }, singleLine = true, enabled = !busy)
                 OutlinedTextField(passphrase, { passphrase = it.take(63) }, label = { Text("암호") }, singleLine = true, enabled = !busy,
                     visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
@@ -94,12 +102,13 @@ internal fun ptpIpGuid(app: App): ByteArray {
                     Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
             }
             if (!enabled) Text("사진 가져오기가 끝난 뒤 실행하세요.")
+            // Above the button, so a refused input is visible without scrolling.
+            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             TextButton(onClick = ::run, enabled = enabled && acknowledged && !busy) { Text(if (busy) "진단 진행 중… (최대 약 2분)" else "진단 실행") }
             if (busy) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
                 Text("카메라 화면에 확인창이 뜨면 내용을 기록하고 OK를 누르세요.")
             }
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             report?.let { result ->
                 Text("결과 해석", style = MaterialTheme.typography.titleSmall)
                 Text(when (result.failure) {

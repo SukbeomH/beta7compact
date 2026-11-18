@@ -191,7 +191,7 @@ python3 tools/verify_release_apk.py app/build/outputs/apk/debug/app-debug.apk \
 
 | 주제 | 문서 |
 | --- | --- |
-| 개발 방향 | [인계 자료 통합 계획](docs/PLAN_A7C_EXTENSIONS.md) · [초기 아키텍처](docs/ARCHITECTURE.md) |
+| 개발 방향 | [카메라 연결 기능 인계](docs/HANDOFF.md) · [인계 자료 통합 계획](docs/PLAN_A7C_EXTENSIONS.md) · [초기 아키텍처](docs/ARCHITECTURE.md) |
 | 디자인 | [웹 시안 사용법](sites/beta7c-screen-studio/README.md) · [화면 시안 캔버스](docs/design/canvas/README.md) · [디자인 시스템](docs/design/DESIGN-SYSTEM.md) · [정보 구조 제안](docs/design/IA.md) · [아이콘 제작 기록](docs/design/ICON-IMPLEMENTATION.md) |
 | 편집 엔진 | [레시피 엔진](docs/M2-ENGINE.md) · [S-Log3](docs/SLOG3.md) · [레시피 공유](docs/M5A-SHARING.md) |
 | 검증 | [최근 검증 기록](docs/verification/2026-11-17/README.md) · [카메라 실기 체크리스트](docs/M1-DEVICE-CHECK.md) |

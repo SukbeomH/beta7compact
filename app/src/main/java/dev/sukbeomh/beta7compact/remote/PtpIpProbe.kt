@@ -76,6 +76,45 @@ object PtpIp {
     }
 }
 
+/** Network name and passphrase read from a QR code. Used for one run; never stored or logged. */
+data class CameraWifiCredentials(val ssid: String, val passphrase: String)
+
+/**
+ * Text of the QR code a Sony camera shows for its own Wi-Fi: `W01:S:<suffix>;P:<password>;C:<model>;M:<id>;`, where the
+ * network is named `DIRECT-<suffix>:<model>` (layout as documented by the open OpenAlpha and Sony-Image-Import projects).
+ * The standard `WIFI:S:<ssid>;T:WPA;P:<password>;;` form is accepted too.
+ */
+object CameraWifiQr {
+    fun parse(text: String): CameraWifiCredentials? {
+        val value = text.trim()
+        val sony = value.startsWith("W01:")
+        if (!sony && !value.startsWith("WIFI:", ignoreCase = true)) return null
+        val fields = fields(value.substring(value.indexOf(':') + 1))
+        val name = fields["S"]?.takeIf { it.isNotEmpty() } ?: return null
+        val passphrase = fields["P"]?.takeIf { it.length in 8..63 } ?: return null
+        val ssid = if (sony) "DIRECT-$name:${fields["C"]?.takeIf { it.isNotEmpty() } ?: return null}" else name
+        return if (ssid.toByteArray(Charsets.UTF_8).size <= 32) CameraWifiCredentials(ssid, passphrase) else null
+    }
+    /** `K:value;` pairs; a backslash keeps the next character, as the Wi-Fi QR convention escapes `;` `:` `,` `\`. */
+    private fun fields(body: String): Map<String, String> {
+        val result = LinkedHashMap<String, String>()
+        var key: String? = null
+        val current = StringBuilder()
+        var i = 0
+        while (i < body.length) {
+            val c = body[i]
+            when {
+                c == '\\' && i + 1 < body.length -> { current.append(body[i + 1]); i++ }
+                key == null && c == ':' -> { key = current.toString(); current.clear() }
+                c == ';' -> { key?.let { if (it !in result) result[it] = current.toString() }; key = null; current.clear() }
+                else -> current.append(c)
+            }
+            i++
+        }
+        return result
+    }
+}
+
 class PtpIpFormatException : IOException("Unexpected PTP/IP packet")
 
 /** One TCP connection. Reads either fill the buffer or throw; a timeout is a [SocketTimeoutException]. */
