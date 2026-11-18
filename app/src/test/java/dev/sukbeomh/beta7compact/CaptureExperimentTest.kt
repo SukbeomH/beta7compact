@@ -76,6 +76,13 @@ class CaptureExperimentTest {
             CaptureExperimentConnection(peer, RemoteUsbSelection(0x054c, 0x0d2b, 1, 0, 0, 0x81, 2, if (events) 0x83 else null), events)
         }, sessionFactory = { SonyCaptureSession(it, { peer.clock }, { peer.clock += it }) })
 
+    @Test fun reportStatesWhatHappenedToControlPriority() = runBlocking {
+        val result = run(Peer(), CaptureExperimentAction.AUTOFOCUS)
+        assertEquals(SonyPriorityStatus.NOT_REQUESTED, result.priorityStatus)
+        assertContains(result.safeText(), "우선순위=NOT_REQUESTED 되돌림=NOT_NEEDED")
+        assertContains(result.safeText(), "AF·단발 촬영 실험 · 형식 2")
+    }
+
     @Test fun autofocusNeverPressesFullAndSharesOnlySafeMetadata() = runBlocking {
         val peer = Peer()
         val result = run(peer, CaptureExperimentAction.AUTOFOCUS)

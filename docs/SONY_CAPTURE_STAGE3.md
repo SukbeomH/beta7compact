@@ -32,14 +32,14 @@ command와 DATA는 같은 transaction ID를 사용한다. DATA 부분 전송·�
 | Drive `0x5013` | Single Shot 값 1. mode2 UINT16, mode3 UINT32 |
 | Focus mode `0x500A` | UINT16 값 2 (공개 구현의 Automatic). AF-S로 단정하지 않음 |
 | Exposure program `0x500E` | 해당 protocol의 M/P/A/S 값만 허용. 영상 모드 제외 |
-| Priority `0xD25A` | UINT8 값 1 Application을 이미 관찰해야 함 |
+| Priority `0xD25A` | 1바이트(INT8 또는 UINT8) 값 1 Application. 확인란을 켠 실행에서는 앱이 쓴 뒤 재조회로 확인([원칙](CAMERA_WRITE_POLICY.md)) |
 | 저장 대상 `0xD222` | UINT16 값 `0x10` card-only |
 | 메모리 객체 `0xD215` | UINT16 값 0. 남은 객체를 다운로드/폐기해 비우지 않음 |
 | 셔터속도 `0xD20D` | UINT32 분수의 분자·분모 모두 0이 아닌 값. Bulb 제외 |
 
 mode2에서 `0xD229`가 있으면 그 값도 비-Bulb인지 검사한다. mode3의 같은 코드는 다른 설정일 수 있어 셔터속도로 해석하지 않는다. 문자열·배열 등 현재 파서의 미지원 형식은 계속 실패 처리한다.
 
-현재 관찰 세션은 PriorityMode나 저장 대상을 설정하지 않는다. 따라서 실제 카메라가 위 조건을 광고하지 않으면 실행을 거부할 수 있다. 권한·저장 대상 설정과 복원은 별도 후속 설계가 필요하다. 이번에는 이를 맞추기 위한 숨은 쓰기 명령을 추가하지 않았다.
+(2026-11-18 이후: 제어 우선순위는 [카메라 쓰기 원칙](CAMERA_WRITE_POLICY.md)에 따라 확인란을 켠 실행에서 쓴다. 아래는 3단계 당시의 기록이다.) 현재 관찰 세션은 PriorityMode나 저장 대상을 설정하지 않는다. 따라서 실제 카메라가 위 조건을 광고하지 않으면 실행을 거부할 수 있다. 권한·저장 대상 설정과 복원은 별도 후속 설계가 필요하다. 이번에는 이를 맞추기 위한 숨은 쓰기 명령을 추가하지 않았다.
 
 ## 초점과 촬영 결과
 

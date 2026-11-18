@@ -83,7 +83,10 @@ import kotlinx.coroutines.*
             TextButton(onClick = recipes) { Text("기본 레시피 관리") }
         } }
         Text("위치 연동", style = MaterialTheme.typography.titleSmall)
-        OutlinedCard { Column(Modifier.padding(16.dp)) { Text("BLE 위치 동기화 · 준비 중"); Text("GPS 좌표는 화면·로그·DB에 기록하지 않습니다", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+        OutlinedCard { Column(Modifier.padding(16.dp)) {
+            BleLocationSetting(activity, app)
+            Text("GPS 좌표는 화면·로그·DB에 기록하지 않습니다", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } }
         Text("업데이트", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { UpdateSetting(app) } }
         Text("연구 · 읽기 전용", style = MaterialTheme.typography.titleSmall)

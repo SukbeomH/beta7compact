@@ -34,9 +34,11 @@ data class CaptureExperimentReport(
     val elapsedMillis: Long,
     val eventCodes: List<Int>,
     val trace: List<RemoteDiagnosticTrace>,
+    val priorityStatus: SonyPriorityStatus? = null,
+    val priorityRestore: SonyPriorityRestore? = null,
 ) {
     fun safeText(): String = buildString {
-        appendLine("AF·단발 촬영 실험 · 형식 1")
+        appendLine("AF·단발 촬영 실험 · 형식 2")
         appendLine("선택=$action 결과=$outcome elapsedMs=$elapsedMillis")
         appendLine("전체셔터시도=$capturePressAttempted 사진저장=미확인")
         failure?.let { appendLine("실패단계=$failureStage 분류=$it") }
@@ -47,6 +49,7 @@ data class CaptureExperimentReport(
             appendLine("endpoint bulkIn=${hex(it.bulkIn)} bulkOut=${hex(it.bulkOut)} event=${it.eventEndpoint?.let(::hex) ?: "없음"}")
         }
         appendLine("광고프로토콜=${advertisedProtocolVersion?.let(::hex) ?: "미확인"}")
+        appendLine("우선순위=${priorityStatus ?: "미확인"} 되돌림=${priorityRestore ?: "미확인"}")
         appendLine("반셔터해제=${halfReleaseStatus ?: "미확인"} 전체셔터해제=${fullReleaseStatus ?: "미확인"}")
         appendLine("PTP종료=${ptpCloseStatus ?: "미확인"} 자원종료=$resourceClose 정리오류수=$cleanupErrorCount")
         appendLine("관찰이벤트=${eventCodes.size} codes=${eventCodes.joinToString { hex(it) }}")
@@ -69,11 +72,12 @@ internal data class CaptureExperimentConnection(
 )
 private class MissingCaptureEventEndpoint : IOException()
 
-suspend fun runCaptureExperiment(context: Context, action: CaptureExperimentAction): CaptureExperimentReport =
-    runCaptureExperiment(action, open = { onStage ->
+suspend fun runCaptureExperiment(context: Context, action: CaptureExperimentAction,
+                                 claimPriority: Boolean = false): CaptureExperimentReport =
+    runCaptureExperiment(action, sessionFactory = { SonyCaptureSession(it, claimPriority = claimPriority) }, open = { onStage ->
         val wire = AndroidSonyRemoteWire.open(context, onStage)
         try {
-            CaptureExperimentConnection(SonySessionWireTransport(wire, allowCaptureControls = true),
+            CaptureExperimentConnection(SonySessionWireTransport(wire, allowCaptureControls = true, allowPriorityWrite = claimPriority),
                 wire.selection, wire.selection.eventEndpoint != null)
         } catch (failure: Throwable) {
             try { wire.close() } catch (closing: Throwable) { if (failure !== closing) failure.addSuppressed(closing) }
@@ -146,6 +150,19 @@ internal suspend fun runCaptureExperiment(
                         record(command.name, RemoteTraceStatus.OK, response = 0x2001)
                     } catch (error: Throwable) {
                         if (cleanup) { cleanupErrorCount++; cleanupFailures += error to command.name } else failed(command.name)
+                        record(command.name, RemoteTraceStatus.FAIL, response = (error as? PtpResponseException)?.code)
+                        throw error
+                    }
+                }
+                override suspend fun set(command: SonySettingCommand) {
+                    val cleanup = command == SonySettingCommand.PRIORITY_CAMERA
+                    if (!cleanup) stage = command.name
+                    record(command.name, RemoteTraceStatus.START)
+                    try {
+                        connection.transport.set(command)
+                        record(command.name, RemoteTraceStatus.OK, response = 0x2001)
+                    } catch (error: Throwable) {
+                        if (cleanup) cleanupErrorCount++ else failed(command.name)
                         record(command.name, RemoteTraceStatus.FAIL, response = (error as? PtpResponseException)?.code)
                         throw error
                     }
@@ -230,5 +247,5 @@ internal suspend fun runCaptureExperiment(
     return CaptureExperimentReport(action, outcome, failure, firstFailureStage, eligibilityReason, eligibilityCode,
         unsupportedCode, unsupportedType, selection, version, session?.capturePressAttempted ?: false,
         session?.halfReleaseStatus, session?.fullReleaseStatus, session?.ptpCloseStatus, resourceClose,
-        cleanupErrorCount, elapsed(), events.toList(), trace.toList())
+        cleanupErrorCount, elapsed(), events.toList(), trace.toList(), session?.priorityStatus, session?.priorityRestore)
 }

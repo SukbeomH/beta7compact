@@ -32,8 +32,13 @@ object LocationPacket {
         require(config.size >= 6) { "위치 서비스 설정 응답이 짧습니다" }
         return config[4].toInt() and 0x02 != 0
     }
+    /**
+     * DD01 notification. `03 01 02 01/00` are the on/off values of the ILCE7M3ExternalGps notes; `03 01 03 01` is
+     * the "location transfer available" value another open implementation (Alpha GPS) lists as verified.
+     * Anything else is unknown: it neither allows nor forbids sending.
+     */
     fun enabled(status: ByteArray): Boolean? = when {
-        status.contentEquals(byteArrayOf(3, 1, 2, 1)) -> true
+        status.contentEquals(byteArrayOf(3, 1, 2, 1)) || status.contentEquals(byteArrayOf(3, 1, 3, 1)) -> true
         status.contentEquals(byteArrayOf(3, 1, 2, 0)) -> false
         else -> null
     }

@@ -35,6 +35,7 @@ internal suspend fun collectRemoteDiagnostics(
     var eventAvailable: Boolean? = null
     var version: Int? = null
     var propertyCount: Int? = null
+    var conditions = emptyList<String>()
     var unsupportedCode: Int? = null
     var unsupportedType: Int? = null
     var session: SonyRemoteSession? = null
@@ -100,6 +101,7 @@ internal suspend fun collectRemoteDiagnostics(
             }
         }, onSession = { session = it }) { connected ->
             propertyCount = connected.snapshot?.properties?.size
+            conditions = connected.snapshot?.properties?.let(RemoteDiagnosticReport::conditions).orEmpty()
             stage = "OBSERVING"
             record(stage, RemoteTraceStatus.OK)
             if (eventAvailable == true) {
@@ -133,5 +135,5 @@ internal suspend fun collectRemoteDiagnostics(
     }
     return RemoteDiagnosticReport(outcome, failureStage, failure, elapsed(), selection, version, propertyCount,
         unsupportedCode, unsupportedType, events.toList(), eventAvailable, session?.state, session?.ptpCloseStatus,
-        resourceClose, cleanupErrorCount, trace.toList())
+        resourceClose, cleanupErrorCount, trace.toList(), conditions)
 }

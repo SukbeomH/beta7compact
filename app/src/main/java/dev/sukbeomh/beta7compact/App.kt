@@ -20,6 +20,8 @@ class App : Application() {
         24 * 1024 * 1024, { it.allocationByteCount })
     val usbState = MutableStateFlow(LinkState.DISCONNECTED)
     val locationState = MutableStateFlow(LocationStatus())
+    /** Evidence of the last location-link attempt; memory only, never coordinates or addresses. */
+    val locationTrace = MutableStateFlow(dev.sukbeomh.beta7compact.core.LinkTrace())
     val usbDiagnostic = MutableStateFlow<String?>(null)
     suspend fun <T> useUsb(block: suspend (Camera) -> T): T = UsbAccess.use(this,
         { settings.getBoolean("raw", true) },
