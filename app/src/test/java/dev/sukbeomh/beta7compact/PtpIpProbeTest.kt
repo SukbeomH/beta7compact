@@ -56,6 +56,16 @@ class PtpIpProbeTest {
             assertNull(PtpIp.localAddress(bad), bad)
     }
 
+    @Test fun cameraAndStandardWifiQrTextBecomeNetworkNameAndPassphrase() {
+        // Example published in the OpenAlpha project's documentation.
+        assertEquals(CameraWifiCredentials("DIRECT-P3E1:ILCE-7M2", "GB44SZnb"), CameraWifiQr.parse(" W01:S:P3E1;P:GB44SZnb;C:ILCE-7M2;M:A0C9A052F529; "))
+        assertEquals(CameraWifiCredentials("Home;Net", "pass:word1"), CameraWifiQr.parse("WIFI:T:WPA;S:Home\\;Net;P:pass\\:word1;;"))
+        assertEquals(CameraWifiCredentials("net", "12345678"), CameraWifiQr.parse("wifi:S:net;P:12345678;;"))
+        for (bad in listOf("", "b7c1:abc", "W01:S:P3E1;P:short;C:ILCE-7C;", "W01:S:P3E1;P:GB44SZnb;", "W01:P:GB44SZnb;C:ILCE-7C;",
+            "WIFI:S:;P:12345678;;", "WIFI:S:" + "x".repeat(33) + ";P:12345678;;", "https://example.com/?W01:S:a;P:12345678;C:b;"))
+            assertNull(CameraWifiQr.parse(bad), bad)
+    }
+
     @Test fun completeProbeAnswersPingsAndReportsOnlyNumbersAndFlags() {
         val (channels, connector) = camera({ bytes, c ->
             when (bytes[4].toInt()) {
