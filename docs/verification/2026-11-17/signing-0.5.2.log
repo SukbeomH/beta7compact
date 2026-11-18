@@ -1,0 +1,4 @@
+PASS: APK signature verified; certificate matches existing installations: eaf9514a8a00e3d029e98e772cf0185bfafd270645cb21bc057f198a2d9e23f8
+package: name='dev.sukbeomh.beta7compact' versionCode='9' versionName='0.5.2' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+sdkVersion:'29'
+targetSdkVersion:'35'

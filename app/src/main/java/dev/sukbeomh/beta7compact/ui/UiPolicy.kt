@@ -54,7 +54,7 @@ fun navigate(state: NavigationState, action: NavigationAction): NavigationState 
 fun isAdjusted(recipe: Recipe): Boolean {
     val grain = if (recipe.grain.amount == 0f) Grain() else recipe.grain.copy(seed = Grain().seed)
     val baseline = Recipe(lutId = recipe.lutId, inputTransform = recipe.inputTransform, requiredLutName = recipe.requiredLutName)
-    return recipe.copy(grain = grain, version = baseline.version) != baseline
+    return recipe.copy(grain = grain, version = 3, colorVersion = 2) != baseline.copy(version = 3)
 }
 
 /** A 3:2 display box, independent of the image aspect ratio. Units can be dp or px. */
@@ -70,6 +70,15 @@ fun editorPhotoBox(width: Float, height: Float, layout: PaneLayout): PhotoBox = 
     PaneLayout.SIDE_BY_SIDE -> photoBox((width - 384f).coerceAtLeast(0f), (height - 56f).coerceAtLeast(0f))
     PaneLayout.TABLETOP -> photoBox(width, (height / 2f - 16f).coerceAtLeast(0f))
 }
+/** Body space excludes the measured header/footer and the gap between preview and controls. */
+fun editorPreviewHeight(bodyWidth: Float, bodyHeight: Float, tabletop: Boolean = false, fontScale: Float = 1f): Float {
+    require(bodyWidth.isFinite() && bodyWidth >= 0f && bodyHeight.isFinite() && bodyHeight >= 0f)
+    require(fontScale.isFinite() && fontScale > 0f)
+    val controls = minOf(160f * fontScale, bodyHeight * .6f)
+    val previewCap = bodyHeight * if (tabletop) .5f else .45f
+    return minOf(bodyWidth / 1.5f, previewCap, (bodyHeight - controls).coerceAtLeast(0f))
+}
+
 fun fittedPhoto(box: PhotoBox, imageWidth: Float, imageHeight: Float): PhotoBox {
     require(imageWidth.isFinite() && imageHeight.isFinite() && imageWidth > 0f && imageHeight > 0f)
     val scale = minOf(box.width / imageWidth, box.height / imageHeight)

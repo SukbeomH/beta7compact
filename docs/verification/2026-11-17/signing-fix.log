@@ -1,0 +1,6 @@
+PASS: APK signature verified; certificate matches existing installations: eaf9514a8a00e3d029e98e772cf0185bfafd270645cb21bc057f198a2d9e23f8
+STOP: APK signing certificate does not match installed-app identity. Do not publish.
+    versionCode=8 minSdk=29 targetSdk=35
+    versionName=0.5.1
+
+adb install -r: Success (no uninstall or data-clear performed). App data contents not independently inspected.

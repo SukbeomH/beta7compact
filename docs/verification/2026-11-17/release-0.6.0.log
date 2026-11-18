@@ -1,0 +1,159 @@
+Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/Users/sukbeom/.codex/worktrees/0ac0/beta7compact/.tools/cacerts
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.9/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:processDebugManifestForPackage
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:buildKotlinToolingMetadata UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:generateReleaseBuildConfig
+> Task :app:checkReleaseAarMetadata UP-TO-DATE
+> Task :app:generateReleaseResValues UP-TO-DATE
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:processDebugResources
+> Task :app:mergeReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:parseReleaseLocalResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease UP-TO-DATE
+> Task :app:processReleaseMainManifest
+> Task :app:processReleaseManifest
+> Task :app:processReleaseManifestForPackage
+> Task :app:processReleaseResources
+
+> Task :app:kaptGenerateStubsDebugKotlin
+w: Kapt currently doesn't support language version 2.0+. Falling back to 1.9.
+
+> Task :app:kaptGenerateStubsReleaseKotlin
+w: Kapt currently doesn't support language version 2.0+. Falling back to 1.9.
+
+> Task :app:kaptDebugKotlin
+warning: The following options were not recognized by any processor: '[room.schemaLocation, kapt.kotlin.generated]'
+
+> Task :app:kaptReleaseKotlin
+warning: The following options were not recognized by any processor: '[room.schemaLocation, kapt.kotlin.generated]'
+
+> Task :app:compileReleaseKotlin FAILED
+e: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/usb/UsbCamera.kt:37:30 Unresolved reference 'DiagnosticUsbSelection'.
+e: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/usb/UsbCamera.kt:39:122 Too many arguments for 'constructor(devices: List<DiagnosticUsbDevice>, stage: DiagnosticStage, outcome: DiagnosticOutcome, elapsedMs: Long, ptpResponseCode: Int? = ..., info: DeviceInfo? = ...): CameraDiagnosticReport'.
+e: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/usb/UsbCamera.kt:66:39 Unresolved reference 'DiagnosticUsbSelection'.
+e: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/usb/UsbCamera.kt:164:47 Unresolved reference 'DiagnosticUsbSelection'.
+e: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/usb/UsbCamera.kt:197:33 Unresolved reference 'DiagnosticUsbSelection'.
+
+> Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :app:preReleaseUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileReleaseUnitTest UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+
+> Task :app:compileDebugKotlin
+w: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/ble/LocationLink.kt:39:85 'var value: ByteArray!' is deprecated. Deprecated in Java.
+w: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/ble/LocationLink.kt:46:77 'var value: ByteArray!' is deprecated. Deprecated in Java.
+w: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/ble/LocationLink.kt:82:21 'var value: ByteArray!' is deprecated. Deprecated in Java.
+w: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/ble/LocationLink.kt:82:82 'fun writeDescriptor(p0: BluetoothGattDescriptor!): Boolean' is deprecated. Deprecated in Java.
+w: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/ble/LocationLink.kt:93:88 'var value: ByteArray!' is deprecated. Deprecated in Java.
+w: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/ble/LocationLink.kt:93:106 'fun writeCharacteristic(p0: BluetoothGattCharacteristic!): Boolean' is deprecated. Deprecated in Java.
+w: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/main/java/dev/sukbeomh/beta7compact/ble/LocationService.kt:62:79 'val isFromMockProvider: Boolean' is deprecated. Deprecated in Java.
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:mergeProjectDexDebug
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:assembleDebug
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugLintReportModel
+> Task :app:generateDebugUnitTestLintModel
+
+> Task :app:kaptGenerateStubsDebugUnitTestKotlin
+w: Kapt currently doesn't support language version 2.0+. Falling back to 1.9.
+
+> Task :app:kaptDebugUnitTestKotlin
+warning: The following options were not recognized by any processor: '[room.schemaLocation, kapt.kotlin.generated]'
+
+> Task :app:compileDebugUnitTestKotlin FAILED
+e: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/test/java/dev/sukbeomh/beta7compact/DeviceInfoDiagnosticsTest.kt:64:9 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/test/java/dev/sukbeomh/beta7compact/DeviceInfoDiagnosticsTest.kt:64:52 Unresolved reference 'DiagnosticUsbSelection'.
+e: file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/src/test/java/dev/sukbeomh/beta7compact/DeviceInfoDiagnosticsTest.kt:64:92 Unresolved reference 'activeSelection'.
+
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:lintAnalyzeDebug
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///Users/sukbeom/.codex/worktrees/0ac0/beta7compact/app/build/reports/lint-results-debug.html
+
+> Task :app:lintDebug
+> Task :app:lint
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':app:compileReleaseKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':app:compileDebugUnitTestKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+BUILD FAILED in 1m 1s
+75 actionable tasks: 41 executed, 34 up-to-date

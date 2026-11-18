@@ -67,6 +67,7 @@ import kotlinx.coroutines.*
     var notices by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ThemeSetting(app)
         Text("가져오기", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -85,6 +86,12 @@ import kotlinx.coroutines.*
         OutlinedCard { Column(Modifier.padding(16.dp)) { Text("BLE 위치 동기화 · 준비 중"); Text("GPS 좌표는 화면·로그·DB에 기록하지 않습니다", color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         Text("업데이트", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { UpdateSetting(app) } }
+        Text("연구 · 읽기 전용", style = MaterialTheme.typography.titleSmall)
+        CameraDiagnosticsSetting(activity = activity, enabled = canChange)
+        dev.sukbeomh.beta7compact.research.FirmwareInspectionCard()
+        Text("연구 · PC Remote 실험", style = MaterialTheme.typography.titleSmall)
+        PcRemoteDiagnosticsSetting(activity = activity, enabled = canChange)
+        CaptureExperimentSetting(activity = activity, enabled = canChange)
         Text("진단 · 정보", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp)) {
             TextButton(onClick = {

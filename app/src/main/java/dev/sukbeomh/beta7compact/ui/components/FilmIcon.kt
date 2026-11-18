@@ -86,9 +86,13 @@ object FilmIcons {
     }
 }
 
-/** Cells are snapped to whole pixels and centred so neighbouring rects leave no seams. */
+/** Keep small badges within their canvas; larger icons retain whole-pixel cells. */
+internal fun filmIconCellSize(width: Float, height: Float, cells: Int): Float {
+    val available = minOf(width, height) / cells
+    return if (available < 1f) available else floor(available)
+}
 private class PixelGrid(private val scope: DrawScope, cells: Int) {
-    private val cell = floor(minOf(scope.size.width, scope.size.height) / cells).coerceAtLeast(1f)
+    private val cell = filmIconCellSize(scope.size.width, scope.size.height, cells)
     private val left = floor((scope.size.width - cell * cells) / 2f)
     private val top = floor((scope.size.height - cell * cells) / 2f)
     fun rect(x: Int, y: Int, w: Int, h: Int, color: Long, alpha: Float = 1f) =

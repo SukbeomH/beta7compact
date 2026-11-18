@@ -73,7 +73,7 @@ class GpuEngine(private val lut: Lut) : AutoCloseable {
         val t=edits.split
         glUniform4f(glGetUniformLocation(program,"split"),t.shadowHue,t.shadowSaturation,t.highlightHue,t.highlightSaturation)
         f("balance",t.balance)
-        glUniform1i(glGetUniformLocation(program,"recipeVersion"),recipe.version)
+        glUniform1i(glGetUniformLocation(program,"colorVersion"),recipe.colorVersion)
         glUniform1i(glGetUniformLocation(program,"seed"),recipe.grain.seed)
         glUniform1i(glGetUniformLocation(program,"transform"),if (recipe.inputTransform == InputTransform.NONE) 0 else 1)
         glUniform2f(glGetUniformLocation(program,"origin"),x.toFloat(),y.toFloat())
@@ -108,7 +108,7 @@ class GpuEngine(private val lut: Lut) : AutoCloseable {
         precision highp sampler3D;
         uniform sampler2D source;
         uniform sampler3D look;
-        uniform int size, seed, transform, recipeVersion;
+        uniform int size, seed, transform, colorVersion;
         uniform vec3 points[64],bands[8];
         uniform ivec4 counts;
         uniform float highlights,shadows,contrast,saturation,vibrance,balance;
@@ -181,11 +181,11 @@ class GpuEngine(private val lut: Lut) : AutoCloseable {
                 vec3 m=vec3(dot(v,vec3(1.6269474,-0.5401385,-0.0868089)),dot(v,vec3(-0.1785155,1.4179409,-0.2394254)),dot(v,vec3(-0.0444361,-0.19591997,1.2403561)));
                 c=clamp(vec3(enc(m.r),enc(m.g),enc(m.b)),0.0,1.0);
             }
-            if(recipeVersion==1) c=clamp(mix(c,sampleLut(c),strength),0.0,1.0);
+            if(colorVersion==1) c=clamp(mix(c,sampleLut(c),strength),0.0,1.0);
             c=vec3(lin(c.r),lin(c.g),lin(c.b))*exp2(vec3(temperature*0.5,-tint*0.5,-temperature*0.5)+ev);
             c=clamp(vec3(enc(c.r),enc(c.g),enc(c.b)),0.0,1.0);
             c=edit(c);
-            if(recipeVersion==2) c=clamp(mix(c,sampleLut(c),strength),0.0,1.0);
+            if(colorVersion>=2) c=clamp(mix(c,sampleLut(c),strength),0.0,1.0);
             vec2 pos=origin+(gl_FragCoord.xy-0.5)*pixelScale;
             float l=dot(c,vec3(0.2126,0.7152,0.0722));
             float grain=noise(ivec2(floor(pos/grainSize)))*grainAmount*0.2*(0.25+0.75*sqrt(l*(1.0-l)));

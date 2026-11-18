@@ -16,7 +16,9 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import dev.sukbeomh.beta7compact.R
 import dev.sukbeomh.beta7compact.ui.components.*
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -30,6 +32,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -109,7 +113,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                     val lut=store.load(snapshot.lutId)
                     app.contentResolver.openOutputStream(uri,"wt")?.bufferedWriter(Charsets.UTF_8)?.use { RecipeBaker.writeCube(snapshot,lut,it) }
                         ?: error("출력 파일을 열 수 없습니다")
-                };status="33³ .cube 저장 완료 · 입력 변환은 LUT 앞에서 유지 · 그레인·비네트 제외";error=null
+                };status="33³ .cube 저장 완료 · 입력 변환은 LUT 앞에서 유지 · 그레인·비네트·왜곡 제외";error=null
             } catch(e: CancellationException) { throw e }
             catch(e: Exception) { error="LUT를 내보낼 수 없습니다" }
             finally { baking=false;bakeSnapshot=null }
@@ -127,13 +131,15 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
         val p=original ?: return@LaunchedEffect
         rendering=true;delay(60)
         try {
-            after=withContext(Dispatchers.Default) { synchronized(PhotoRenderer.lock) {
+            after=withContext(Dispatchers.Default) { val execution=coroutineContext; synchronized(PhotoRenderer.lock) {
                 GpuEngine(store.load(recipe.lutId)).use { gpu ->
-                    val processed=gpu.render(p.bitmap,recipe,fullWidth=p.sourceWidth,fullHeight=p.sourceHeight,
-                        scaleX=p.sourceWidth.toFloat()/p.bitmap.width,scaleY=p.sourceHeight.toFloat()/p.bitmap.height)
-                    val upright=PhotoRenderer.upright(processed,p.orientation)
-                    if(upright!==processed) processed.recycle()
-                    upright
+                    val warped=DistortionRenderer.preview(p.bitmap,p.sourceWidth,p.sourceHeight,recipe.distortion) {execution.ensureActive()}
+                    try {
+                        val processed=gpu.render(warped,recipe,fullWidth=p.sourceWidth,fullHeight=p.sourceHeight,
+                            scaleX=p.sourceWidth.toFloat()/p.bitmap.width,scaleY=p.sourceHeight.toFloat()/p.bitmap.height)
+                        try { PhotoRenderer.upright(processed,p.orientation) }
+                        finally { if(p.orientation!=1) processed.recycle() }
+                    } finally { if(warped!==p.bitmap) warped.recycle() }
                 }
             } };error=null
         } catch(e: CancellationException) { throw e }
@@ -144,7 +150,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
 
     fun save() {
         val snapshot=recipe;saving=true;scope.launch {
-            try { RecipeWorker.start(app,photos.map { it.key },snapshot);status="${photos.size}장 저장 대기열에 추가했습니다";error=null }
+            try { RecipeWorker.start(app,photos.map { it.key },snapshot);status="보정 사진 ${photos.size}장을 JPEG 저장 대기열에 추가했습니다";error=null }
             catch(e: Exception) { error="저장 대기열을 만들지 못했습니다" }
             finally { saving=false }
         }
@@ -158,14 +164,31 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
             else -> retry++
         }
     }
-    /** [aboveSidePanel] stretches the save button over the 352dp side panel (16dp end margin) of the landscape layout. */
-    @Composable fun Toolbar(aboveSidePanel: Boolean=false) {
-        Row(Modifier.fillMaxWidth().heightIn(min=56.dp),verticalAlignment=Alignment.CenterVertically) {
+    var headerHeightPx by remember { mutableIntStateOf(0) }
+    @Composable fun Header() {
+        Row(Modifier.fillMaxWidth().onSizeChanged {headerHeightPx=it.height}.heightIn(min=56.dp),verticalAlignment=Alignment.CenterVertically) {
             SymbolButton(R.drawable.pixel_back,"사진으로 돌아가기",action=onBack)
             Text(if(photos.size>1) "${photos.size}장에 적용" else "편집",Modifier.weight(1f),style=MaterialTheme.typography.titleSmall)
-            Button(onClick=::save,enabled=!saving && original!=null && after!=null && !rendering,
-                modifier=if(aboveSidePanel) Modifier.padding(end=16.dp).width(352.dp) else Modifier,
-                contentPadding=PaddingValues(horizontal=12.dp)) { Text(if(photos.size>1) "${photos.size}장 저장" else "저장") }
+        }
+    }
+    @Composable fun SaveActions() {
+        Surface(color=MaterialTheme.colorScheme.background) {
+            Column(Modifier.fillMaxWidth().padding(start=12.dp,end=12.dp,top=8.dp,bottom=20.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp,Alignment.End),
+                    verticalArrangement=Arrangement.spacedBy(4.dp)) {
+                    Row {
+                        SymbolButton(R.drawable.pixel_compare,if(compare) "보정 사진 보기" else "원본 보기") {compare=!compare}
+                        SymbolButton(R.drawable.pixel_undo,"실행 취소",history.canUndo) {onRecipeChange(history.undo())}
+                        SymbolButton(R.drawable.pixel_redo,"다시 실행",history.canRedo) {onRecipeChange(history.redo())}
+                    }
+                    EditorRecipeSave(app,recipe,name,changeName,onArchived) {status=it}
+                    Button(onClick=::save,enabled=!saving && original!=null && after!=null && !rendering,
+                        modifier=Modifier.heightIn(min=48.dp)) {
+                        Text(if(saving) "저장 준비 중…" else if(photos.size>1) "사진 ${photos.size}장 저장" else "사진 저장")
+                    }
+                }
+                status?.let {Text(it,Modifier.semantics {liveRegion=LiveRegionMode.Polite},style=MaterialTheme.typography.bodySmall)}
+            }
         }
     }
     @Composable fun Preview(box: PhotoBox) {
@@ -178,7 +201,7 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                     },contentScale=ContentScale.Fit)
             }
             if(rendering) LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
-            if(display==null && error==null) Text("미리보기 읽는 중…",Modifier.align(Alignment.Center))
+            if(display==null && error==null) Text("미리보기 읽는 중…",Modifier.align(Alignment.Center),color=androidx.compose.ui.graphics.Color.White)
             if(display==null && error!=null) ErrorBanner(error!!,"다시 시도",{retry++})
         }
     }
@@ -198,6 +221,8 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                     Symbol(R.drawable.symbol_raw_on,size=24.dp)
                     Text("RAW · 카메라 내장 JPEG로 편집",color=dev.sukbeomh.beta7compact.ui.theme.BetaTokens.warning)
                 }
+                Text("사진 저장: 보정된 사진을 별도 JPEG로 저장합니다. 원본은 유지됩니다.",style=MaterialTheme.typography.bodySmall)
+                Text("레시피 저장: 현재 설정을 레시피로 저장해 다른 사진에도 사용할 수 있습니다.",style=MaterialTheme.typography.bodySmall)
                 Text("LUT",style=MaterialTheme.typography.titleSmall)
                 val categories=listOf("보관","네거","슬라이드","시네마","흑백","크리에이티브","사용자")
                 val categoryIds=listOf("saved","color_negative","slide","cinema_print","bw","creative","user")
@@ -239,58 +264,54 @@ fun RecipeEditor(app: App, photos: List<Photo>, appWindowWidth: Float? = null, a
                 }
                 TextButton(onClick={details=!details}) { Symbol(R.drawable.pixel_tune);Spacer(Modifier.width(8.dp));Text(if(details) "세부 조정 접기" else "세부 조정") }
                 if(details) {
-                    TabRow(tab) { listOf("기본","톤커브","HSL","효과").forEachIndexed { i,label -> Tab(tab==i,{tab=i},text={Text(label)}) } }
+                    ScrollableTabRow(selectedTabIndex=tab,edgePadding=0.dp) { listOf("기본","톤커브","HSL","효과","왜곡").forEachIndexed { i,label -> Tab(tab==i,{tab=i},text={Text(label)}) } }
                     ColorControls(tab,recipe) { change(it) }
                 }
                 TextButton(onClick={pick.launch(arrayOf("*/*"))}) { Text("사용자 .cube 가져오기 (2~65)") }
-                TextButton(onClick={change(Recipe(inputTransform=recipe.inputTransform))}) { Text("색 보정 초기화 · 입력 변환 유지") }
+                TextButton(onClick={change(Recipe(inputTransform=recipe.inputTransform,distortion=recipe.distortion,version=if(recipe.distortion==0f) 2 else 3))}) { Text("색 보정 초기화 · 입력 변환·왜곡 유지") }
                 TextButton(enabled=!baking && entries.any { it.id==recipe.lutId },onClick={bakeSnapshot=recipe;exportCube.launch("beta7compact-recipe.cube")}) { Text(if(baking) "LUT 굽는 중…" else "현재 색을 33³ .cube로 내보내기") }
-                Text("구운 LUT는 색 보정 초기화 후 선택하세요. 입력 변환은 유지합니다.",style=MaterialTheme.typography.bodySmall)
+                Text("구운 LUT는 색 보정 초기화 후 선택하세요. 입력 변환은 유지하며 왜곡은 .cube에 포함되지 않습니다.",style=MaterialTheme.typography.bodySmall)
                 TextButton(onClick={tabletopOverride=!tabletop}) { Text(if(tabletop) "테이블탑 해제" else "테이블탑으로 보기") }
                 error?.let { ErrorBanner(it,"다시 시도",::recover) {error=null} }
-                status?.let { Text(it,style=MaterialTheme.typography.bodyMedium) }
-                results.forEach { result -> TextButton(onClick={try { openPhoto(app,result.uri) } catch(e: Exception) {error="결과 사진을 열 수 없습니다"}}) {Text("저장 결과 열기")} }
+                results.forEach { result -> TextButton(onClick={try { openPhoto(app,result.uri) } catch(e: Exception) {error="결과 사진을 열 수 없습니다"}}) {Text("저장한 보정 사진 열기")} }
             }
-            Row(Modifier.fillMaxWidth().padding(horizontal=8.dp),verticalAlignment=Alignment.CenterVertically) {
-            SymbolButton(R.drawable.pixel_compare,if(compare) "보정 사진 보기" else "원본 보기") { compare=!compare }
-            SymbolButton(R.drawable.pixel_undo,"실행 취소",history.canUndo) { onRecipeChange(history.undo()) }
-            SymbolButton(R.drawable.pixel_redo,"다시 실행",history.canRedo) { onRecipeChange(history.redo()) }
-                Spacer(Modifier.weight(1f))
-                EditorRecipeSave(app,recipe,name,changeName,onArchived) {status=it}
-            }
-            if(tabletop) Toolbar()
             }
         }
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val windowHeight=maxHeight
         val detected=rememberTabletop(maxWidth.value)
         val tabletop=tabletopOverride ?: detected
         val layout=paneLayout(appWindowWidth ?: maxWidth.value,appWindowHeight ?: maxHeight.value,tabletop)
-        val box=editorPhotoBox(maxWidth.value,maxHeight.value,layout)
-        val wide=windowClass(maxWidth.value)!=WindowClass.COMPACT
-        Surface(Modifier.fillMaxSize().graphicsLayer { scaleX=1f-backProgress*.05f;scaleY=scaleX;translationX=backProgress*24.dp.toPx() }) {
-            when(layout) {
-                PaneLayout.TABLETOP -> Column {
-                    Box(Modifier.fillMaxWidth().height(windowHeight/2),contentAlignment=Alignment.Center) {Preview(box)}
-                    Spacer(Modifier.height(12.dp))
-                    Panel(Modifier.weight(1f).padding(horizontal=16.dp).padding(bottom=12.dp),true)
-                }
-                PaneLayout.SIDE_BY_SIDE -> Column {
-                    Toolbar(aboveSidePanel=true)
-                    Row(Modifier.weight(1f).padding(end=16.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
-                        Box(Modifier.weight(1f).fillMaxHeight(),contentAlignment=Alignment.Center) {Preview(box)}
-                        Panel(Modifier.width(352.dp).fillMaxHeight().padding(vertical=16.dp),false)
+        val density=LocalDensity.current
+        val fontScale=density.fontScale
+        val tabletopBoundary=maxHeight/2-with(density) {headerHeightPx.toDp()}
+        Surface(Modifier.fillMaxSize().graphicsLayer {scaleX=1f-backProgress*.05f;scaleY=scaleX;translationX=backProgress*24.dp.toPx()}) {
+            Scaffold(contentWindowInsets=WindowInsets(0,0,0,0),topBar={if(layout!=PaneLayout.SIDE_BY_SIDE) Header()},bottomBar={SaveActions()}) {padding ->
+                BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
+                    if(layout==PaneLayout.SIDE_BY_SIDE) {
+                        Row(Modifier.fillMaxSize().padding(horizontal=16.dp),horizontalArrangement=Arrangement.spacedBy(16.dp)) {
+                            Column(Modifier.weight(1f).fillMaxHeight()) {
+                                Header()
+                                BoxWithConstraints(Modifier.fillMaxWidth().weight(1f),contentAlignment=Alignment.Center) {
+                                    Preview(photoBox(maxWidth.value,maxHeight.value))
+                                }
+                            }
+                            Panel(Modifier.width(352.dp).fillMaxHeight().padding(vertical=8.dp),tabletop)
+                        }
+                    } else {
+                        val gap=8.dp
+                        val bodyHeight=(maxHeight-gap).value.coerceAtLeast(0f)
+                        val previewHeight=if(layout==PaneLayout.TABLETOP) {
+                            // Retain the original viewport midpoint while reserving scrollable controls.
+                            tabletopBoundary.value.coerceIn(0f,(bodyHeight-minOf(160f*fontScale,bodyHeight*.6f)).coerceAtLeast(0f)).dp
+                        } else editorPreviewHeight(maxWidth.value,bodyHeight,fontScale=fontScale).dp
+                        Column(Modifier.fillMaxSize(),verticalArrangement=Arrangement.spacedBy(gap)) {
+                            BoxWithConstraints(Modifier.fillMaxWidth().height(previewHeight),contentAlignment=Alignment.Center) {
+                                Preview(photoBox(maxWidth.value,maxHeight.value))
+                            }
+                            Panel(Modifier.fillMaxWidth().weight(1f).padding(horizontal=8.dp),tabletop)
+                        }
                     }
-                }
-                PaneLayout.STACKED -> if(windowHeight.value < box.height+256f) Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Toolbar();Preview(box)
-                    Spacer(Modifier.height(8.dp))
-                    Panel(Modifier.fillMaxWidth().height(600.dp),false)
-                } else Column {
-                    Toolbar();Preview(box)
-                    Spacer(Modifier.height(if(wide) 12.dp else 8.dp))
-                    Panel(Modifier.weight(1f).padding(horizontal=if(wide) 16.dp else 0.dp).padding(bottom=if(wide) 16.dp else 8.dp),false)
                 }
             }
         }

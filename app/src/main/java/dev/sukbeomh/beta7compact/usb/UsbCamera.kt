@@ -9,6 +9,12 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import dev.sukbeomh.beta7compact.core.Camera
 import dev.sukbeomh.beta7compact.core.CameraObject
+import dev.sukbeomh.beta7compact.remote.SonyRemoteSession
+import dev.sukbeomh.beta7compact.remote.SonySessionTransport
+import dev.sukbeomh.beta7compact.remote.SonyCaptureSession
+import dev.sukbeomh.beta7compact.remote.SonyCaptureTransport
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -16,6 +22,59 @@ import java.io.File
 /** One owner for the physical USB interface, shared by listing, thumbs and the worker. */
 object UsbAccess {
     private val lock = Mutex()
+    /** Explicit capture scope; diagnostics continue using the read-only/control-disabled scopes. */
+    suspend fun <T> useCapture(openTransport: suspend () -> SonyCaptureTransport,
+                               onSession: (SonyCaptureSession) -> Unit = {},
+                               sessionFactory: (SonyCaptureTransport) -> SonyCaptureSession = { SonyCaptureSession(it) },
+                               block: suspend (SonyCaptureSession) -> T): T = lock.withLock {
+        val transport = openTransport()
+        val session = try { sessionFactory(transport) } catch (failure: Throwable) {
+            try { transport.close() } catch (closing: Throwable) {
+                if (failure !== closing) failure.addSuppressed(closing)
+            }
+            throw failure
+        }
+        var failure: Throwable? = null
+        try {
+            onSession(session)
+            session.connect()
+            block(session)
+        } catch (error: Throwable) {
+            failure = error
+            throw error
+        } finally {
+            try {
+                withContext(NonCancellable) { session.close() }
+            } catch (closing: Throwable) {
+                if (failure == null) throw closing
+                if (failure !== closing) failure.addSuppressed(closing)
+            }
+        }
+    }
+
+    /** Explicit remote-session scope; shares ownership with import and read-only diagnostics. */
+    suspend fun <T> useRemote(openTransport: suspend () -> SonySessionTransport,
+                              onSession: (SonyRemoteSession) -> Unit = {},
+                              block: suspend (SonyRemoteSession) -> T): T = lock.withLock {
+        val session = SonyRemoteSession(openTransport())
+        var failure: Throwable? = null
+        try {
+            onSession(session)
+            session.connect()
+            block(session)
+        } catch (error: Throwable) {
+            failure = error
+            throw error
+        } finally {
+            try {
+                withContext(NonCancellable) { session.close() }
+            } catch (closing: Throwable) {
+                if (failure == null) throw closing
+                if (failure !== closing) failure.addSuppressed(closing)
+            }
+        }
+    }
+
     suspend fun <T> use(context: Context, raw: Boolean, remember: (Boolean) -> Unit = {},
                         failed: (MtpFailure) -> Unit = {}, block: suspend (Camera) -> T): T =
         use(context, { raw }, remember, failed, block)
@@ -23,6 +82,62 @@ object UsbAccess {
                         failed: (MtpFailure) -> Unit = {}, block: suspend (Camera) -> T): T = lock.withLock {
         // Read preferences after acquiring ownership: queued thumbnail reads see a prior fallback.
         open(context, raw(), remember, failed).use { block(it) }
+    }
+    suspend fun inspect(context: Context): DeviceInfo = lock.withLock {
+        val device = device(context)
+        val manager = context.getSystemService(UsbManager::class.java)
+        check(manager.hasPermission(device)) { "USB 접근 권한을 허용하세요" }
+        RawCamera(manager, device, openSession = false).use { it.deviceInfo() }
+    }
+    suspend fun collectDiagnostics(context: Context): CameraDiagnosticReport = lock.withLock {
+        val started = System.nanoTime()
+        var stage = DiagnosticStage.DISCOVERY
+        var snapshots = emptyList<DiagnosticUsbDevice>()
+        var activeSelection: DiagnosticUsbSelection? = null
+        fun report(outcome: DiagnosticOutcome, info: DeviceInfo? = null, response: Int? = null) =
+            CameraDiagnosticReport(snapshots, stage, outcome, (System.nanoTime() - started) / 1_000_000, response, info, activeSelection)
+        try {
+            val manager = context.getSystemService(UsbManager::class.java)
+            val devices = manager.deviceList.values.filter { it.vendorId == 0x054c }
+            snapshots = devices.map { device ->
+                DiagnosticUsbDevice(device.vendorId, device.productId, manager.hasPermission(device),
+                    (0 until device.configurationCount).flatMap { c ->
+                        val config = device.getConfiguration(c)
+                        (0 until config.interfaceCount).map { i ->
+                            val face = config.getInterface(i)
+                            DiagnosticInterface(config.id, face.id, face.alternateSetting, face.interfaceClass,
+                                face.interfaceSubclass, face.interfaceProtocol, (0 until face.endpointCount).map { e ->
+                                    val endpoint = face.getEndpoint(e)
+                                    DiagnosticEndpoint(endpoint.address, endpoint.direction, endpoint.type, endpoint.maxPacketSize)
+                                })
+                        }
+                    })
+            }
+            if (devices.isEmpty()) return@withLock report(DiagnosticOutcome.NO_DEVICE)
+            if (devices.size != 1) return@withLock report(DiagnosticOutcome.MULTIPLE_DEVICES)
+            stage = DiagnosticStage.PERMISSION
+            if (!snapshots.single().permission) return@withLock report(DiagnosticOutcome.NO_PERMISSION)
+            stage = DiagnosticStage.INTERFACE
+            if (snapshots.single().interfaces.none { it.supportsPtpBulk })
+                return@withLock report(DiagnosticOutcome.UNSUPPORTED_INTERFACE)
+            stage = DiagnosticStage.OPEN
+            val info = RawCamera(manager, devices.single(), openSession = false, diagnosticStage = { stage = it },
+                diagnosticSelection = { activeSelection = it }).use {
+                stage = DiagnosticStage.PARSE
+                it.deviceInfo()
+            }
+            stage = DiagnosticStage.COMPLETE
+            report(DiagnosticOutcome.SUCCESS, info, Ptp.OK)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: SecurityException) {
+            report(DiagnosticOutcome.NO_PERMISSION)
+        } catch (e: PtpResponseException) {
+            report(DiagnosticOutcome.PTP_REJECTED, response = e.code)
+        } catch (e: Exception) {
+            report(if (stage == DiagnosticStage.PARSE || e is IllegalArgumentException) DiagnosticOutcome.INVALID_DATA
+                else DiagnosticOutcome.TRANSPORT_FAILURE)
+        }
     }
     fun device(context: Context): UsbDevice {
         val candidates = context.getSystemService(UsbManager::class.java).deviceList.values.filter { it.vendorId == 0x054c }
@@ -103,10 +218,13 @@ private class NativeCamera(private val manager: UsbManager, private val device: 
     }
 }
 
-private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
+private class RawCamera(manager: UsbManager, device: UsbDevice, openSession: Boolean = true,
+                        diagnosticStage: (DiagnosticStage) -> Unit = {},
+                        diagnosticSelection: (DiagnosticUsbSelection) -> Unit = {}) : Camera {
     private val connection = checkNotNull(manager.openDevice(device)) { "USB 장치를 열 수 없습니다" }
     private var face: android.hardware.usb.UsbInterface? = null
     private lateinit var client: PtpUsbClient
+    private val deviceInfoBytes: ByteArray
     init {
         try {
             fun configuration(): Int {
@@ -114,11 +232,13 @@ private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
                 check(connection.controlTransfer(0x80, 8, 0, 0, result, 1, 8000) == 1) { "USB 구성을 확인할 수 없습니다" }
                 return result[0].toInt() and 255
             }
+            diagnosticStage(DiagnosticStage.CONFIGURATION)
             val active = configuration()
             val configurations = (0 until device.configurationCount).flatMap { c ->
                 val cfg = device.getConfiguration(c)
                 (0 until cfg.interfaceCount).map { cfg.id to cfg.getInterface(it) }
             }
+            diagnosticStage(DiagnosticStage.INTERFACE)
             val alternates = mutableMapOf<Int, Int>()
             val selected = activeStillImageInterface(active, configurations, { it.alternateSetting }, { f ->
                 alternates.getOrPut(f.id) {
@@ -133,6 +253,8 @@ private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
                 f.interfaceClass == 6 && endpoints.any { it.type == 2 && it.direction == 128 } &&
                     endpoints.any { it.type == 2 && it.direction == 0 }
             }
+            diagnosticSelection(DiagnosticUsbSelection(active, selected.id, selected.alternateSetting))
+            diagnosticStage(DiagnosticStage.CLAIM)
             check(connection.claimInterface(selected, true)) { "USB 인터페이스를 사용할 수 없습니다" }
             face = selected
             val endpoints = (0 until selected.endpointCount).map { selected.getEndpoint(it) }
@@ -142,10 +264,12 @@ private class RawCamera(manager: UsbManager, device: UsbDevice) : Camera {
                 override fun write(bytes: ByteArray, timeoutMs: Int) = connection.bulkTransfer(output, bytes, bytes.size, timeoutMs)
                 override fun read(bytes: ByteArray, timeoutMs: Int) = connection.bulkTransfer(input, bytes, bytes.size, timeoutMs)
             })
-            client.read(0x1001)
-            client.openSession()
+            diagnosticStage(DiagnosticStage.DEVICE_INFO)
+            deviceInfoBytes = client.read(0x1001)
+            if (openSession) client.openSession()
         } catch (e: Throwable) { face?.let { connection.releaseInterface(it) }; connection.close(); throw e }
     }
+    fun deviceInfo(): DeviceInfo = Ptp.deviceInfo(deviceInfoBytes)
     override fun list(): List<CameraObject> = Ptp.ids(client.read(0x1004)).flatMap { storage ->
         Ptp.ids(client.read(0x1007, storage, 0, 0)).map { handle ->
             info(handle).also { check(it.storage == storage) { "카드 내용이 변경되었습니다. 목록을 새로고침하세요" } }

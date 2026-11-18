@@ -1,0 +1,8 @@
+testDebugUnitTest: {'tests': 228, 'failures': 0, 'errors': 0, 'skipped': 0}
+  SonyExtendedInfoParserTest: tests=10, failures=0, errors=0, skipped=0
+  SonyPropertyParserTest: tests=13, failures=0, errors=0, skipped=0
+  SonyEventParserTest: tests=9, failures=0, errors=0, skipped=0
+testReleaseUnitTest: {'tests': 228, 'failures': 0, 'errors': 0, 'skipped': 0}
+  SonyExtendedInfoParserTest: tests=10, failures=0, errors=0, skipped=0
+  SonyPropertyParserTest: tests=13, failures=0, errors=0, skipped=0
+  SonyEventParserTest: tests=9, failures=0, errors=0, skipped=0

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.sukbeomh.beta7compact.App
 import dev.sukbeomh.beta7compact.R
+import dev.sukbeomh.beta7compact.library.isExternal
 import dev.sukbeomh.beta7compact.library.Photo
 import dev.sukbeomh.beta7compact.recipe.*
 import dev.sukbeomh.beta7compact.ui.components.*
@@ -28,8 +29,8 @@ import kotlinx.coroutines.*
 
 internal data class PhotoPreviewState(val bitmap: Bitmap? = null, val loading: Boolean = true)
 @Composable internal fun photoPreview(app: App, photo: Photo?, retry: Int = 0): PhotoPreviewState {
-    var state by remember(photo?.key) { mutableStateOf(PhotoPreviewState()) }
-    LaunchedEffect(photo?.key, retry) {
+    var state by remember(photo?.key,photo?.uri) { mutableStateOf(PhotoPreviewState()) }
+    LaunchedEffect(photo?.key,photo?.uri,retry) {
         state = PhotoPreviewState()
         val bitmap = if (photo == null) null else withContext(Dispatchers.IO) {
             try { PhotoRenderer.preview(app, photo).let { PhotoRenderer.upright(it.bitmap, it.orientation) } }
@@ -62,7 +63,7 @@ internal data class PhotoPreviewState(val bitmap: Bitmap? = null, val loading: B
     @Composable fun Info(modifier: Modifier) {
         Column(modifier.verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(if (photo.captured > 0) java.text.DateFormat.getDateTimeInstance().format(java.util.Date(photo.captured)) else "촬영일 미상")
+                Text(if (photo.isExternal) "추가일 · ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(photo.captured))}" else if (photo.captured > 0) java.text.DateFormat.getDateTimeInstance().format(java.util.Date(photo.captured)) else "촬영일 미상")
                 Text("${if (photos.any { it.key != photo.key && it.pair == photo.pair }) "RAW+JPEG 쌍 · " else ""}레시피 적용본 ${results.size}개")
                 Text("원본은 수정되지 않습니다", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } }

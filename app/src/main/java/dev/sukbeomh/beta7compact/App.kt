@@ -15,6 +15,9 @@ class App : Application() {
         .addMigrations(LibraryDb.MIGRATION_1_2, LibraryDb.MIGRATION_2_3, LibraryDb.MIGRATION_3_4).build() }
     val settings by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
     val updater by lazy { dev.sukbeomh.beta7compact.update.Updater(this) }
+    val diskThumbnails by lazy { dev.sukbeomh.beta7compact.cache.DiskThumbnailCache(java.io.File(cacheDir, "camera-thumbnails-v1")) }
+    val cameraThumbnails = dev.sukbeomh.beta7compact.cache.ThumbnailCache<android.graphics.Bitmap>(
+        24 * 1024 * 1024, { it.allocationByteCount })
     val usbState = MutableStateFlow(LinkState.DISCONNECTED)
     val locationState = MutableStateFlow(LocationStatus())
     val usbDiagnostic = MutableStateFlow<String?>(null)

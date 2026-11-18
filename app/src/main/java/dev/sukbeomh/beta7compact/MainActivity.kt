@@ -35,7 +35,8 @@ class MainActivity : ComponentActivity() {
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                UsbManager.ACTION_USB_DEVICE_DETACHED -> { app.usb(LinkEvent.LOST); refresh.value++ }
+                UsbManager.ACTION_USB_DEVICE_DETACHED -> { app.cameraThumbnails.clear(); app.usb(LinkEvent.LOST); refresh.value++ }
+                UsbManager.ACTION_USB_DEVICE_ATTACHED -> { app.cameraThumbnails.clear(); refresh.value++ }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> { refresh.value++ }
                 else -> refresh.value++
             }
@@ -43,6 +44,7 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        app.cameraThumbnails.clear()
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         val filter = IntentFilter("$packageName.USB_PERMISSION").apply {
@@ -51,7 +53,13 @@ class MainActivity : ComponentActivity() {
         }
         ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
         receiveRecipe(intent)
-        setContent { BetaTheme {
+        setContent { BetaTheme(settings = app.settings) {
+            val dark = dev.sukbeomh.beta7compact.ui.theme.LocalAppTheme.current.dark
+            androidx.compose.runtime.SideEffect {
+                val style = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
             MainScreen(this, app)
             sharedRecipe?.let { code -> androidx.compose.runtime.key(code) {
                 RecipeImportDialog(app,code,close={sharedRecipe=null})

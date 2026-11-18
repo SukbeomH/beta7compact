@@ -1,0 +1,1 @@
+ecb604f38a7111c84a4da6d9fa60bd95e3cacdf3fe47c8920d111d1538183a51  dist/beta7compact-0.8.5.apk

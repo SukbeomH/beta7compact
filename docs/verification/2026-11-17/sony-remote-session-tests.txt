@@ -1,0 +1,8 @@
+testDebugUnitTest: {'tests': 262, 'failures': 0, 'errors': 0, 'skipped': 0}
+  SonySessionWireTransportTest: tests=12, failures=0, errors=0, skipped=0
+  SonyRemoteOwnershipTest: tests=6, failures=0, errors=0, skipped=0
+  SonyRemoteSessionTest: tests=16, failures=0, errors=0, skipped=0
+testReleaseUnitTest: {'tests': 262, 'failures': 0, 'errors': 0, 'skipped': 0}
+  SonySessionWireTransportTest: tests=12, failures=0, errors=0, skipped=0
+  SonyRemoteOwnershipTest: tests=6, failures=0, errors=0, skipped=0
+  SonyRemoteSessionTest: tests=16, failures=0, errors=0, skipped=0

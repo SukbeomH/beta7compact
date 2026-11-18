@@ -45,9 +45,9 @@ class RecipeWorker(context: Context, params: WorkerParameters) : CoroutineWorker
     }
     private fun info(done: Int,total: Int): ForegroundInfo {
         applicationContext.getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel("recipes","레시피 저장",NotificationManager.IMPORTANCE_LOW))
+            NotificationChannel("recipes","보정 사진 저장",NotificationManager.IMPORTANCE_LOW))
         return ForegroundInfo(20,NotificationCompat.Builder(applicationContext,"recipes").setSmallIcon(R.drawable.ic_camera)
-            .setContentTitle("레시피 저장").setContentText("$done / $total").setProgress(total,done,false).setOngoing(true)
+            .setContentTitle("보정 사진 저장").setContentText("$done / $total").setProgress(total,done,false).setOngoing(true)
             .addAction(0,"중단",WorkManager.getInstance(applicationContext).createCancelPendingIntent(id)).build(),ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
     }
     companion object {
