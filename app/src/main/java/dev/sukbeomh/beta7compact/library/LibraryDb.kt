@@ -78,8 +78,13 @@ abstract class LibraryDb : RoomDatabase() {
     }
 }
 class RoomJournal(private val dao: PhotoDao,
+    private val wifiKey: String? = null,
     private val onComplete: (suspend (String, String, Long) -> Unit)? = null) : ImportJournal {
-    override suspend fun pending() = dao.pending().filterNot { it.isExternal }.map { it.cameraObject() }
+    override suspend fun pending() = if (wifiKey != null) {
+        listOfNotNull(dao.get(wifiKey)?.takeIf { it.imported == null }?.cameraObject())
+    } else {
+        dao.pending().filterNot { it.isExternal || it.isWifiImport }.map { it.cameraObject() }
+    }
     override suspend fun completedItems() = dao.all().filter { it.imported != null && !it.isExternal }.map { it.cameraObject() }
     override suspend fun contentHash(key: String) = dao.get(key)?.contentHash
     override suspend fun hashed(key: String, hash: String) = dao.hashed(key, hash)
@@ -90,3 +95,5 @@ class RoomJournal(private val dao: PhotoDao,
         onComplete?.invoke(key, uri, now) ?: dao.complete(key, uri, now)
     }
 }
+
+internal val Photo.isWifiImport: Boolean get() = key.startsWith("wifi:")

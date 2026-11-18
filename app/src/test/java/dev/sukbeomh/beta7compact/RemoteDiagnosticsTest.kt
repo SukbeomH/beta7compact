@@ -81,14 +81,14 @@ class RemoteDiagnosticsTest {
 
     @Test fun parserFailureRetainsVersionAndTypedPropertyWithoutPayload() = runBlocking {
         val peer = Peer().apply {
-            snapshot = byteArrayOf(1, 0, 0, 0, 0, 0, 0, 0, 0x1e, 0xd2.toByte(), -1, -1, 0, 0, 0, 0, 0)
+            snapshot = byteArrayOf(1, 0, 0, 0, 0, 0, 0, 0, 0x1e, 0xd2.toByte(), 6, 0x40, 0, 0, 0, 0, 0)
         }
         val result = run(peer)
         assertEquals(RemoteDiagnosticOutcome.FAILED, result.outcome)
         assertEquals("PROPERTY_SNAPSHOT_VALIDATION", result.failureStage)
         assertEquals(RemoteDiagnosticFailure.UNSUPPORTED_PROPERTY_TYPE, result.failure)
         assertEquals(0xd21e, result.unsupportedPropertyCode)
-        assertEquals(0xffff, result.unsupportedPropertyType)
+        assertEquals(0x4006, result.unsupportedPropertyType)
         assertEquals(0xc8, result.advertisedProtocolVersion)
         assertNull(result.propertyCount)
         assertEquals(SonyPtpCloseStatus.CONFIRMED, result.ptpCloseStatus)

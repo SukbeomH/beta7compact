@@ -18,7 +18,7 @@ import java.util.*
 
 @Composable fun CameraScreen(status: String, connected: Boolean, detail: String, busy: Boolean, working: Boolean,
     newCount: Int, pendingCount: Int, resolve: () -> Unit, scan: () -> Unit, receive: () -> Unit,
-    pick: () -> Unit, resume: () -> Unit, photos: () -> Unit) {
+    pick: () -> Unit, resume: () -> Unit, photos: () -> Unit, wifiImport: () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = windowClass(maxWidth.value) != WindowClass.COMPACT
         @Composable fun Connection(modifier: Modifier) {
@@ -37,6 +37,7 @@ import java.util.*
                     }
                 } }
                 OutlinedButton(onClick = pick, enabled = connected && !busy && !working, modifier = Modifier.fillMaxWidth()) { Text("골라서 가져오기") }
+                OutlinedButton(onClick = wifiImport, enabled = !busy && !working, modifier = Modifier.fillMaxWidth()) { Text("Wi-Fi로 사진 가져오기") }
                 TextButton(onClick = scan, enabled = !busy && !working) { Symbol(dev.sukbeomh.beta7compact.R.drawable.pixel_refresh); Text("다시 스캔") }
                 if (pendingCount > 0 && !working) WorkBanner("중단된 가져오기", 0, pendingCount, "이어서 받기", resume)
             }
@@ -44,12 +45,10 @@ import java.util.*
         @Composable fun Planned(modifier: Modifier) {
             Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("실험·예정 기능", style = MaterialTheme.typography.titleSmall)
-                listOf("원격 촬영 실험" to "설정 → AF·단발 촬영 실험 · 실기 검증 전", "USB 라이브뷰 · 준비 중" to "촬영 영상 미리보기", "위치 연동 · 준비 중" to "BLE 위치 동기화").forEach { (title, detail) ->
-                    OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                        Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } }
-                }
+                OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
+                    Text("USB 라이브뷰 · 준비 중", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("촬영 영상 미리보기", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } }
                 Text("원본은 DCIM/beta7compact/에 보존합니다.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

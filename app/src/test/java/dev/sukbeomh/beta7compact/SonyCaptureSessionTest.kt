@@ -208,6 +208,26 @@ class SonyCaptureSessionTest {
         }
     }
 
+    @Test fun restoreWaitsForCameraToReportOriginalPriorityWithoutWritingTwice() = runBlocking {
+        val peer = Peer().apply {
+            overrides[0xd25a] = 2 to 0L
+            restoreIgnored = true
+        }
+        var rereads = 0
+        peer.snapshotHook = {
+            if (peer.sets.lastOrNull() == SonySettingCommand.PRIORITY_CAMERA && ++rereads == 3) {
+                peer.overrides[0xd25a] = 2 to 0L
+            }
+        }
+        val session = peer.session(claim = true)
+        session.connect()
+        assertEquals(SonyAutofocusResult.LOCK_OBSERVED, session.autofocus())
+        assertEquals(SonyPriorityRestore.CONFIRMED, session.priorityRestore)
+        assertEquals(3, rereads)
+        assertEquals(1, peer.sets.count { it == SonySettingCommand.PRIORITY_CAMERA })
+        session.close()
+    }
+
     @Test fun priorityThatWasNeitherCameraNorApplicationIsNotGuessedBack() = runBlocking {
         val peer = Peer().apply { overrides[0xd25a] = 2 to 2L }
         val session = peer.session(claim = true); session.connect()
@@ -321,10 +341,46 @@ class SonyCaptureSessionTest {
         assertEquals(listOf(SonyCaptureCommand.HALF_PRESS, SonyCaptureCommand.HALF_RELEASE), peer.controlCalls)
     }
 
+    @Test fun wifiCanObserveFreshFocusAfterOneSecondWithoutFiringShutter() = runBlocking {
+        val peer = Peer(mode3 = true).apply { snapshotHook = { if (half) clock += 1200 } }
+        val session = SonyCaptureSession(peer, { peer.clock }, { peer.clock += it }, wifi = true)
+        session.connect()
+        assertEquals(SonyAutofocusResult.LOCK_OBSERVED, session.autofocus())
+        assertEquals(listOf(SonyCaptureCommand.HALF_PRESS, SonyCaptureCommand.HALF_RELEASE), peer.controlCalls)
+        session.close()
+    }
+
     @Test fun mode3IgnoresD229BecauseItIsNotItsShutterProperty() = runBlocking {
         val peer = Peer(true).apply { overrides[0xd229] = 6 to 0L }
         val session = peer.session(); session.connect()
         assertEquals(SonySingleCaptureOutcome.SUBMITTED_UNCONFIRMED, session.captureSingle().outcome)
+        session.close()
+    }
+
+    @Test fun onlyAlpha7CMode3WifiUsesAdvertisedShutterControlsWithoutDescriptors() = runBlocking {
+        fun peer(model: String = "ILCE-7C", mode3: Boolean = true) = Peer(mode3).apply {
+            this.model = model
+            omitted.addAll(listOf(0xd2c1, 0xd2c2))
+        }
+        for ((peer, wifi) in listOf(peer() to false, peer("ILCE-7CM2") to true, peer(mode3 = false) to true)) {
+            val session = SonyCaptureSession(peer, { peer.clock }, { peer.clock += it }, wifi = wifi)
+            session.connect()
+            val error = assertFailsWith<SonyCaptureEligibilityException> { session.autofocus() }
+            assertEquals(SonyCaptureEligibilityReason.PROPERTY_MISSING, error.reason)
+            assertTrue(peer.controlCalls.isEmpty())
+        }
+        val unsafe = peer().apply { idleFocus = 2 }
+        val unsafeSession = SonyCaptureSession(unsafe, { unsafe.clock }, { unsafe.clock += it }, wifi = true)
+        unsafeSession.connect()
+        assertEquals(SonyCaptureEligibilityReason.BUTTON_STATE,
+            assertFailsWith<SonyCaptureEligibilityException> { unsafeSession.autofocus() }.reason)
+        assertTrue(unsafe.controlCalls.isEmpty())
+
+        val supported = peer()
+        val session = SonyCaptureSession(supported, { supported.clock }, { supported.clock += it }, wifi = true)
+        session.connect()
+        assertEquals(SonySingleCaptureOutcome.SUBMITTED_UNCONFIRMED, session.captureSingle().outcome)
+        assertEquals(1, supported.controlCalls.count { it == SonyCaptureCommand.FULL_PRESS })
         session.close()
     }
 

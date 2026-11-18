@@ -82,21 +82,10 @@ import kotlinx.coroutines.*
             AutoRecipeSetting(app, recipes)
             TextButton(onClick = recipes) { Text("기본 레시피 관리") }
         } }
-        Text("위치 연동", style = MaterialTheme.typography.titleSmall)
-        OutlinedCard { Column(Modifier.padding(16.dp)) {
-            BleLocationSetting(activity, app)
-            Text("GPS 좌표는 화면·로그·DB에 기록하지 않습니다", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } }
         Text("업데이트", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { UpdateSetting(app) } }
-        Text("연구 · 읽기 전용", style = MaterialTheme.typography.titleSmall)
-        CameraDiagnosticsSetting(activity = activity, enabled = canChange)
-        dev.sukbeomh.beta7compact.research.FirmwareInspectionCard()
-        Text("연구 · PC Remote 실험", style = MaterialTheme.typography.titleSmall)
-        PcRemoteDiagnosticsSetting(activity = activity, enabled = canChange)
-        CaptureExperimentSetting(activity = activity, enabled = canChange)
-        WifiRemoteDiagnosticsSetting(app = app, enabled = canChange)
         Text("진단 · 정보", style = MaterialTheme.typography.titleSmall)
+        CameraDiagnosticsSetting(activity = activity, enabled = canChange)
         Card { Column(Modifier.padding(16.dp)) {
             TextButton(onClick = {
                 try { activity.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {

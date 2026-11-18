@@ -28,9 +28,12 @@ sealed interface WifiDiagnosticTarget {
 private class SocketChannel(private val socket: Socket) : PtpIpChannel {
     override fun write(bytes: ByteArray) { socket.getOutputStream().apply { write(bytes); flush() } }
     override fun readFully(buffer: ByteArray, timeoutMillis: Int) {
-        socket.soTimeout = timeoutMillis
+        val deadline = System.nanoTime() + timeoutMillis * 1_000_000L
         var offset = 0
         while (offset < buffer.size) {
+            val remaining = deadline - System.nanoTime()
+            if (remaining <= 0) throw java.net.SocketTimeoutException()
+            socket.soTimeout = ((remaining + 999_999) / 1_000_000).toInt()
             val count = socket.getInputStream().read(buffer, offset, buffer.size - offset)
             if (count < 0) throw EOFException()
             offset += count
@@ -39,7 +42,7 @@ private class SocketChannel(private val socket: Socket) : PtpIpChannel {
     override fun close() = socket.close()
 }
 
-private fun connector(factory: SocketFactory, address: InetAddress) = PtpIpConnector { timeout ->
+internal fun ptpIpConnector(factory: SocketFactory, address: InetAddress) = PtpIpConnector { timeout ->
     val socket = factory.createSocket()
     try {
         socket.connect(InetSocketAddress(address, PtpIp.PORT), timeout)
@@ -70,7 +73,7 @@ suspend fun runWifiDiagnostic(context: Context, target: WifiDiagnosticTarget, gu
             null, null, null, emptyMap(), 0, trace.toList())
     }
     suspend fun probe(factory: SocketFactory, address: InetAddress) = withContext(Dispatchers.IO) {
-        runPtpIpProbe(connector(factory, address), guid, name, address.hostAddress, earlier = trace.toList(), startedAt = started)
+        runPtpIpProbe(ptpIpConnector(factory, address), guid, name, address.hostAddress, earlier = trace.toList(), startedAt = started)
     }
     return when (target) {
         is WifiDiagnosticTarget.Address ->

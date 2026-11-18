@@ -16,6 +16,7 @@ import dev.sukbeomh.beta7compact.*
 import dev.sukbeomh.beta7compact.R
 import dev.sukbeomh.beta7compact.core.*
 import dev.sukbeomh.beta7compact.library.isExternal
+import dev.sukbeomh.beta7compact.library.isWifiImport
 import dev.sukbeomh.beta7compact.library.Photo
 import dev.sukbeomh.beta7compact.recipe.Recipe
 import dev.sukbeomh.beta7compact.recipe.RecipeWorker
@@ -68,6 +69,7 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
     var objects by remember { mutableStateOf<List<CameraObject>>(emptyList()) }
     var selected by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var busy by remember { mutableStateOf(false) }
+    var wifiImport by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var detail by remember { mutableStateOf("Sony 카메라를 USB로 연결하세요") }
     var raw by remember { mutableStateOf(app.settings.getBoolean("raw", true)) }
@@ -212,11 +214,11 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
                                 AppTab.CAMERA -> if (navigation.picking) CameraPicker(objects, completed, selected.toSet(), working,
                                     { selected = it.toList() }, { cameraThumb(app, it, raw, working, thumbnailNamespace, objectGeneration) }, { receive(selected.toSet()) }, { dispatch(NavigationAction.Back) })
                                 else CameraScreen(status, connected, usbDiagnostic ?: detail, busy, working,
-                                    objects.count { !it.isKnown(completed) }, records.count { it.imported == null }, ::resolve, ::scanUsb,
+                                    objects.count { !it.isKnown(completed) }, records.count { it.imported == null && !it.isWifiImport }, ::resolve, ::scanUsb,
                                     { receive(null) }, {
                                         selected = objects.filter { !it.isKnown(completed) }.map { it.key }
                                         dispatch(NavigationAction.Pick)
-                                    }, { resumeImport() }, { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) })
+                                    }, { resumeImport() }, { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) }, { wifiImport = true })
                                 AppTab.PHOTOS -> PhotosScreen(app, records.filter { it.imported != null },
                                     { dispatch(NavigationAction.Edit(it)) }, { dispatch(NavigationAction.View(it)) }, { dispatch(NavigationAction.Tab(AppTab.CAMERA)) }, windowWidth, windowHeight)
                                 AppTab.RECIPES -> RecipesScreen(app) { dispatch(NavigationAction.Tab(AppTab.PHOTOS)) }
@@ -230,6 +232,10 @@ private val EditorExitSaver = listSaver<EditorExitState, String>(
             }
         }
     }
+    if (wifiImport) WifiCardImportDialog(app, onClose = { wifiImport = false }, onOpenPhotos = {
+        wifiImport = false
+        dispatch(NavigationAction.Tab(AppTab.PHOTOS))
+    })
     if (editorExitState.pending != null) AlertDialog(
         onDismissRequest = { handleExit(EditorExitEvent.ContinueEditing) },
         title = { Text("보정 설정을 레시피로 저장할까요?") },

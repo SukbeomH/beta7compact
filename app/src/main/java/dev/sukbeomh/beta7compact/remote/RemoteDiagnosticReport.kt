@@ -69,6 +69,7 @@ data class RemoteDiagnosticReport(
             when {
                 found.isEmpty() -> "0x%04X 없음".format(code)
                 property == null -> "0x%04X 중복 ${found.size}".format(code)
+                property.currentValue == null -> "0x%04X type=0x%04X 값 제외".format(code, property.dataType)
                 else -> "0x%04X type=0x%04X getset=0x%02X enabled=%d value=0x%s".format(code, property.dataType,
                     property.rawGetSet, property.rawEnabled, property.currentValue.toString(16).uppercase().take(16))
             }

@@ -31,6 +31,8 @@ class SonyRemoteSession(private val transport: SonySessionTransport,
         private set
     @Volatile var ptpCloseStatus = SonyPtpCloseStatus.NOT_OPENED
         private set
+    internal var deviceModel: String? = null
+        private set
 
     suspend fun connect(): SonyRemoteSnapshot = mutex.withLock {
         check(state == SonyRemoteSessionState.NEW) { "Sony remote session is single-use" }
@@ -43,6 +45,7 @@ class SonyRemoteSession(private val transport: SonySessionTransport,
             require(device.operations.toSet().containsAll(setOf(0x9201, 0x9202))) {
                 "Required Sony session operations not advertised"
             }
+            deviceModel = device.model
             ptpCloseStatus = SonyPtpCloseStatus.UNCONFIRMED
             transport.exchange(SonySessionOperation.OPEN_SESSION)
             opened = true
@@ -114,7 +117,10 @@ class SonyRemoteSession(private val transport: SonySessionTransport,
     private suspend fun readProperties(): List<SonyPropertyDescriptor> =
         frozen(SonyPropertyParser.snapshot(transport.exchange(SonySessionOperation.PROPERTY_SNAPSHOT)).map { property ->
             when (val form = property.form) {
-                is SonyPropertyForm.Enumeration -> property.copy(form = form.copy(values = frozen(form.values)))
+                is SonyPropertyForm.Enumeration -> property.copy(form = form.copy(
+                    values = frozen(form.values), secondaryValues = form.secondaryValues?.let(::frozen)))
+                is SonyPropertyForm.TextEnumeration -> property.copy(form = form.copy(
+                    values = frozen(form.values), secondaryValues = form.secondaryValues?.let(::frozen)))
                 else -> property
             }
         })

@@ -91,4 +91,16 @@ class LibraryMigrationContractTest {
         assertEquals("content://synthetic/original", completed.uri)
     }
 
+    @Test fun wifiRecoverySelectsOnlyItsOwnRowAndUsbSkipsWifiPending() = runBlocking {
+        val usb = Photo.from(CameraObject(1, 2, "USB.JPG", 4, 123))
+        val wifi = usb.copy(key = "wifi:synthetic", name = "WIFI.JPG")
+        val otherWifi = wifi.copy(key = "wifi:other")
+        val dao = Dao(listOf(usb, wifi, otherWifi))
+        assertEquals(listOf(usb.key), RoomJournal(dao).pending().map { it.key })
+        assertEquals(listOf(wifi.key), RoomJournal(dao, wifiKey = wifi.key).pending().map { it.key })
+        dao.complete(wifi.key, "content://synthetic/wifi", 123)
+        assertTrue(RoomJournal(dao, wifiKey = wifi.key).pending().isEmpty())
+        assertEquals(listOf(wifi.key), RoomJournal(dao).completedItems().map { it.key })
+    }
+
 }
