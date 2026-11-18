@@ -28,7 +28,9 @@ open class Context(val contentResolver: ContentResolver, val packageName: String
         override fun delete(uri: Uri, selection: String?, args: Array<String>?): Int = error("unused")
     }, "synthetic") { this.manager = manager }
     constructor(manager: android.bluetooth.BluetoothManager) : this(android.hardware.usb.UsbManager()) { this.manager = manager }
-    open fun <T> getSystemService(type: Class<T>): T = checkNotNull(type.cast(checkNotNull(manager)))
+    val location = android.location.LocationManager()
+    open fun <T> getSystemService(type: Class<T>): T =
+        checkNotNull(type.cast(if (type == android.location.LocationManager::class.java) location else checkNotNull(manager)))
 }
 abstract class ContentResolver {
     companion object {

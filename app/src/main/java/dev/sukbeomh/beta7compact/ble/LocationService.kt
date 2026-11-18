@@ -50,13 +50,16 @@ class LocationService : Service() {
                     val address = checkNotNull(app.settings.getString("camera", null)) { "먼저 카메라를 선택하고 페어링하세요" }
                     val adapter = checkNotNull(getSystemService(BluetoothManager::class.java).adapter) { "Bluetooth를 사용할 수 없습니다" }
                     check(adapter.isEnabled) { "휴대폰 Bluetooth를 켜세요" }
-                    val connection = LocationLink(this@LocationService).also { link = it }
+                    app.locationTrace.value = dev.sukbeomh.beta7compact.core.LinkTrace()
+                    val connection = LocationLink(this@LocationService, intent?.getBooleanExtra("unlock", false) == true) {
+                        app.locationTrace.value = it
+                    }.also { link = it }
                     val includeZone = connection.connect(adapter.getRemoteDevice(address))
                     app.locationState.value = app.locationState.value.copy(running = true, message = "GPS 수신 대기")
                     while (isActive) {
                         check(allowed()) { "위치·Bluetooth 권한이 해제되었습니다" }
                         check(manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) { "휴대폰 GPS를 켜세요" }
-                        check(connection.enabled.value == true) { "카메라 위치정보 연동이 꺼져 있습니다" }
+                        check(connection.enabled.value != false) { "카메라 위치정보 연동이 꺼져 있습니다" }
                         val fix = location
                         val fresh = fix != null && (SystemClock.elapsedRealtimeNanos() - fix.elapsedRealtimeNanos) in 0..60_000_000_000L &&
                             fix.hasAccuracy() && fix.accuracy <= 100f && !fix.isFromMockProvider
@@ -93,7 +96,11 @@ class LocationService : Service() {
     override fun onDestroy() {
         job?.cancel(); scope.cancel()
         runCatching { manager.removeUpdates(listener) }
-        runCatching { link?.close() }; link = null; location = null
+        // Give the lock back (if one was taken) before closing; the service scope is already cancelled, so use its own.
+        val closing = link; link = null; location = null
+        if (closing != null) CoroutineScope(Dispatchers.Main.immediate).launch {
+            try { withTimeoutOrNull(7_000) { closing.release() } } catch (_: Exception) {} finally { runCatching { closing.close() } }
+        }
         app.locationState.value = app.locationState.value.copy(running = false,
             message = if (app.locationState.value.running) "꺼짐" else app.locationState.value.message)
         stopForeground(STOP_FOREGROUND_REMOVE)
