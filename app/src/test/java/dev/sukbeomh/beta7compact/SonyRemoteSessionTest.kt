@@ -68,8 +68,18 @@ class SonyRemoteSessionTest {
         }
     }
 
-    @Test fun wrongModelMakerOrMissingHandshakeCodeNeverOpensSession() = runBlocking {
-        for (info in listOf(device(model = "ILCE-7CM2"), device(maker = "Other"), device(ops = intArrayOf(0x9202, 0x9209)), device(ops = intArrayOf(0x9201, 0x9209)))) {
+    @Test fun otherSonyModelCanRunExperimentalDiagnostic() = runBlocking {
+        val wire = Fake().apply { info = device(model = "ILCE-7CM2") }
+        val session = SonyRemoteSession(wire)
+        session.connect()
+        assertEquals(SonyRemoteSessionState.OBSERVING, session.state)
+        assertEquals(connectOrder, wire.calls)
+        session.close()
+        assertEquals(SonySessionOperation.CLOSE_SESSION, wire.calls.last())
+    }
+
+    @Test fun wrongMakerOrMissingHandshakeCodeNeverOpensSession() = runBlocking {
+        for (info in listOf(device(maker = "Other"), device(ops = intArrayOf(0x9202, 0x9209)), device(ops = intArrayOf(0x9201, 0x9209)))) {
             val wire = Fake().apply { this.info = info }
             val session = SonyRemoteSession(wire)
             assertFailsWith<IllegalArgumentException> { session.connect() }

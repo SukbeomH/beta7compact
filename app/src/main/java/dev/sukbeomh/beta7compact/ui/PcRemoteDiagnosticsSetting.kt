@@ -42,13 +42,13 @@ import kotlinx.coroutines.withContext
         title = { Text("PC Remote 실험 진단") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("원형 α7C(ILCE-7C)용 실험 기능입니다. 카메라에서 스마트폰 제어를 끄고, 네트워크 → PC Remote 기능을 켠 뒤 연결 방법을 USB로 선택하세요.")
+                Text("Sony 카메라용 미검증 실험 기능입니다. 원형 α7C(ILCE-7C) 이외 기종도 실행할 수 있으나 호환성이 확인되지 않았습니다. 기종별 PC Remote USB 설정을 직접 확인하세요.")
                 Text("Sony SDIO 연결은 카메라 모드를 바꿀 수 있습니다. 기존 읽기 전용 연결 진단과 다르며, 끝난 뒤 USB 재연결이나 카메라의 PC Remote 끄기·MTP 선택이 필요할 수 있습니다.")
                 Text("연결 협상·속성 조회·짧은 이벤트 관찰 후 종료합니다. 촬영·노출 설정 쓰기·펌웨어 명령은 보내지 않습니다.")
                 PcRemoteTestGuide()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = acknowledged, onCheckedChange = { acknowledged = it }, enabled = enabled && !busy)
-                    Text("모드 변경 가능성을 확인했고, 이번 진단을 실행합니다.", modifier = Modifier.weight(1f))
+                    Text("기종별 호환성 미확인과 모드 변경 가능성을 확인했고, 이번 진단을 실행합니다.", modifier = Modifier.weight(1f))
                 }
                 if (!enabled) Text("사진 가져오기가 끝난 뒤 실행하세요.")
                 Row {

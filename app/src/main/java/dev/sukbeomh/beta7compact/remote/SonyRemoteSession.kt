@@ -36,8 +36,8 @@ class SonyRemoteSession(private val transport: SonySessionTransport) {
         state = SonyRemoteSessionState.CONNECTING
         guarded {
             val device = Ptp.deviceInfo(transport.exchange(SonySessionOperation.DEVICE_INFO))
-            require(device.model == "ILCE-7C" && device.manufacturer in setOf("Sony", "Sony Corporation")) {
-                "Unsupported Sony remote model"
+            require(device.manufacturer in setOf("Sony", "Sony Corporation")) {
+                "Unsupported remote manufacturer"
             }
             require(device.operations.toSet().containsAll(setOf(0x9201, 0x9202))) {
                 "Required Sony session operations not advertised"
