@@ -18,7 +18,7 @@
 
 ---
 
-**0.8.5** · Android 10 이상(API 29+) · Sony α7C 1세대(ILCE-7C) 대상
+**0.8.6** · Android 10 이상(API 29+) · Sony α7C 1세대(ILCE-7C) 대상
 
 Galaxy Z Fold 계열 폰을 중심으로 만든 개인용 카메라 동반 앱입니다. USB로 사진을 가져오고, LUT와 세부 보정을 적용해 저장하거나 레시피를 공유할 수 있습니다. AF·단발 촬영은 별도 실험 화면에서만 제공하며 α7C 실기 검증 전입니다. 카메라 펌웨어 변경 기능은 제공하지 않습니다.
 
@@ -104,7 +104,8 @@ ARW 편집은 현재 **내장 미리보기 JPEG**를 사용합니다. RAW 센서
 | --- | --- |
 | USB 가져오기·레시피 편집 | Galaxy Z Fold8(Android 17) + α7C fw 2.03에서 확인한 이력 있음 |
 | 0.6.0 기능 테스트 | debug·release 각각 196개 단위 테스트 통과, Room 마이그레이션 검사 통과 |
-| 0.8.5 국소 보정 실험 | debug·release 각각353개 테스트, 빌드·lint·기존 인증서 일치. 실제 인물/Android 입출력은 미검증. [기록](docs/verification/2026-11-18/release-0.8.5.md) |
+| 0.8.6 실험 제거 | 클린 빌드·Debug/Release 각각335개 테스트·마이그레이션 검사 통과, lint 오류0·기존 인증서 일치. 폰/카메라 실기 미실행. [기록](docs/verification/2026-11-18/release-0.8.6.md) |
+| 0.8.5 국소 보정 실험 | debug·release 각각353개 테스트, 빌드·lint·기존 인증서 일치. 배포 당시 인물/Android 입출력 미검증. 이후 얼굴·배경이 어색하다는 사용자 피드백으로0.8.6에서 제거. [기록](docs/verification/2026-11-18/release-0.8.5.md) |
 | 0.8.4 사진 선택 | debug·release 각각335개 테스트, 빌드·lint·기존 인증서 일치. 선택/필터/공유창의 개발 빌드 실기 범위는 [기록](docs/verification/2026-11-17/release-0.8.4.md) 참고 |
 | 0.8.3 편집·2열·버튼 | debug·release 각각331개 테스트, 빌드·lint·기존 인증서 일치. 개발 빌드 폰 검증 범위는 [기록](docs/verification/2026-11-17/release-0.8.3.md) 참고 |
 | 0.8.2 배치·캐시 | debug·release 각각326개 테스트, 빌드·lint·기존 서명 확인. 캐시 재사용·용량·세대 검사 |
@@ -197,6 +198,6 @@ python3 tools/verify_release_apk.py app/build/outputs/apk/debug/app-debug.apk \
 
 [디자인 기준과 공식 레퍼런스](UIUX_DESIGN.md) · [현재 앱 검토와 개선 순서](docs/UIUX_AUDIT.md)
 
-## 수동 국소 보정 실험
+## 사진 보정 실험 종료
 
-0.8.5에서는 **설정 → 연구 · 사진 보정 실험 → 수동 국소 보정 · 실험**을 제공합니다. JPEG 위에서 영역을 지정하고 강도·반경을 조절하는2D 변형입니다. 원본 비교·초기화·긴 변 최대2048px 별도 JPEG 저장을 제공하며 실제 인물 품질은 미검증입니다.3D/렌즈 재현이나 기존 LUT 레시피에 포함되는 기능은 아닙니다. [실행 순서·평가 기준·검증 기록](docs/LOCAL_WARP_EXPERIMENT.md). 0.8.5부터 포함되는 품질 평가 전 실험 기능입니다.
+0.8.6에서 수동 국소 보정 실험을 제거했습니다. 얼굴과 배경이 부자연스럽다는 실기 피드백에 따라 중단했으며, 기존 LUT 편집·레시피·사진 저장은 유지합니다. [실기 피드백·Lightroom 렌즈 보정 조사·제거 결정](docs/LENS_CORRECTION_RESEARCH.md).
