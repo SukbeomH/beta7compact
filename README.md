@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/SukbeomH/beta7compact/releases/latest">최신 APK 다운로드</a> ·
+  <a href="https://beta7c-screen-studio.robust-zebra-1280.chatgpt.site/">앱 화면 미리보기</a> ·
   <a href="#시작하기">시작하기</a> ·
   <a href="#화면-시안">화면 시안</a> ·
   <a href="#검증-상태">검증 상태</a> ·
@@ -38,9 +39,11 @@ Galaxy Z Fold 계열 폰을 중심으로 만든 개인용 카메라 동반 앱�
 
 ## 화면 시안
 
-[β7C Screen Studio](https://beta7c-screen-studio.robust-zebra-1280.chatgpt.site/)에서 카메라, 사진, 편집, 레시피, 설정 화면을 둘러볼 수 있습니다. 현재 구성과 개선 제안, 네 가지 테마, 접힌 화면과 펼친 화면의 배치를 비교합니다. **사이트는 현재 소유자 전용**이므로 다른 계정에서는 열리지 않을 수 있습니다.
+[앱 화면 미리보기 · β7C Screen Studio](https://beta7c-screen-studio.robust-zebra-1280.chatgpt.site/)에서 카메라, 사진, 편집, 레시피, 설정 화면을 둘러볼 수 있습니다. 현재 구성과 개선 제안, 네 가지 테마, 접힌 화면과 펼친 화면의 배치를 비교합니다.
 
-소스 저장소를 내려받았다면 [로컬 실행 방법](sites/beta7c-screen-studio/README.md#로컬에서-열기)으로 시안을 열 수 있습니다. 시안은 Android 0.8.12 소스를 기준으로 만든 웹 재현입니다. 데모 사진과 모의 연결을 사용하며 실제 앱의 LUT 출력이나 카메라 제어를 검증하지 않습니다.
+**웹 데모 안내:** Android 0.8.12를 참고해 별도로 재구성한 시안이며 실제 앱 화면 캡처가 아닙니다. 데모 사진과 모의 연결을 사용하므로 실제 카메라에 연결하거나 촬영하지 않습니다. LUT 색상도 웹에서 근사한 표현으로 실제 앱의 사진 출력과 다를 수 있습니다. 개선 제안은 Android 앱에 적용되지 않았을 수 있습니다.
+
+소스 저장소를 내려받았다면 [로컬 실행 방법](sites/beta7c-screen-studio/README.md#로컬에서-열기)으로도 시안을 열 수 있습니다.
 
 디자인 원본은 [화면 시안 캔버스](docs/design/canvas/README.md)에 있습니다. Android 적용 여부와 실기 확인은 [검증 상태](#검증-상태)를 따릅니다.
 

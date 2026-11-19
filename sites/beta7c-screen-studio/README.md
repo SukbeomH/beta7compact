@@ -4,7 +4,7 @@ Android 앱 0.8.12의 화면 구성을 살펴보는 인터랙티브 웹 시안�
 
 ## 시안 열기
 
-[게시된 Screen Studio](https://beta7c-screen-studio.robust-zebra-1280.chatgpt.site/)는 현재 소유자 전용으로 게시되어 있습니다. 다른 계정에서 열리지 않으면 아래 방법으로 저장소의 시안을 실행하세요.
+[게시된 Screen Studio](https://beta7c-screen-studio.robust-zebra-1280.chatgpt.site/)에서 앱 화면 미리보기를 열 수 있습니다. 데모 사진과 모의 연결을 사용하며 실제 카메라 연결이나 촬영은 실행하지 않습니다. LUT 색상도 실제 앱 출력과 다를 수 있습니다.
 
 ## 로컬에서 열기
 
