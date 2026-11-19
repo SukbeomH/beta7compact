@@ -20,4 +20,8 @@
 
 빌드와 APK 서명·폰 설치 결과는 [0.8.12 검증 기록](verification/2026-11-19/release-0.8.12.md)을 참고하세요. 기존 설치본과 같은 키인지 [서명키 관리](SIGNING.md)에서 확인하고, 서명이 다르면 앱을 지우지 말고 중단합니다. `tools/check_m5a_contract.py`와 `tools/check_d2_contract.py`는 0.4.0 기준의 역사적 검사입니다.
 
-웹 시안은 [Screen Studio](../sites/beta7c-screen-studio/README.md)에서 확인합니다. 실제 Android 스크린샷이 아니며 카메라 전송은 모의 동작입니다.
+## 공개 웹 미리보기
+
+[Screen Studio](https://beta7c-screen-studio.robust-zebra-1280.chatgpt.site/)는 전체 공개 상태입니다. GitHub README에서 바로 열 수 있습니다. 실제 Android 스크린샷이 아니며 카메라 전송은 모의 동작입니다. 웹 LUT와 JPEG 결과는 앱의 결과와 다를 수 있습니다.
+
+2026-11-19에 로그인 정보 없는 HTTP 접속, Mac Aside 브라우저, Samsung SM-F971N의 삼성 인터넷에서 주요 화면을 확인했습니다. Mac에서 레시피 저장과 새로고침 후 유지, 네 가지 테마, 웹 JPEG 다운로드를 확인했습니다. 폰에서는 Wi-Fi 데모 목록과 사진·설정 화면 전환을 확인했습니다. 범위와 미실행 항목은 [공개 미리보기 검증 기록](verification/2026-11-19/screen-studio-public.md)을 참고하세요. 로컬 실행 방법은 [시안 README](../sites/beta7c-screen-studio/README.md)에 있습니다.

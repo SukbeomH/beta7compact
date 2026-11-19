@@ -43,6 +43,8 @@ Galaxy Z Fold 계열 폰을 중심으로 만든 개인용 카메라 동반 앱�
 
 **웹 데모 안내:** Android 0.8.12를 참고해 별도로 재구성한 시안이며 실제 앱 화면 캡처가 아닙니다. 데모 사진과 모의 연결을 사용하므로 실제 카메라에 연결하거나 촬영하지 않습니다. LUT 색상도 웹에서 근사한 표현으로 실제 앱의 사진 출력과 다를 수 있습니다. 개선 제안은 Android 앱에 적용되지 않았을 수 있습니다.
 
+미리보기는 공개되어 있습니다. Mac 브라우저와 Galaxy 폰에서 주요 화면과 데모 동작을 확인했습니다. 확인한 기능과 남은 검증은 [공개 미리보기 검증 기록](docs/verification/2026-11-19/screen-studio-public.md)을 참고하세요.
+
 소스 저장소를 내려받았다면 [로컬 실행 방법](sites/beta7c-screen-studio/README.md#로컬에서-열기)으로도 시안을 열 수 있습니다.
 
 디자인 원본은 [화면 시안 캔버스](docs/design/canvas/README.md)에 있습니다. Android 적용 여부와 실기 확인은 [검증 상태](#검증-상태)를 따릅니다.
@@ -75,7 +77,7 @@ JPEG는 카메라가 제공하는 원본을, RAW는 카메라가 제공하는 JP
 | 수동 왜곡 | 사진 전체를 배럴↔핀쿠션 방향으로 조절. 레시피 v3에 포함하며 `.cube`에는 제외. [사용법과 한계](docs/MANUAL_DISTORTION.md) |
 | 레시피 공유 | `b7c1:` 텍스트, QR 표시, 현재 색 설정을 `.cube`로 내보내기 |
 | 폴더블 화면 | 카메라·사진·레시피·설정 4탭, 화면 크기와 자세에 따른 배치, 미저장 편집 이탈 확인 |
-| 진단·업데이트 | 진단별 로그 미리보기·공유, Wi-Fi 연결 진단, GitHub 릴리즈 확인·APK 내려받기 |
+| 진단·업데이트 | 읽기 전용 USB 카메라 연결 진단과 로그 공유, GitHub 릴리즈 확인·APK 내려받기 |
 
 수동 왜곡은 렌즈 프로파일 자동 보정이 아닙니다. 왜곡이 포함된 레시피 v3은 구버전 앱에서 읽을 수 없으며 `.cube`에 왜곡이 포함되지 않습니다.
 
@@ -95,7 +97,8 @@ ARW 편집은 현재 **내장 미리보기 JPEG**를 사용합니다. RAW 센서
 | --- | --- |
 | USB 가져오기·레시피 편집 | Galaxy Z Fold8(Android 17) + α7C fw 2.03에서 확인한 이력 있음 |
 | 0.6.0 기능 테스트 | debug·release 각각 196개 단위 테스트 통과, Room 마이그레이션 검사 통과 |
-| 0.8.12 기능 정리 | BLE·원격 실험과 펌웨어 분석 제거, 설정 카드 폭 정리. Wi-Fi 사진 가져오기는 카메라 실기 검증 전. [기록](docs/verification/2026-11-19/release-0.8.12.md) |
+| 0.8.12 기능 정리 | 클린 빌드, Debug·Release 각 220개 테스트, 서명과 폰 설치·화면 확인. Wi-Fi 사진 가져오기는 카메라 실기 검증 전. [기록](docs/verification/2026-11-19/release-0.8.12.md) |
+| 공개 웹 미리보기 | Mac 브라우저와 Galaxy 폰에서 공개 접속과 주요 데모 동작 확인. Android 앱 검증과 별도. [기록](docs/verification/2026-11-19/screen-studio-public.md) |
 | 0.8.11 Wi-Fi 사진 가져오기 | 클린 빌드·단위 테스트·서명 확인. 카메라 실기 검증 전. [기록](docs/verification/2026-11-19/release-0.8.11.md) |
 | 0.8.10 BLE·원격·Wi-Fi | 클린 빌드·단위 테스트·서명 확인. 카메라 실기 검증 전. [기록](docs/verification/2026-11-18/release-0.8.10.md) |
 | 0.8.9 Sony 기종 경고 | 모의 통신·빌드·서명 확인. α7C 및 다른 기종의 원격 실기 검증 전. [기록](docs/verification/2026-11-18/release-0.8.9.md) |
@@ -179,7 +182,7 @@ python3 tools/verify_release_apk.py app/build/outputs/apk/debug/app-debug.apk \
 | 개발 방향 | [카메라 연결 기능 인계](docs/HANDOFF.md) · [인계 자료 통합 계획](docs/PLAN_A7C_EXTENSIONS.md) · [초기 아키텍처](docs/ARCHITECTURE.md) |
 | 디자인 | [웹 시안 사용법](sites/beta7c-screen-studio/README.md) · [화면 시안 캔버스](docs/design/canvas/README.md) · [디자인 시스템](docs/design/DESIGN-SYSTEM.md) · [정보 구조 제안](docs/design/IA.md) · [아이콘 제작 기록](docs/design/ICON-IMPLEMENTATION.md) |
 | 편집 엔진 | [레시피 엔진](docs/M2-ENGINE.md) · [S-Log3](docs/SLOG3.md) · [레시피 공유](docs/M5A-SHARING.md) |
-| 검증 | [최근 검증 기록](docs/verification/2026-11-17/README.md) · [카메라 실기 체크리스트](docs/M1-DEVICE-CHECK.md) |
+| 검증 | [0.8.12 빌드·폰 검증](docs/verification/2026-11-19/release-0.8.12.md) · [공개 미리보기 검증](docs/verification/2026-11-19/screen-studio-public.md) · [카메라 실기 체크리스트](docs/M1-DEVICE-CHECK.md) |
 | 배포 | [변경 이력](CHANGELOG.md) · [서명키 관리](docs/SIGNING.md) |
 | LUT | [출처·라이선스](docs/LUT-SOURCES.md) · [파일 형식](docs/LUT-FORMAT.md) · [고지](assets/luts/NOTICE) |
 

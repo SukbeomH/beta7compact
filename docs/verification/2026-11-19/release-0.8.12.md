@@ -9,7 +9,7 @@
 - 패키지 `dev.sukbeomh.beta7compact`, versionCode 25, versionName 0.8.12, 최소 API 29. APK 서명 검증과 기존 설치본 인증서 일치 확인: SHA-256 `eaf9514a8a00e3d029e98e772cf0185bfafd270645cb21bc057f198a2d9e23f8`.
 - Samsung SM-F971N의 0.8.11을 `adb install -r`로 업데이트. 설치된 APK와 배포 APK의 SHA-256 일치: `5cec5afd8f777c5f08a66ad998653edeac669aa15f9ed8bea7d2f3aad6169009`.
 - 폰에서 카메라 탭, Wi-Fi 사진 가져오기 대화상자와 설정의 버전·진단 영역을 확인했다. 설정 하단 카드와 업데이트 카드의 폭이 같은 것을 화면에서 확인했다. 카메라 탭의 실험·예정 영역과 설정의 중단 기능은 표시되지 않았다.
-- 웹 시안 로컬 HTTP 200, JavaScript 문법, 카메라·Wi-Fi 데모 목록·설정 화면 확인. 기존 소유자 전용 Sites에 게시했다.
+- 웹 시안 로컬 HTTP 200, JavaScript 문법, 카메라·Wi-Fi 데모 목록·설정 화면 확인. 당시 소유자 전용 Sites에 게시했다. 이후 전체 공개로 변경했으며 [공개 접속 검증](screen-studio-public.md)을 별도로 기록했다.
 
 [클린 빌드 로그](release-0.8.12-build.log)는 후행 공백만 제거했다. 배포 파일은 기존 서명키로 서명된 `assembleDebug` APK다. Release 단위 테스트는 실행했지만 release variant APK는 생성하지 않았다.
 
