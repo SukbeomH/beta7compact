@@ -39,7 +39,7 @@ import kotlinx.coroutines.withContext
         text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("카메라에서 선택한 모드를 기록하세요. 이 화면은 카메라 모드를 변경하지 않습니다.")
             Row {
-                listOf("미확인", "MTP", "PC Remote").forEach { mode ->
+                listOf("미확인", "MTP", "기타").forEach { mode ->
                     TextButton(onClick = { selectedMode = mode }, enabled = !busy) {
                         Text(if (selectedMode == mode) "✓ $mode" else mode)
                     }
@@ -89,7 +89,7 @@ import kotlinx.coroutines.withContext
                     TextButton(onClick = { report = null }, enabled = !busy) { Text("결과 지우기") }
                 }
             }
-            Text("지원 목록은 실제 제어 성공을 보장하지 않습니다. MTP와 PC Remote 각각의 결과를 비교하면 호환성 확인에 도움이 됩니다.")
+            Text("지원 목록은 실제 사진 가져오기 성공을 보장하지 않습니다. 카메라의 USB 연결 설정을 확인하세요.")
         } },
         confirmButton = { TextButton(onClick = { opened = false }, enabled = !busy) { Text("닫기") } })
 }

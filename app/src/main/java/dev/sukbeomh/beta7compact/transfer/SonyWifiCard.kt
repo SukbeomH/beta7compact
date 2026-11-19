@@ -5,7 +5,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import dev.sukbeomh.beta7compact.core.CameraObject
-import dev.sukbeomh.beta7compact.remote.PtpIp
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.BufferedInputStream
@@ -273,7 +272,7 @@ internal class SonyWifiCard(private val address: InetAddress, private val socket
     companion object {
         @Suppress("DEPRECATION")
         fun connected(context: Context, localAddress: String): SonyWifiCard {
-            val address = InetAddress.getByAddress(requireNotNull(PtpIp.localAddress(localAddress)) { "카메라의 사설 IPv4 주소를 입력하세요" })
+            val address = InetAddress.getByAddress(requireNotNull(privateIpv4Address(localAddress)) { "카메라의 사설 IPv4 주소를 입력하세요" })
             val manager = context.getSystemService(ConnectivityManager::class.java)
             val network = manager.allNetworks.firstOrNull { candidate ->
                 manager.getNetworkCapabilities(candidate)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true &&
@@ -292,7 +291,7 @@ internal class SonyWifiCard(private val address: InetAddress, private val socket
                 val link = manager.getLinkProperties(network) ?: return@flatMap emptyList()
                 val address = if (Build.VERSION.SDK_INT >= 30) link.dhcpServerAddress else null
                 listOfNotNull(address, link.routes.firstOrNull { it.isDefaultRoute && it.gateway is Inet4Address }?.gateway)
-                    .mapNotNull { it.hostAddress?.takeIf { host -> PtpIp.localAddress(host) != null } }
+                    .mapNotNull { it.hostAddress?.takeIf { host -> privateIpv4Address(host) != null } }
             }.distinct()
             for (candidate in addresses) {
                 try {

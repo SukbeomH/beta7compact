@@ -65,7 +65,6 @@ import kotlinx.coroutines.*
 @Composable fun SettingsScreen(activity: MainActivity, app: App, raw: Boolean, canChange: Boolean, changeRaw: (Boolean) -> Unit, recipes: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     var notices by remember { mutableStateOf<String?>(null) }
-    var cameraToolsExpanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ThemeSetting(app)
@@ -85,25 +84,9 @@ import kotlinx.coroutines.*
         } }
         Text("업데이트", style = MaterialTheme.typography.titleSmall)
         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { UpdateSetting(app) } }
-        OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = { cameraToolsExpanded = !cameraToolsExpanded }, modifier = Modifier.fillMaxWidth()) {
-                Text("위치 연동 · 카메라 실험 · ${if (cameraToolsExpanded) "접기" else "펼치기"}", modifier = Modifier.fillMaxWidth())
-            }
-            if (cameraToolsExpanded) {
-                Text("위치 연동", style = MaterialTheme.typography.titleSmall)
-                BleLocationSetting(activity, app)
-                Text("GPS 좌표는 화면·로그·DB에 기록하지 않습니다", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("연구 · 읽기 전용", style = MaterialTheme.typography.titleSmall)
-                dev.sukbeomh.beta7compact.research.FirmwareInspectionCard()
-                Text("연구 · PC Remote 실험", style = MaterialTheme.typography.titleSmall)
-                PcRemoteDiagnosticsSetting(activity = activity, enabled = canChange)
-                CaptureExperimentSetting(activity = activity, app = app, enabled = canChange)
-                WifiRemoteDiagnosticsSetting(app = app, enabled = canChange)
-            }
-        } }
         Text("진단 · 정보", style = MaterialTheme.typography.titleSmall)
         CameraDiagnosticsSetting(activity = activity, enabled = canChange)
-        Card { Column(Modifier.padding(16.dp)) {
+        Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
             TextButton(onClick = {
                 try { activity.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"; putExtra(Intent.EXTRA_TEXT, DiagnosticLog.shareText())

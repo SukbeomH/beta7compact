@@ -10,10 +10,7 @@ enum class DiagnosticEvent(val text: String) {
     USB_MTP_OK("USB MTP 읽기 성공"),
     USB_RAW_OK("USB raw PTP 읽기 성공"),
     IMPORT_STARTED("가져오기 시작"), IMPORT_DONE("가져오기 완료"), IMPORT_FAILED("가져오기 실패"),
-    BLE_FILTER_START("BLE 필터 검색 시작"), BLE_UNFILTERED_START("BLE 무필터 검색 시작"),
-    BLE_FOUND("BLE 카메라 발견"), BLE_EMPTY("BLE 카메라 광고 없음"),
-    BLE_FAILED("BLE 검색 실패"), BLE_SELECTED("BLE 카메라 선택"),
-    BLE_BOND_STARTED("BLE 페어링 시작"), BLE_BOND_FAILED("BLE 페어링 실패")
+
 }
 
 object DiagnosticLog {

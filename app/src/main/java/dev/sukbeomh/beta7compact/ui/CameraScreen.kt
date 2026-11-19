@@ -19,43 +19,26 @@ import java.util.*
 @Composable fun CameraScreen(status: String, connected: Boolean, detail: String, busy: Boolean, working: Boolean,
     newCount: Int, pendingCount: Int, resolve: () -> Unit, scan: () -> Unit, receive: () -> Unit,
     pick: () -> Unit, resume: () -> Unit, photos: () -> Unit, wifiImport: () -> Unit) {
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val wide = windowClass(maxWidth.value) != WindowClass.COMPACT
-        @Composable fun Connection(modifier: Modifier) {
-            Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Sony 카메라", style = MaterialTheme.typography.titleMedium)
-                    StatusChip(status, connected)
-                    Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (connected) {
-                        Text("새 사진 ${newCount}장", style = MaterialTheme.typography.headlineMedium)
-                        Button(onClick = receive, enabled = newCount > 0 && !busy && !working, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("새 사진 ${newCount}장 가져오기") }
-                        if (newCount == 0 && !busy) TextButton(onClick = photos) { Text("모두 가져왔어요 · 사진 탭 열기") }
-                    } else {
-                        Text("1. 카메라 전원 켜기\n2. USB-C 케이블 연결\n3. 카메라 메뉴 → USB 연결 → MTP")
-                        Button(onClick = resolve, enabled = !busy && !working) { Text(if (status == "권한 필요") "USB 권한 요청" else "다시 연결") }
-                    }
-                } }
-                OutlinedButton(onClick = pick, enabled = connected && !busy && !working, modifier = Modifier.fillMaxWidth()) { Text("골라서 가져오기") }
-                OutlinedButton(onClick = wifiImport, enabled = !busy && !working, modifier = Modifier.fillMaxWidth()) { Text("Wi-Fi로 사진 가져오기") }
-                TextButton(onClick = scan, enabled = !busy && !working) { Symbol(dev.sukbeomh.beta7compact.R.drawable.pixel_refresh); Text("다시 스캔") }
-                if (pendingCount > 0 && !working) WorkBanner("중단된 가져오기", 0, pendingCount, "이어서 받기", resume)
-            }
-        }
-        @Composable fun Planned(modifier: Modifier) {
-            Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("실험·예정 기능", style = MaterialTheme.typography.titleSmall)
-                OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                    Text("USB 라이브뷰 · 준비 중", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("촬영 영상 미리보기", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } }
-                Text("원본은 DCIM/beta7compact/에 보존합니다.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        if (wide) Row(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-            Connection(Modifier.weight(1f)); Planned(Modifier.weight(1f))
-        } else Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(24.dp)) {
-            Connection(Modifier.fillMaxWidth()); Planned(Modifier.fillMaxWidth())
+    Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = androidx.compose.ui.Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 720.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Sony 카메라", style = MaterialTheme.typography.titleMedium)
+                StatusChip(status, connected)
+                Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (connected) {
+                    Text("새 사진 ${newCount}장", style = MaterialTheme.typography.headlineMedium)
+                    Button(onClick = receive, enabled = newCount > 0 && !busy && !working, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("새 사진 ${newCount}장 가져오기") }
+                    if (newCount == 0 && !busy) TextButton(onClick = photos) { Text("모두 가져왔어요 · 사진 탭 열기") }
+                } else {
+                    Text("1. 카메라 전원 켜기\n2. USB-C 케이블 연결\n3. 카메라 메뉴 → USB 연결 → MTP")
+                    Button(onClick = resolve, enabled = !busy && !working) { Text(if (status == "권한 필요") "USB 권한 요청" else "다시 연결") }
+                }
+            } }
+            OutlinedButton(onClick = pick, enabled = connected && !busy && !working, modifier = Modifier.fillMaxWidth()) { Text("골라서 가져오기") }
+            OutlinedButton(onClick = wifiImport, enabled = !busy && !working, modifier = Modifier.fillMaxWidth()) { Text("Wi-Fi로 사진 가져오기") }
+            TextButton(onClick = scan, enabled = !busy && !working) { Symbol(dev.sukbeomh.beta7compact.R.drawable.pixel_refresh); Text("다시 스캔") }
+            if (pendingCount > 0 && !working) WorkBanner("중단된 가져오기", 0, pendingCount, "이어서 받기", resume)
+            Text("원본은 DCIM/beta7compact/에 보존합니다.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

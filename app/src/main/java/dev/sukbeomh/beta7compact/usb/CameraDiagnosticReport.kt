@@ -47,7 +47,7 @@ data class CameraDiagnosticReport(val devices: List<DiagnosticUsbDevice>, val st
             appendLine("지원 명령: ${it.operations.distinct().joinToString { code -> hex(code) }}")
             appendLine("지원 속성: ${it.properties.distinct().joinToString { code -> hex(code) }}")
         }
-        appendLine("연결 모드는 자동 판정하지 않습니다. 기기에서 MTP/PC Remote 설정을 확인하세요.")
+        appendLine("연결 모드는 자동 판정하지 않습니다. 기기에서 USB 연결 설정을 확인하세요.")
         append("지원 목록은 실제 제어 성공의 증거가 아닙니다. 설정 변경·촬영·펌웨어 쓰기는 수행하지 않았습니다.")
     }
 }

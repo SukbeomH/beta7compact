@@ -19,9 +19,6 @@ class App : Application() {
     val cameraThumbnails = dev.sukbeomh.beta7compact.cache.ThumbnailCache<android.graphics.Bitmap>(
         24 * 1024 * 1024, { it.allocationByteCount })
     val usbState = MutableStateFlow(LinkState.DISCONNECTED)
-    val locationState = MutableStateFlow(LocationStatus())
-    /** Evidence of the last location-link attempt; memory only, never coordinates or addresses. */
-    val locationTrace = MutableStateFlow(dev.sukbeomh.beta7compact.core.LinkTrace())
     val usbDiagnostic = MutableStateFlow<String?>(null)
     suspend fun <T> useUsb(block: suspend (Camera) -> T): T = UsbAccess.use(this,
         { settings.getBoolean("raw", true) },
@@ -29,4 +26,3 @@ class App : Application() {
         failed = { usbDiagnostic.value = "${it.message} · raw PTP로 1회 대체" }, block = block)
     @Synchronized fun usb(event: LinkEvent) { usbState.value = transition(usbState.value, event) }
 }
-data class LocationStatus(val running: Boolean = false, val message: String = "꺼짐", val lastSent: Long? = null)
