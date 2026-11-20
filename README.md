@@ -37,13 +37,13 @@ Galaxy Z Fold 계열 폰을 중심으로 만든 개인용 카메라 동반 앱�
 
 > 기존 앱은 삭제하지 않고 업데이트하세요. **0.5.0은 서명 불일치가 있어 사용하지 않습니다.** 0.5.1부터 기존 설치본의 서명키로 배포합니다. 서명 오류가 나면 앱을 삭제하지 말고 [서명키 관리 문서](docs/SIGNING.md)를 확인하세요.
 
-## 앱 화면
+## 앱 화면 미리보기
 
 <p align="center">
-  <img src="docs/images/beta7compact-fold-landscape.gif" width="800" alt="펼친 가로 화면에서 카메라 연결 안내와 Wi-Fi 가져오기, 테마 변경을 보여주는 앱 영상">
+  <img src="docs/images/beta7compact-fold-landscape.gif" width="800" alt="펼친 가로 웹 시안의 카메라 연결 안내, 사진 선택, 편집 및 테마 변경 화면">
 </p>
 
-Galaxy 폴더블 폰에서 촬영한 0.8.12 화면입니다. 카메라 연결 안내, Wi-Fi 가져오기 화면, 테마 변경 순서로 보여줍니다. 촬영 당시 카메라는 연결하지 않았습니다.
+**웹 시안 영상입니다.** 0.8.12 화면을 참고한 펼친 가로 시안에서 카메라 연결 안내, Wi-Fi 데모, 사진 선택, 편집, 테마 변경을 보여줍니다. 실제 앱이나 카메라를 촬영한 영상은 아닙니다. 사진은 [데모 이미지](sites/beta7c-screen-studio/dist/assets/photo-credits.json)를 사용합니다.
 
 ## 화면 시안
 
